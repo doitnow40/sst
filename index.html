@@ -6,6 +6,7 @@
 <title>섹터 레이더 | 한국·미국 섹터 등락률 트래커</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
   --bg-darkest:#0f1117; --bg-dark:#161b27; --bg-card:#1e2535; --bg-card2:#252d40;
@@ -145,7 +146,17 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 #scrollTop.visible{opacity:1}
 #scrollTop:hover{color:var(--text-primary)}
 
-/* 배포 안내 박스 */
+/* ━━━ CHART SECTION ━━━ */
+.chart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.chart-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.chart-title{font-size:12px;font-weight:700;color:var(--text-primary);letter-spacing:.5px}
+.chart-subtitle{font-size:10px;color:var(--text-muted)}
+.chart-toggle-all{margin-left:auto;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer;transition:all .15s}
+.chart-toggle-all:hover{border-color:var(--border-light);color:var(--text-primary)}
+.chart-body{padding:8px 14px 12px;position:relative}
+.chart-canvas-wrap{position:relative;height:280px}
+
+@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}
 .deploy-guide{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:11px;line-height:1.9;color:var(--text-secondary)}
 .deploy-guide h3{color:var(--accent-kr);font-size:13px;margin-bottom:8px}
 .deploy-guide ol{padding-left:18px}
@@ -211,13 +222,29 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
         <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 시트에서 동적 로딩</div></div>
         <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
       </div>
-      <div class="ad-slot ad-slot-top" id="adfit-kr-top"><span>광고 영역 (카카오 Adfit)</span></div>
+
+      <!-- ① 섹터 추이 선 차트 (최대 1개월) -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">📈 섹터별 등락률 추이 (최근 1개월)</div>
+            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥·ADR 제외</div>
+          </div>
+          <button class="chart-toggle-all" onclick="krChartToggleAll()">전체 ON/OFF</button>
+        </div>
+        <div class="chart-body">
+          <div class="chart-canvas-wrap">
+            <canvas id="kr-chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 컨트롤 + 통계 + 표 -->
       <div class="controls-bar">
         <button class="range-btn active-kr" onclick="setKrRange(30,this)">1개월</button>
         <button class="range-btn" onclick="setKrRange(90,this)">3개월</button>
         <button class="range-btn" onclick="setKrRange(180,this)">6개월</button>
         <button class="range-btn" onclick="setKrRange(365,this)">1년</button>
-        <!-- ★ 글자 크기 조절 -->
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
           <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
@@ -232,7 +259,9 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
       <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
         🔵 -15% ←—— ⬜ 0% ——→ 🔴 +15% | 섹터 평균 등락률(%)
       </div>
-      <div class="ad-slot ad-slot-btm"><span>광고 영역 (카카오 Adfit)</span></div>
+
+      <!-- ③ 광고 하단 -->
+      <div class="ad-slot ad-slot-btm" id="adfit-kr-btm"><span>광고 영역 (카카오 Adfit)</span></div>
     </div>
 
     <!-- ══ KR LIST ══ -->
@@ -254,7 +283,24 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
         <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년</div></div>
         <div class="page-badge badge-us" id="us-status">로딩 중...</div>
       </div>
-      <div class="ad-slot ad-slot-top"><span>광고 영역 (카카오 Adfit)</span></div>
+
+      <!-- ① 섹터 추이 선 차트 -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">📈 섹터별 등락률 추이 (최근 1개월)</div>
+            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · GICS 11섹터 기준</div>
+          </div>
+          <button class="chart-toggle-all" onclick="usChartToggleAll()">전체 ON/OFF</button>
+        </div>
+        <div class="chart-body">
+          <div class="chart-canvas-wrap">
+            <canvas id="us-chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② 컨트롤 + 통계 + 표 -->
       <div class="controls-bar">
         <button class="range-btn active-us" onclick="setUsRange(30,this)">1개월</button>
         <button class="range-btn" onclick="setUsRange(90,this)">3개월</button>
@@ -274,7 +320,9 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
       <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
         🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
       </div>
-      <div class="ad-slot ad-slot-btm"><span>광고 영역 (카카오 Adfit)</span></div>
+
+      <!-- ③ 광고 하단 -->
+      <div class="ad-slot ad-slot-btm" id="adfit-us-btm"><span>광고 영역 (카카오 Adfit)</span></div>
     </div>
 
     <!-- ══ US LIST ══ -->
@@ -338,11 +386,10 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ★ GAS 웹앱 URL을 여기에 붙여넣으세요
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyQjlAljqU-CWo0kqSS0S-rcSkmP4yQLy_5rpiDKzSW6_rVpSSKfQraOjOiWuzUEixs/exec';
+const GAS_WEBAPP_URL = 'YOUR_GAS_WEBAPP_URL_HERE';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 
-
-const IS_DEMO = false;  
+const IS_DEMO = !GAS_WEBAPP_URL || GAS_WEBAPP_URL === 'YOUR_GAS_WEBAPP_URL_HERE';
 
 // ━━━ US 섹터 메타 (색상/타입/그룹) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ★ KR 섹터 메타는 하드코딩하지 않음 → 시트 헤더 동적 로딩으로 해결
@@ -642,6 +689,125 @@ function renderKr(){
   });
   t+='</tbody></table>';
   document.getElementById('kr-table').innerHTML=t;
+
+  // ★ 차트 렌더
+  renderKrChart();
+}
+
+// ━━━ KR 차트 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let krChart=null;
+let krChartAllOn=true;
+
+// 섹터별 고정 색상 팔레트 (선명한 색 20개 순환)
+const CHART_COLORS=[
+  '#4fc3f7','#ef5350','#66bb6a','#ffa726','#ab47bc',
+  '#26c6da','#ff7043','#9ccc65','#ec407a','#5c6bc0',
+  '#26a69a','#ffca28','#8d6e63','#78909c','#d4e157',
+  '#42a5f5','#ff5252','#69f0ae','#ffab40','#ea80fc',
+];
+
+function renderKrChart(){
+  if(!S.krD) return;
+  const{headers:H,rows}=S.krD;
+  // 차트는 항상 최근 30일(1개월)만 표시
+  const chartRows=[...rows.slice(0,30)].reverse(); // 오래된 날짜 → 최신 순서로
+
+  const fixedNames=new Set(Object.keys(KR_FIXED)); // 날짜/코스피/코스닥/ADR 제외
+  const sectorNames=H.slice(1).filter(h=>!fixedNames.has(h));
+  const labels=chartRows.map(r=>r[0]);
+
+  const datasets=sectorNames.map((name,si)=>{
+    const colIdx=H.indexOf(name);
+    const data=chartRows.map(r=>{
+      const v=parseFloat(r[colIdx]);
+      return isNaN(v)?null:v;
+    });
+    const color=CHART_COLORS[si%CHART_COLORS.length];
+    return{
+      label:name,
+      data,
+      borderColor:color,
+      backgroundColor:color+'22',
+      borderWidth:1.5,
+      pointRadius:2,
+      pointHoverRadius:5,
+      tension:0.3,
+      fill:false,
+      spanGaps:true,
+    };
+  });
+
+  const canvas=document.getElementById('kr-chart-canvas');
+  if(!canvas) return;
+
+  if(krChart){ krChart.destroy(); krChart=null; }
+
+  krChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{
+          display:true,
+          position:'bottom',
+          labels:{
+            color:'#8a9ab5',
+            font:{size:10,family:"'JetBrains Mono',monospace"},
+            boxWidth:12,
+            boxHeight:2,
+            padding:8,
+            usePointStyle:true,
+            pointStyle:'line',
+          },
+          onClick(e,legendItem,legend){
+            // 기본 toggle 동작
+            const idx=legendItem.datasetIndex;
+            const meta=legend.chart.getDatasetMeta(idx);
+            meta.hidden=!meta.hidden;
+            legend.chart.update();
+          }
+        },
+        tooltip:{
+          backgroundColor:'#1a2332',
+          borderColor:'#2e3a50',
+          borderWidth:1,
+          titleColor:'#e8edf5',
+          bodyColor:'#8a9ab5',
+          titleFont:{size:11},
+          bodyFont:{size:10,family:"'JetBrains Mono',monospace"},
+          callbacks:{
+            label(ctx){return ` ${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+'%':''}`;},
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},maxRotation:45,autoSkip:true,maxTicksLimit:15},
+          grid:{color:'#1e2535'},
+          border:{color:'#2e3a50'}
+        },
+        y:{
+          ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
+          grid:{color:'rgba(46,58,80,0.5)'},
+          border:{color:'#2e3a50'},
+          zero:true,
+        }
+      }
+    }
+  });
+  krChartAllOn=true;
+}
+
+function krChartToggleAll(){
+  if(!krChart) return;
+  krChartAllOn=!krChartAllOn;
+  krChart.data.datasets.forEach((_,i)=>{
+    krChart.getDatasetMeta(i).hidden=!krChartAllOn;
+  });
+  krChart.update();
 }
 
 // ━━━ US HISTORY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -699,6 +865,121 @@ function renderUs(){
   });
   t+='</tbody></table>';
   document.getElementById('us-table').innerHTML=t;
+
+  // ★ 차트 렌더
+  renderUsChart();
+}
+
+// ━━━ US 차트 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let usChart=null;
+let usChartAllOn=true;
+
+function renderUsChart(){
+  if(!S.usD) return;
+  const{headers:H,rows}=S.usD;
+  const chartRows=[...rows.slice(0,30)].reverse();
+
+  // GICS 11섹터만 차트에 표시 (ETF 그룹=SECTOR)
+  const sectorNames=H.slice(1).filter(h=>{
+    const m=US_META[h];
+    return m && (m.group==='SECTOR'||m.group==='INDEX'&&['S&P500','Nasdaq','DowJones'].includes(h));
+  });
+
+  const labels=chartRows.map(r=>r[0]);
+
+  const datasets=sectorNames.map((name,si)=>{
+    const colIdx=H.indexOf(name);
+    const data=chartRows.map(r=>{
+      if(String(r[colIdx])==='휴장') return null;
+      const v=parseFloat(r[colIdx]);
+      return isNaN(v)?null:v;
+    });
+    const m=US_META[name]||{};
+    const color=m.bg&&m.bg!=='#FFD700'?m.bg:CHART_COLORS[si%CHART_COLORS.length];
+    return{
+      label:name,
+      data,
+      borderColor:color,
+      backgroundColor:color+'22',
+      borderWidth:1.5,
+      pointRadius:2,
+      pointHoverRadius:5,
+      tension:0.3,
+      fill:false,
+      spanGaps:true,
+    };
+  });
+
+  const canvas=document.getElementById('us-chart-canvas');
+  if(!canvas) return;
+
+  if(usChart){ usChart.destroy(); usChart=null; }
+
+  usChart=new Chart(canvas,{
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{
+          display:true,
+          position:'bottom',
+          labels:{
+            color:'#8a9ab5',
+            font:{size:10,family:"'JetBrains Mono',monospace"},
+            boxWidth:12,
+            boxHeight:2,
+            padding:8,
+            usePointStyle:true,
+            pointStyle:'line',
+          },
+          onClick(e,legendItem,legend){
+            const idx=legendItem.datasetIndex;
+            const meta=legend.chart.getDatasetMeta(idx);
+            meta.hidden=!meta.hidden;
+            legend.chart.update();
+          }
+        },
+        tooltip:{
+          backgroundColor:'#1a2332',
+          borderColor:'#2e3a50',
+          borderWidth:1,
+          titleColor:'#e8edf5',
+          bodyColor:'#8a9ab5',
+          titleFont:{size:11},
+          bodyFont:{size:10,family:"'JetBrains Mono',monospace"},
+          callbacks:{
+            label(ctx){return ` ${ctx.dataset.label}: ${ctx.parsed.y!=null?ctx.parsed.y.toFixed(2)+'%':''}`;},
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},maxRotation:45,autoSkip:true,maxTicksLimit:15},
+          grid:{color:'#1e2535'},
+          border:{color:'#2e3a50'}
+        },
+        y:{
+          ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
+          grid:{color:'rgba(46,58,80,0.5)'},
+          border:{color:'#2e3a50'},
+          zero:true,
+        }
+      }
+    }
+  });
+  usChartAllOn=true;
+}
+
+function usChartToggleAll(){
+  if(!usChart) return;
+  usChartAllOn=!usChartAllOn;
+  usChart.data.datasets.forEach((_,i)=>{
+    usChart.getDatasetMeta(i).hidden=!usChartAllOn;
+  });
+  usChart.update();
 }
 
 // ━━━ KR LIST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
