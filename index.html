@@ -294,7 +294,7 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
           <button class="chart-toggle-all" onclick="usChartToggleAll()">전체 ON/OFF</button>
         </div>
         <div class="chart-body">
-          <div class="chart-canvas-wrap">
+          <div class="chart-canvas-wrap" style="height:320px">
             <canvas id="us-chart-canvas"></canvas>
           </div>
         </div>
@@ -386,10 +386,10 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ★ GAS 웹앱 URL을 여기에 붙여넣으세요
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const GAS_WEBAPP_URL = 'YOUR_GAS_WEBAPP_URL_HERE';
+const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyQjlAljqU-CWo0kqSS0S-rcSkmP4yQLy_5rpiDKzSW6_rVpSSKfQraOjOiWuzUEixs/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 
-const IS_DEMO = !GAS_WEBAPP_URL || GAS_WEBAPP_URL === 'YOUR_GAS_WEBAPP_URL_HERE';
+const IS_DEMO = !GAS_WEBAPP_URL || GAS_WEBAPP_URL === 'https://script.google.com/macros/s/AKfycbyQjlAljqU-CWo0kqSS0S-rcSkmP4yQLy_5rpiDKzSW6_rVpSSKfQraOjOiWuzUEixs/exec';
 
 // ━━━ US 섹터 메타 (색상/타입/그룹) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ★ KR 섹터 메타는 하드코딩하지 않음 → 시트 헤더 동적 로딩으로 해결
@@ -712,8 +712,9 @@ function renderKrChart(){
   // 차트는 항상 최근 30일(1개월)만 표시
   const chartRows=[...rows.slice(0,30)].reverse(); // 오래된 날짜 → 최신 순서로
 
-  const fixedNames=new Set(Object.keys(KR_FIXED)); // 날짜/코스피/코스닥/ADR 제외
-  const sectorNames=H.slice(1).filter(h=>!fixedNames.has(h));
+  // ADR피/ADR닥만 제외, 코스피/코스닥은 포함
+  const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+  const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
   const labels=chartRows.map(r=>r[0]);
 
   const datasets=sectorNames.map((name,si)=>{
@@ -722,18 +723,22 @@ function renderKrChart(){
       const v=parseFloat(r[colIdx]);
       return isNaN(v)?null:v;
     });
-    const color=CHART_COLORS[si%CHART_COLORS.length];
+    // 코스피/코스닥은 굵고 눈에 띄는 색으로 강조
+    const isIndex=name==='코스피'||name==='코스닥';
+    const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
     return{
       label:name,
       data,
       borderColor:color,
       backgroundColor:color+'22',
-      borderWidth:1.5,
-      pointRadius:2,
-      pointHoverRadius:5,
+      borderWidth:isIndex?2.5:1.5,
+      pointRadius:isIndex?3:2,
+      pointHoverRadius:6,
       tension:0.3,
       fill:false,
       spanGaps:true,
+      borderDash:isIndex?[]:[],
+      order:isIndex?0:1, // 코스피/코스닥을 앞으로
     };
   });
 
@@ -879,11 +884,8 @@ function renderUsChart(){
   const{headers:H,rows}=S.usD;
   const chartRows=[...rows.slice(0,30)].reverse();
 
-  // GICS 11섹터만 차트에 표시 (ETF 그룹=SECTOR)
-  const sectorNames=H.slice(1).filter(h=>{
-    const m=US_META[h];
-    return m && (m.group==='SECTOR'||m.group==='INDEX'&&['S&P500','Nasdaq','DowJones'].includes(h));
-  });
+  // 전체 섹터 포함 (Date 열만 제외), YIELD/VIX는 별도 y축 없이 그냥 포함
+  const sectorNames=H.slice(1);
 
   const labels=chartRows.map(r=>r[0]);
 
@@ -895,18 +897,26 @@ function renderUsChart(){
       return isNaN(v)?null:v;
     });
     const m=US_META[name]||{};
-    const color=m.bg&&m.bg!=='#FFD700'?m.bg:CHART_COLORS[si%CHART_COLORS.length];
+    const isMainIndex=['S&P500','Nasdaq','DowJones','Russell2K'].includes(name);
+    const isYieldVix=m.type==='YIELD'||m.type==='VIX';
+    // 색상: 메타 bg색 사용, 너무 밝은 황금색(INDEX)은 팔레트로 대체
+    let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
+    if(name==='S&P500') color='#FFD700';
+    else if(name==='Nasdaq') color='#4fc3f7';
+    else if(name==='DowJones') color='#ff9800';
+    else if(name==='Russell2K') color='#ab47bc';
     return{
       label:name,
       data,
       borderColor:color,
       backgroundColor:color+'22',
-      borderWidth:1.5,
-      pointRadius:2,
-      pointHoverRadius:5,
+      borderWidth:isMainIndex?2.5:(isYieldVix?1.5:1.5),
+      pointRadius:isMainIndex?3:2,
+      pointHoverRadius:6,
       tension:0.3,
       fill:false,
       spanGaps:true,
+      order:isMainIndex?0:1,
     };
   });
 
