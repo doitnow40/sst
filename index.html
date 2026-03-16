@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>섹터 레이더 | 한국·미국 섹터 등락률 트래커</title>
+<title>Stock Sector Tracker | 한국·미국 섹터 등락률 트래커</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -11,7 +11,7 @@
 :root {
   --bg-darkest:#0f1117; --bg-dark:#161b27; --bg-card:#1e2535; --bg-card2:#252d40;
   --border:#2e3a50; --border-light:#3a4a65;
-  --text-primary:#e8edf5; --text-secondary:#8a9ab5; --text-muted:#4a5a78;
+  --text-primary:#f0f4fc; --text-secondary:#b0c4de; --text-muted:#7a90b0;
   --accent-kr:#4fc3f7; --accent-us:#ef5350; --accent-gold:#ffc107;
   --sidebar-w:220px; --header-h:56px;
   --font-body:'Noto Sans KR',sans-serif;
@@ -26,7 +26,7 @@ body{font-family:var(--font-body);background:var(--bg-darkest);color:var(--text-
 /* HEADER */
 header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent-kr),var(--accent-us));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.logo-text{font-family:var(--font-display);font-size:20px;letter-spacing:2px;background:linear-gradient(90deg,var(--accent-kr),#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.logo-text{font-family:var(--font-display);font-size:16px;letter-spacing:2px;background:linear-gradient(90deg,var(--accent-kr),#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
 .logo-sub{font-size:9px;color:var(--text-muted);margin-left:-4px;white-space:nowrap}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
 
@@ -191,7 +191,7 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 <header>
   <div class="logo-icon">📡</div>
   <div>
-    <div class="logo-text">SECTOR RADAR</div>
+    <div class="logo-text">STOCK SECTOR TRACKER</div>
     <div class="logo-sub">한국 · 미국 섹터 등락률 트래커</div>
   </div>
   <div class="header-right">
@@ -262,6 +262,8 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
               <button class="chart-type-btn" onclick="setKrChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
               <button class="chart-type-btn" onclick="setKrChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
             </div>
+            <!-- 시간순 반전 (히트맵 전용) -->
+            <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
             <button class="chart-toggle-all" onclick="krChartToggleAll()">전체 ON/OFF</button>
           </div>
         </div>
@@ -335,6 +337,7 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
               <button class="chart-type-btn" onclick="setUsChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
               <button class="chart-type-btn" onclick="setUsChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
             </div>
+            <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
             <button class="chart-toggle-all" onclick="usChartToggleAll()">전체 ON/OFF</button>
           </div>
         </div>
@@ -570,12 +573,12 @@ function krCellColor(name,val,secColorIdx){
   return pctCell(val,15);
 }
 
-// US 셀 컬러
+// US 셀 컬러 — max=6 으로 KR과 비슷한 채도
 function usCell(name,val){
-  const m=US_META[name];if(!m)return pctCell(val,10);
+  const m=US_META[name];if(!m)return pctCell(val,6);
   if(m.type==='YIELD') return yldCell(val);
   if(m.type==='VIX')   return vixCell(val);
-  return pctCell(val,10);
+  return pctCell(val,6); // ★ 6%를 최대치로 → 더 진한 색
 }
 
 // ━━━ API CALL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -744,6 +747,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;    // 기본 1주(5일)
 let krChartType='line'; // 'line' | 'ranking' | 'heatmap'
+let krHeatmapReverse=false; // 히트맵 날짜 반전
 
 const CHART_COLORS=[
   '#4fc3f7','#ef5350','#66bb6a','#ffa726','#ab47bc',
@@ -788,9 +792,11 @@ function setKrChartType(type,btn){
   krChartType=type;
   document.querySelectorAll('#page-kr-history .chart-type-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  // 랭킹/히트맵은 전체 ON/OFF 버튼 숨기기
-  const toggleBtn=document.querySelector('#page-kr-history .chart-toggle-all');
+  const toggleBtn=document.querySelector('#page-kr-history .chart-toggle-all:last-child');
   if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
+  // 히트맵일 때만 반전 버튼 표시
+  const revBtn=document.getElementById('kr-reverse-btn');
+  if(revBtn) revBtn.style.display=(type==='heatmap')?'':'none';
   renderKrChart();
 }
 
@@ -810,14 +816,15 @@ function renderKrChart(){
     document.getElementById('kr-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
     if(krChart){krChart.destroy();krChart=null;}
     wrap.style.height='auto';
-    // 히트맵: 섹터(행) × 날짜(열)
+    // 날짜 순서 반전 옵션
+    const dispRows=krHeatmapReverse?[...chartRows].reverse():chartRows;
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
-    chartRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`); // MM-DD
+    dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
     html+='</tr></thead><tbody>';
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       html+=`<tr><td>${name}</td>`;
-      chartRows.forEach(r=>{
+      dispRows.forEach(r=>{
         const v=r[colIdx];
         const isIndex=name==='코스피'||name==='코스닥';
         const c=isIndex?pctCell(v,5):pctCell(v,15);
@@ -883,6 +890,18 @@ function renderKrChart(){
   document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
   wrap.style.height='280px';
   const labels=chartRows.map(r=>r[0]);
+
+  // Top5 계산 (코스피·코스닥 제외 섹터 기준)
+  const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+  const avgForTop=pureSecNames.map(name=>{
+    const ci=H.indexOf(name);
+    const vs=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));
+    return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
+  }).sort((a,b)=>b.avg-a.avg);
+  const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
+  // 코스피·코스닥은 항상 ON
+  top5.add('코스피'); top5.add('코스닥');
+
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
     const data=chartRows.map(r=>{const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
@@ -890,7 +909,8 @@ function renderKrChart(){
     const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
     return{label:name,data,borderColor:color,backgroundColor:color+'22',
       borderWidth:isIndex?2.5:1.5,pointRadius:isIndex?3:2,pointHoverRadius:6,
-      tension:0.3,fill:false,spanGaps:true,order:isIndex?0:1};
+      tension:0.3,fill:false,spanGaps:true,order:isIndex?0:1,
+      hidden:!top5.has(name)}; // ★ top5 아니면 기본 hidden
   });
   krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:CHART_OPTS_BASE});
   krChartAllOn=true;
@@ -902,12 +922,20 @@ function krChartToggleAll(){
   krChart.data.datasets.forEach((_,i)=>{krChart.getDatasetMeta(i).hidden=!krChartAllOn;});
   krChart.update();
 }
+function toggleKrReverse(btn){
+  krHeatmapReverse=!krHeatmapReverse;
+  btn.style.background=krHeatmapReverse?'rgba(79,195,247,0.2)':'';
+  btn.style.borderColor=krHeatmapReverse?'var(--accent-kr)':'';
+  btn.style.color=krHeatmapReverse?'var(--accent-kr)':'';
+  renderKrChart();
+}
 
 // ━━━ US 차트 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=5;
 let usChartType='line';
+let usHeatmapReverse=false;
 
 function setUsChartPeriod(days,btn){
   usChartPeriod=days;
@@ -919,8 +947,10 @@ function setUsChartType(type,btn){
   usChartType=type;
   document.querySelectorAll('#page-us-history .chart-type-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  const toggleBtn=document.querySelector('#page-us-history .chart-toggle-all');
+  const toggleBtn=document.querySelector('#page-us-history .chart-toggle-all:last-child');
   if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
+  const revBtn=document.getElementById('us-reverse-btn');
+  if(revBtn) revBtn.style.display=(type==='heatmap')?'':'none';
   renderUsChart();
 }
 
@@ -938,20 +968,21 @@ function renderUsChart(){
     document.getElementById('us-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
     if(usChart){usChart.destroy();usChart=null;}
     wrap.style.height='auto';
+    const dispRows=usHeatmapReverse?[...chartRows].reverse():chartRows;
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
-    chartRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
+    dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
     html+='</tr></thead><tbody>';
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       const m=US_META[name]||{};
       html+=`<tr><td>${name}</td>`;
-      chartRows.forEach(r=>{
+      dispRows.forEach(r=>{
         const v=r[colIdx];
         if(String(v)==='휴장'){html+=`<td style="color:var(--text-muted);font-size:8px">휴장</td>`;return;}
         let c;
         if(m.type==='YIELD') c=yldCell(v);
         else if(m.type==='VIX') c=vixCell(v);
-        else c=pctCell(v,10);
+        else c=pctCell(v,6);
         html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
       });
       html+='</tr>';
@@ -1008,6 +1039,18 @@ function renderUsChart(){
   document.getElementById('us-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
   wrap.style.height='320px';
   const labels=chartRows.map(r=>r[0]);
+
+  // Top5 계산 (YIELD/VIX 제외)
+  const rankableNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+  const avgForTop=rankableNames.map(name=>{
+    const ci=H.indexOf(name);
+    const vs=chartRows.map(r=>{if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(v=>!isNaN(v));
+    return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
+  }).sort((a,b)=>b.avg-a.avg);
+  const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
+  // 주요 지수는 항상 ON
+  ['S&P500','Nasdaq'].forEach(n=>top5.add(n));
+
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
     const data=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return null;const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
@@ -1020,7 +1063,8 @@ function renderUsChart(){
     else if(name==='Russell2K')color='#ab47bc';
     return{label:name,data,borderColor:color,backgroundColor:color+'22',
       borderWidth:isMainIndex?2.5:1.5,pointRadius:isMainIndex?3:2,pointHoverRadius:6,
-      tension:0.3,fill:false,spanGaps:true,order:isMainIndex?0:1};
+      tension:0.3,fill:false,spanGaps:true,order:isMainIndex?0:1,
+      hidden:!top5.has(name)}; // ★ top5 아니면 기본 hidden
   });
   const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
   usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
@@ -1033,6 +1077,13 @@ function usChartToggleAll(){
   usChartAllOn=!usChartAllOn;
   usChart.data.datasets.forEach((_,i)=>{usChart.getDatasetMeta(i).hidden=!usChartAllOn;});
   usChart.update();
+}
+function toggleUsReverse(btn){
+  usHeatmapReverse=!usHeatmapReverse;
+  btn.style.background=usHeatmapReverse?'rgba(239,83,80,0.2)':'';
+  btn.style.borderColor=usHeatmapReverse?'var(--accent-us)':'';
+  btn.style.color=usHeatmapReverse?'var(--accent-us)':'';
+  renderUsChart();
 }
 
 // ━━━ US HISTORY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
