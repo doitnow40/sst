@@ -8,12 +8,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- ★ Google Analytics GA4 — 측정 ID를 교체하세요 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
 <script>
   window.dataLayer=window.dataLayer||[];
   function gtag(){dataLayer.push(arguments);}
   gtag('js',new Date());
-  gtag('config','G-XXXXXXXXXX'); // ← GA4 측정 ID 교체
+  gtag('config','G-3PTKMRYZZ3');
 </script>
 <!-- ★ Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -598,7 +598,7 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
               · <strong>Today</strong> — 오늘 방문자 수 (세션 기준)<br>
               · <strong>Total</strong> — 누적 방문자 수<br>
               · <strong>국가별 · 기기별 · 시간대별</strong> 상세 통계 제공<br><br>
-              GA4 측정 ID: <code id="ga-id-display">G-XXXXXXXXXX</code>
+              GA4 측정 ID: <code id="ga-id-display">G-3PTKMRYZZ3</code>
             </div>
             <br>
             <a class="ga-btn" href="https://analytics.google.com" target="_blank" rel="noopener">
@@ -1471,11 +1471,8 @@ function go(page,el){
 //  ★ 관리자 설정 — 아래 3가지를 반드시 교체하세요
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ADMIN_CONFIG = {
-  // Google Cloud Console → OAuth 2.0 클라이언트 ID
   CLIENT_ID: '339396064098-c30aqitomqthhegfdtgv9j199eor2l8m.apps.googleusercontent.com',
-  // 관리자로 허용할 Gmail 주소 (본인 계정)
   ALLOWED_EMAILS: ['doitnow40@gmail.com'],
-  // GA4 측정 ID
   GA_ID: 'G-3PTKMRYZZ3',
 };
 
@@ -1620,15 +1617,18 @@ function selectSector(sectorName){
 }
 
 // ━━━ GAS API (관리자 쓰기 작업) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ GAS 관리자 API 호출 (GET 방식 — CORS 우회) ━━━━━━━━━━━━━
+// GAS 웹앱은 POST preflight(OPTIONS)를 지원하지 않아 CORS 오류 발생.
+// 모든 관리자 쓰기 작업도 GET 파라미터로 전달하고 token으로 서버에서 인증.
 async function adminPost(action, payload){
   if(!ADM.user) throw new Error('로그인 필요');
-  const body=new URLSearchParams({
-    type: 'admin',
+  const params=new URLSearchParams({
+    type:   'admin',
     action,
-    token: ADM.user.token,
+    token:  ADM.user.token,
     ...payload
   });
-  const r=await fetch(GAS_WEBAPP_URL,{method:'POST',body});
+  const r=await fetch(GAS_WEBAPP_URL+'?'+params.toString());
   if(!r.ok) throw new Error('HTTP '+r.status);
   const j=await r.json();
   if(!j.ok) throw new Error(j.error||'API 오류');
