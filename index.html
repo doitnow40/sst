@@ -7,6 +7,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- ★ Google Analytics GA4 — 측정 ID를 교체하세요 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());
+  gtag('config','G-XXXXXXXXXX'); // ← GA4 측정 ID 교체
+</script>
+<!-- ★ Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --bg-darkest:#0f1117; --bg-dark:#161b27; --bg-card:#1e2535; --bg-card2:#252d40;
@@ -187,6 +197,57 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .about-section-title{padding:11px 16px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:.3px}
 .about-section-body{padding:14px 18px;font-size:12px;color:var(--text-secondary);line-height:2.0}
 .about-section-body strong{color:var(--text-primary)}
+
+/* ━━━ ADMIN PAGE ━━━ */
+.admin-login-box{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:20px}
+.admin-login-title{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--text-primary)}
+.admin-login-sub{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7}
+.admin-user-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:16px}
+.admin-user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.admin-user-name{font-size:12px;color:var(--text-primary);font-weight:600}
+.admin-user-email{font-size:10px;color:var(--text-muted)}
+.admin-logout-btn{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}
+.admin-logout-btn:hover{border-color:var(--accent-us);color:var(--accent-us)}
+
+.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px}
+.admin-tab{padding:8px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.admin-tab:hover{color:var(--text-primary)}
+.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}
+
+/* 방문자 통계 */
+.stats-embed-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;min-height:200px}
+.ga-notice{font-size:12px;color:var(--text-secondary);line-height:1.9}
+.ga-notice code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px;color:#90caf9}
+.ga-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:10px;transition:opacity .15s}
+.ga-btn:hover{opacity:.85}
+
+/* 섹터/종목 관리 */
+.admin-mgmt-layout{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}
+.admin-sector-list{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.admin-sector-list-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;justify-content:space-between}
+.admin-sector-item{display:flex;align-items:center;padding:8px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-bottom:1px solid rgba(46,58,80,.3);transition:all .15s;gap:8px}
+.admin-sector-item:hover{background:rgba(255,255,255,.03);color:var(--text-primary)}
+.admin-sector-item.selected{background:rgba(79,195,247,.1);color:var(--accent-kr)}
+.admin-sector-item:last-child{border-bottom:none}
+.admin-del-btn{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer;flex-shrink:0;transition:all .15s}
+.admin-del-btn:hover{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us)}
+
+.admin-stock-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.admin-panel-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)}
+.admin-panel-body{padding:14px}
+.admin-stock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;background:var(--bg-card2);border:1px solid var(--border);margin-bottom:6px}
+.admin-stock-name{flex:1;color:var(--text-primary)}
+.admin-stock-ticker{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px}
+.admin-input-row{display:flex;gap:6px;margin-top:10px}
+.admin-input{flex:1;background:var(--bg-darkest);border:1px solid var(--border);color:var(--text-primary);padding:6px 10px;border-radius:6px;font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .15s}
+.admin-input:focus{border-color:var(--accent-kr)}
+.admin-add-btn{padding:6px 14px;border-radius:6px;border:none;background:var(--accent-kr);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.admin-add-btn:hover{opacity:.85}
+.admin-add-btn:disabled{opacity:.4;cursor:not-allowed}
+.admin-msg{font-size:11px;padding:6px 10px;border-radius:5px;margin-top:8px;display:none}
+.admin-msg.ok{background:rgba(102,187,106,.15);color:#a5d6a7;border:1px solid rgba(102,187,106,.3)}
+.admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}
+.admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}
 </style>
 </head>
 <body>
@@ -232,6 +293,13 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
     <div class="nav-group-label">도움말</div>
     <div class="nav-item" id="nav-about" onclick="go('about',this)">
       <span class="nav-icon">ℹ️</span><span>이 서비스에 대해</span>
+    </div>
+    <!-- 관리자 메뉴 - 사이드바 최하단 -->
+    <div style="flex:1;min-height:20px"></div>
+    <div class="sidebar-divider" style="margin-top:auto"></div>
+    <div class="nav-group-label">관리자</div>
+    <div class="nav-item" id="nav-admin" onclick="go('admin',this)" style="color:var(--text-muted)">
+      <span class="nav-icon">⚙️</span><span>관리자 페이지</span>
     </div>
   </nav>
 
@@ -470,6 +538,144 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
         투자 결정에 따른 모든 손익은 투자자 본인에게 귀속되며, 본 서비스는 이에 대한 어떠한 책임도 지지 않습니다.
       </div>
     </div>
+
+    <!-- ══ ADMIN PAGE ══ -->
+    <div id="page-admin" style="display:none">
+      <div class="page-header">
+        <div class="page-flag">⚙️</div>
+        <div><div class="page-title">관리자 페이지</div><div class="page-subtitle">방문자 통계 · 섹터/종목 관리</div></div>
+        <div class="page-badge" id="admin-login-badge" style="background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3);font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:20px">미로그인</div>
+      </div>
+
+      <!-- 로그인 전 -->
+      <div id="admin-login-section">
+        <div class="admin-login-box">
+          <div class="admin-login-title">🔐 관리자 로그인</div>
+          <div class="admin-login-sub">Google 계정으로 로그인하세요.<br>허가된 관리자 계정만 접근할 수 있습니다.</div>
+          <!-- Google GIS 로그인 버튼 -->
+          <div id="g_id_onload"
+            data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+            data-callback="onGoogleLogin"
+            data-auto_prompt="false">
+          </div>
+          <div class="g_id_signin"
+            data-type="standard"
+            data-size="large"
+            data-theme="outline"
+            data-text="sign_in_with"
+            data-shape="rectangular"
+            data-logo_alignment="left">
+          </div>
+        </div>
+      </div>
+
+      <!-- 로그인 후 -->
+      <div id="admin-content-section" style="display:none">
+        <!-- 사용자 정보 바 -->
+        <div class="admin-user-bar">
+          <img id="admin-avatar" class="admin-user-avatar" src="" alt="">
+          <div>
+            <div class="admin-user-name" id="admin-name">-</div>
+            <div class="admin-user-email" id="admin-email">-</div>
+          </div>
+          <button class="admin-logout-btn" onclick="adminLogout()">로그아웃</button>
+        </div>
+
+        <!-- 탭 -->
+        <div class="admin-tabs">
+          <div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
+          <div class="admin-tab" onclick="switchAdminTab('mgmt',this)">🗂️ 섹터/종목 관리</div>
+        </div>
+
+        <!-- ① 방문자 통계 탭 -->
+        <div id="admin-tab-stats">
+          <div class="stats-embed-wrap">
+            <div class="ga-notice">
+              <strong style="color:var(--accent-kr);font-size:13px">📈 Google Analytics 방문자 통계</strong><br><br>
+              방문자 통계는 <strong>Google Analytics GA4</strong>로 수집됩니다.<br>
+              아래 버튼을 클릭하면 Google Analytics 대시보드로 이동합니다.<br><br>
+              · <strong>실시간 방문자</strong> — 지금 이 순간 사이트를 보고 있는 사용자 수<br>
+              · <strong>Today</strong> — 오늘 방문자 수 (세션 기준)<br>
+              · <strong>Total</strong> — 누적 방문자 수<br>
+              · <strong>국가별 · 기기별 · 시간대별</strong> 상세 통계 제공<br><br>
+              GA4 측정 ID: <code id="ga-id-display">G-XXXXXXXXXX</code>
+            </div>
+            <br>
+            <a class="ga-btn" href="https://analytics.google.com" target="_blank" rel="noopener">
+              📊 Google Analytics 열기
+            </a>
+
+            <!-- 간단한 실시간 카운터 (GAS 기반) -->
+            <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:12px">⚡ GAS 방문자 카운터 (Today / Total)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px">
+                <div class="stat-card">
+                  <div class="stat-label">Today</div>
+                  <div class="stat-val neu" id="admin-visit-today">-</div>
+                  <div class="stat-sub">오늘 방문</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Total</div>
+                  <div class="stat-val neu" id="admin-visit-total">-</div>
+                  <div class="stat-sub">누적 방문</div>
+                </div>
+              </div>
+              <button class="range-btn" style="margin-top:10px" onclick="loadVisitorStats()">🔄 새로고침</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ② 섹터/종목 관리 탭 -->
+        <div id="admin-tab-mgmt" style="display:none">
+          <div class="admin-mgmt-layout">
+
+            <!-- 좌: 섹터 목록 -->
+            <div>
+              <div class="admin-sector-list">
+                <div class="admin-sector-list-header">
+                  <span>🇰🇷 섹터 목록</span>
+                  <span id="admin-sector-count" style="font-size:10px;color:var(--text-muted)"></span>
+                </div>
+                <div id="admin-sector-items">
+                  <div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
+                </div>
+              </div>
+              <!-- 섹터 추가 -->
+              <div style="margin-top:10px">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 새 섹터 추가</div>
+                <div class="admin-input-row">
+                  <input class="admin-input" id="new-sector-name" placeholder="섹터명 (예: 우주항공)" maxlength="20">
+                  <button class="admin-add-btn" onclick="addSector()">추가</button>
+                </div>
+                <div class="admin-msg" id="sector-msg"></div>
+              </div>
+            </div>
+
+            <!-- 우: 종목 목록 -->
+            <div>
+              <div class="admin-stock-panel">
+                <div class="admin-panel-header" id="admin-stock-panel-title">← 섹터를 선택하세요</div>
+                <div class="admin-panel-body" id="admin-stock-list">
+                  <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:30px 0">좌측에서 섹터를 선택하면<br>해당 섹터의 종목이 표시됩니다.</div>
+                </div>
+              </div>
+              <!-- 종목 추가 (섹터 선택 후 표시) -->
+              <div id="add-stock-section" style="display:none;margin-top:10px">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 종목 추가</div>
+                <div class="admin-input-row">
+                  <input class="admin-input" id="new-stock-name" placeholder="종목명 (예: 삼성전자)" style="flex:2">
+                  <input class="admin-input" id="new-stock-ticker" placeholder="티커 (예: 005930)" style="flex:1">
+                  <button class="admin-add-btn" onclick="addStock()">추가</button>
+                </div>
+                <div class="admin-msg" id="stock-msg"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /admin-content-section -->
+    </div><!-- /page-admin -->
 
   </main>
 </div>
@@ -1245,7 +1451,7 @@ function setKrRange(d,b){S.krR=d;document.querySelectorAll('#page-kr-history .ra
 function setUsRange(d,b){S.usR=d;document.querySelectorAll('#page-us-history .range-btn').forEach(x=>x.classList.remove('active-us'));b.classList.add('active-us');if(S.usOk)renderUs();}
 
 // ━━━ NAVIGATION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const PAGES=['kr-history','kr-list','us-history','us-list','about'];
+const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
 function go(page,el){
   PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
   const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
@@ -1257,7 +1463,249 @@ function go(page,el){
   else if(page==='us-history')loadUs();
   else if(page==='kr-list')loadKrList();
   else if(page==='us-list')renderUsList();
+  else if(page==='admin')initAdminPage();
   document.querySelector('.main').scrollTo({top:0});
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  ★ 관리자 설정 — 아래 3가지를 반드시 교체하세요
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const ADMIN_CONFIG = {
+  // Google Cloud Console → OAuth 2.0 클라이언트 ID
+  CLIENT_ID: '339396064098-c30aqitomqthhegfdtgv9j199eor2l8m.apps.googleusercontent.com',
+  // 관리자로 허용할 Gmail 주소 (본인 계정)
+  ALLOWED_EMAILS: ['doitnow40@gmail.com'],
+  // GA4 측정 ID
+  GA_ID: 'G-3PTKMRYZZ3',
+};
+
+// ━━━ ADMIN STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const ADM = {
+  loggedIn: false,
+  user: null,
+  sectors: [],         // [{sector, stocks:[{name,ticker}]}]
+  selectedSector: null,
+};
+
+// ━━━ ADMIN PAGE INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initAdminPage(){
+  // GA ID 표시
+  const gaEl=document.getElementById('ga-id-display');
+  if(gaEl) gaEl.textContent=ADMIN_CONFIG.GA_ID;
+
+  if(ADM.loggedIn){
+    showAdminContent();
+  } else {
+    document.getElementById('admin-login-section').style.display='';
+    document.getElementById('admin-content-section').style.display='none';
+  }
+}
+
+// ━━━ GOOGLE GIS 로그인 콜백 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function onGoogleLogin(response){
+  // JWT 디코드 (페이로드만)
+  const payload=JSON.parse(atob(response.credential.split('.')[1]));
+  const email=payload.email||'';
+  const name=payload.name||'';
+  const picture=payload.picture||'';
+
+  if(!ADMIN_CONFIG.ALLOWED_EMAILS.includes(email)){
+    alert('❌ 접근 권한이 없습니다.\n허가된 관리자 계정만 접근 가능합니다.\n\n시도한 계정: '+email);
+    return;
+  }
+
+  ADM.loggedIn=true;
+  ADM.user={email,name,picture,token:response.credential};
+
+  // 사용자 정보 표시
+  document.getElementById('admin-avatar').src=picture;
+  document.getElementById('admin-name').textContent=name;
+  document.getElementById('admin-email').textContent=email;
+  document.getElementById('admin-login-badge').textContent='✅ '+email;
+  document.getElementById('admin-login-badge').style.background='rgba(102,187,106,.15)';
+  document.getElementById('admin-login-badge').style.color='#a5d6a7';
+  document.getElementById('admin-login-badge').style.borderColor='rgba(102,187,106,.3)';
+
+  showAdminContent();
+}
+
+function adminLogout(){
+  ADM.loggedIn=false; ADM.user=null; ADM.sectors=[]; ADM.selectedSector=null;
+  document.getElementById('admin-login-section').style.display='';
+  document.getElementById('admin-content-section').style.display='none';
+  document.getElementById('admin-login-badge').textContent='미로그인';
+  document.getElementById('admin-login-badge').style.background='rgba(239,83,80,.15)';
+  document.getElementById('admin-login-badge').style.color='#ef9a9a';
+  document.getElementById('admin-login-badge').style.borderColor='rgba(239,83,80,.3)';
+  if(window.google&&google.accounts) google.accounts.id.disableAutoSelect();
+}
+
+function showAdminContent(){
+  document.getElementById('admin-login-section').style.display='none';
+  document.getElementById('admin-content-section').style.display='';
+  switchAdminTab('stats', document.querySelector('.admin-tab'));
+  loadVisitorStats();
+  loadAdminSectors();
+}
+
+// ━━━ 탭 전환 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function switchAdminTab(tab, btn){
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
+  document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
+}
+
+// ━━━ 방문자 카운터 (GAS 기반) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function loadVisitorStats(){
+  document.getElementById('admin-visit-today').textContent='…';
+  document.getElementById('admin-visit-total').textContent='…';
+  try{
+    const d=await api('visit_count',0);
+    document.getElementById('admin-visit-today').textContent=(d.today||0).toLocaleString();
+    document.getElementById('admin-visit-total').textContent=(d.total||0).toLocaleString();
+  }catch(e){
+    document.getElementById('admin-visit-today').textContent='오류';
+    document.getElementById('admin-visit-total').textContent='오류';
+  }
+}
+
+// ━━━ 섹터 목록 로드 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function loadAdminSectors(){
+  document.getElementById('admin-sector-items').innerHTML=
+    '<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>';
+  try{
+    // kr_list API 재사용 (캐시 없이 직접 읽기)
+    const d=await api('kr_list',0);
+    ADM.sectors=d.sectors||[];
+    renderAdminSectors();
+    document.getElementById('admin-sector-count').textContent=ADM.sectors.length+'개';
+  }catch(e){
+    document.getElementById('admin-sector-items').innerHTML=
+      `<div style="padding:14px;font-size:11px;color:#ef9a9a">로드 실패: ${e.message}</div>`;
+  }
+}
+
+function renderAdminSectors(){
+  let h='';
+  ADM.sectors.forEach((sec,i)=>{
+    const sel=ADM.selectedSector===sec.sector;
+    h+=`<div class="admin-sector-item${sel?' selected':''}" onclick="selectSector('${sec.sector.replace(/'/g,"\\'")}')">
+      <span>${sec.sector}</span>
+      <span style="font-size:10px;color:var(--text-muted)">${sec.stocks.length}개</span>
+      <button class="admin-del-btn" onclick="event.stopPropagation();deleteSector('${sec.sector.replace(/'/g,"\\'")}')">삭제</button>
+    </div>`;
+  });
+  if(!h) h='<div style="padding:14px;font-size:11px;color:var(--text-muted);text-align:center">섹터가 없습니다</div>';
+  document.getElementById('admin-sector-items').innerHTML=h;
+}
+
+function selectSector(sectorName){
+  ADM.selectedSector=sectorName;
+  renderAdminSectors();
+  const sec=ADM.sectors.find(s=>s.sector===sectorName);
+  if(!sec) return;
+  document.getElementById('admin-stock-panel-title').textContent='📋 '+sectorName+' 종목 ('+sec.stocks.length+'개)';
+  document.getElementById('add-stock-section').style.display='';
+  let h='';
+  sec.stocks.forEach(st=>{
+    h+=`<div class="admin-stock-item">
+      <span class="admin-stock-name">${st.name}</span>
+      <span class="admin-stock-ticker">${st.ticker||'KR'}</span>
+      <button class="admin-del-btn" onclick="deleteStock('${sectorName.replace(/'/g,"\\'")}','${st.name.replace(/'/g,"\\'")}')">삭제</button>
+    </div>`;
+  });
+  if(!h) h='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">종목이 없습니다. 아래에서 추가하세요.</div>';
+  document.getElementById('admin-stock-list').innerHTML=h;
+}
+
+// ━━━ GAS API (관리자 쓰기 작업) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function adminPost(action, payload){
+  if(!ADM.user) throw new Error('로그인 필요');
+  const body=new URLSearchParams({
+    type: 'admin',
+    action,
+    token: ADM.user.token,
+    ...payload
+  });
+  const r=await fetch(GAS_WEBAPP_URL,{method:'POST',body});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  if(!j.ok) throw new Error(j.error||'API 오류');
+  return j.data;
+}
+
+function showMsg(elId, msg, isErr){
+  const el=document.getElementById(elId);
+  el.textContent=msg; el.className='admin-msg '+(isErr?'err':'ok');
+  el.style.display='block';
+  setTimeout(()=>{el.style.display='none';},4000);
+}
+
+// ━━━ 섹터 추가/삭제 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function addSector(){
+  const name=document.getElementById('new-sector-name').value.trim();
+  if(!name){showMsg('sector-msg','섹터명을 입력하세요.',true);return;}
+  if(ADM.sectors.find(s=>s.sector===name)){showMsg('sector-msg','이미 존재하는 섹터입니다.',true);return;}
+  const btn=document.querySelector('#new-sector-name+button');
+  btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
+  try{
+    await adminPost('add_sector',{sector:name});
+    document.getElementById('new-sector-name').value='';
+    showMsg('sector-msg','✅ 섹터 "'+name+'" 추가 완료!',false);
+    // 캐시 무효화 후 재로드
+    S.krListLoaded=false; S.krLoaded=false;
+    await loadAdminSectors();
+  }catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);}
+  btn.disabled=false; btn.innerHTML='추가';
+}
+
+async function deleteSector(sectorName){
+  if(!confirm('"'+sectorName+'" 섹터와 모든 종목을 삭제하시겠습니까?')) return;
+  try{
+    await adminPost('delete_sector',{sector:sectorName});
+    if(ADM.selectedSector===sectorName){
+      ADM.selectedSector=null;
+      document.getElementById('admin-stock-panel-title').textContent='← 섹터를 선택하세요';
+      document.getElementById('admin-stock-list').innerHTML='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:30px 0">좌측에서 섹터를 선택하세요.</div>';
+      document.getElementById('add-stock-section').style.display='none';
+    }
+    showMsg('sector-msg','✅ 섹터 삭제 완료',false);
+    S.krListLoaded=false; S.krLoaded=false;
+    await loadAdminSectors();
+  }catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);}
+}
+
+// ━━━ 종목 추가/삭제 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function addStock(){
+  const sector=ADM.selectedSector;
+  const name=document.getElementById('new-stock-name').value.trim();
+  const ticker=document.getElementById('new-stock-ticker').value.trim();
+  if(!sector){showMsg('stock-msg','섹터를 먼저 선택하세요.',true);return;}
+  if(!name){showMsg('stock-msg','종목명을 입력하세요.',true);return;}
+  const btn=document.querySelector('#new-stock-name').closest('div').querySelector('button');
+  btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
+  try{
+    await adminPost('add_stock',{sector,stock_name:name,ticker});
+    document.getElementById('new-stock-name').value='';
+    document.getElementById('new-stock-ticker').value='';
+    showMsg('stock-msg','✅ "'+name+'" 추가 완료!',false);
+    S.krListLoaded=false; S.krLoaded=false;
+    await loadAdminSectors();
+    selectSector(sector);
+  }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
+  btn.disabled=false; btn.innerHTML='추가';
+}
+
+async function deleteStock(sectorName, stockName){
+  if(!confirm('"'+stockName+'"을(를) 삭제하시겠습니까?')) return;
+  try{
+    await adminPost('delete_stock',{sector:sectorName,stock_name:stockName});
+    showMsg('stock-msg','✅ "'+stockName+'" 삭제 완료',false);
+    S.krListLoaded=false; S.krLoaded=false;
+    await loadAdminSectors();
+    selectSector(sectorName);
+  }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
 }
 
 // ━━━ UTILS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1269,6 +1717,9 @@ tick();setInterval(tick,1000);
 
 // ━━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 go('kr-history',document.getElementById('nav-kr-history'));
+
+// 방문자 카운터 기록 (페이지 로드 시 1회)
+if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 </script>
 </body>
 </html>
