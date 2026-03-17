@@ -181,9 +181,12 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .deploy-guide ol{padding-left:18px}
 .deploy-guide li{margin-bottom:4px}
 .deploy-guide code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px;color:#90caf9}
-.deploy-guide .step-badge{display:inline-block;background:var(--accent-kr);color:#000;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:4px}
 
-@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}
+/* ABOUT PAGE */
+.about-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.about-section-title{padding:11px 16px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:.3px}
+.about-section-body{padding:14px 18px;font-size:12px;color:var(--text-secondary);line-height:2.0}
+.about-section-body strong{color:var(--text-primary)}
 </style>
 </head>
 <body>
@@ -389,40 +392,82 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
     <div id="page-about" style="display:none">
       <div class="page-header">
         <div class="page-flag">ℹ️</div>
-        <div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">설정 방법 · 배포 가이드 · 아키텍처 안내</div></div>
+        <div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">Stock Sector Tracker 소개 및 이용 안내</div></div>
       </div>
 
-      <div class="deploy-guide">
-        <h3>🚀 웹사이트 배포 방법 (Cloudflare Pages 추천)</h3>
-        <ol>
-          <li><strong>GAS 웹앱 배포</strong> — Apps Script → <code>WebApp_addon.gs</code> 코드 붙여넣기 → 저장 → 배포 → 새 배포 → 웹 앱 (실행: 나, 액세스: 모든 사용자) → URL 복사</li>
-          <li><strong>index.html 수정</strong> — 파일 상단 <code>GAS_WEBAPP_URL</code>에 복사한 URL 붙여넣기</li>
-          <li><strong>Cloudflare Pages 배포</strong> — <a href="https://pages.cloudflare.com" style="color:var(--accent-kr)">pages.cloudflare.com</a> → 로그인 → Create application → Pages → Direct Upload → <code>index.html</code> 업로드 → 완료</li>
-          <li><strong>카카오 Adfit</strong> — 각 페이지 <code>ad-slot</code> div 안에 Adfit 코드 삽입 후 재배포</li>
-        </ol>
-        <br>
-        ⚠️ <strong>로컬 파일(file://)로 열면 GAS API 연결이 안 됩니다</strong> — 반드시 Cloudflare Pages 같은 웹 서버를 통해 서빙해야 합니다.
+      <!-- 서비스 소개 -->
+      <div class="about-section">
+        <div class="about-section-title">📌 서비스 소개</div>
+        <div class="about-section-body">
+          <strong>Stock Sector Tracker</strong>는 한국과 미국 주식시장의 <strong>섹터별 일일 등락률 흐름</strong>을 한눈에 파악할 수 있도록 만든 무료 정보 서비스입니다.<br><br>
+          어떤 섹터가 강세이고 어떤 섹터가 약세인지, 최근 시장의 자금 흐름이 어디로 향하는지를 히트맵·추이 차트·랭킹 차트로 직관적으로 확인할 수 있습니다.
+        </div>
       </div>
 
-      <div class="notice-box" style="border-left-color:var(--accent-kr)">
-        <strong>🏗️ 아키텍처: GAS 웹앱 + CacheService (완전 무료)</strong><br><br>
-        방문자 → GAS 웹앱 → <strong>캐시 HIT</strong> → JSON 즉시 반환<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        → <strong>캐시 MISS</strong> → Sheets 읽기 → 캐시 저장(6시간) → 반환<br><br>
-        ✅ API Key 불필요 &nbsp;|&nbsp; ✅ 스프레드시트 비공개 유지<br>
-        ✅ 동시 수천 명 처리 &nbsp;|&nbsp; ✅ 완전 무료<br><br>
-        <strong>헤더(섹터명)는 시트에서 동적으로 읽어오므로</strong> 시트에 섹터를 추가/삭제해도 웹사이트가 자동 반영됩니다.
+      <!-- 한국 섹터 안내 -->
+      <div class="about-section">
+        <div class="about-section-title">🇰🇷 한국 섹터 History</div>
+        <div class="about-section-body">
+          <strong>표시 기준</strong><br>
+          각 섹터는 해당 섹터를 대표하는 주요 종목들의 당일 등락률 평균값으로 계산됩니다. 예를 들어 '반도체' 섹터의 수치는 삼성전자, SK하이닉스 등 주요 반도체 종목들의 등락률을 평균한 값입니다.<br><br>
+          <strong>주요지수 / ADR</strong><br>
+          코스피·코스닥은 당일 지수 등락률을 표시합니다. <strong>ADR(등락비율)</strong>은 상승 종목 수를 하락 종목 수로 나눈 비율로, 100% 기준으로 100 초과 시 상승 종목이 더 많음을 의미합니다. 시장의 내부 건강도를 파악하는 데 유용합니다.<br><br>
+          <strong>색상 기준</strong><br>
+          🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락 · ⬜ 흰색에 가까울수록 보합<br>
+          섹터 등락률 기준: ±15% 범위에서 색상이 포화됩니다.
+        </div>
       </div>
 
-      <div class="notice-box" style="border-left-color:#546e7a">
-        <strong>🔄 캐시 관리</strong><br><br>
-        데이터는 <strong>6시간 자동 캐싱</strong>됩니다. 헤더 우상단에 "시트 읽은 시각"이 표시됩니다.<br>
-        장 마감 후 즉시 반영 → Sheets 메뉴 → ⚙️ 통합 설정 → <code>🌐 웹앱 API 캐시 초기화</code>
+      <!-- 미국 섹터 안내 -->
+      <div class="about-section">
+        <div class="about-section-title">🇺🇸 미국 섹터 History</div>
+        <div class="about-section-body">
+          <strong>표시 기준</strong><br>
+          미국 섹터는 SPDR ETF(XLK, XLV, XLF 등) 및 주요 테마 ETF의 당일 등락률로 표시됩니다. ETF 가격 변동률이 해당 섹터의 대표 수치로 사용됩니다.<br><br>
+          <strong>구성 그룹</strong><br>
+          · <strong>Major Index</strong>: S&P500, Nasdaq, DowJones, Russell2K 지수 등락률 및 VIX(변동성 지수), Bitcoin<br>
+          · <strong>GICS 11 Sectors</strong>: IT, 헬스케어, 금융, 임의소비재, 산업재, 통신서비스, 필수소비재, 에너지, 유틸리티, 부동산, 소재<br>
+          · <strong>Thematic ETF</strong>: 반도체, 소프트웨어, 클라우드, AI/로봇, 바이오, 은행, 방산, 운송, 클린에너지, 금, 원유<br>
+          · <strong>Bond / USD</strong>: 장기채, 단기채, 하이일드채권, 달러인덱스<br><br>
+          <strong>국채수익률(Yield)</strong><br>
+          등락률이 아닌 절대 수익률(%)로 표시됩니다. 4.0%를 기준으로 높을수록 붉게, 낮을수록 파랗게 표시됩니다.<br><br>
+          <strong>VIX</strong><br>
+          공포지수로 불리며 20 이하는 안정, 20~30은 경계, 30 이상은 고변동성 구간입니다.<br><br>
+          <strong>색상 기준</strong><br>
+          🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락<br>
+          ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다.
+        </div>
       </div>
 
-      <div class="notice-box" style="border-left-color:var(--text-muted)">
+      <!-- 차트 안내 -->
+      <div class="about-section">
+        <div class="about-section-title">📊 차트 이용 안내</div>
+        <div class="about-section-body">
+          <strong>📈 추이 차트</strong><br>
+          선택한 기간(1주·2주·1개월) 동안 각 섹터의 등락률 변화를 선 그래프로 표시합니다. 기본적으로 해당 기간 상위 5개 섹터와 주요 지수만 표시되며, 범례를 클릭해 원하는 섹터를 추가로 켜고 끌 수 있습니다.<br><br>
+          <strong>🏆 랭킹 차트</strong><br>
+          선택한 기간 동안의 평균 등락률을 기준으로 섹터를 순위별로 정렬하여 표시합니다. 어느 섹터에 시장의 관심이 집중되고 있는지 빠르게 파악할 수 있습니다.<br><br>
+          <strong>🗓️ 히트맵 차트</strong><br>
+          날짜×섹터 격자로 색상을 표시합니다. 특정 섹터가 어느 날 강세였는지, 시장 전체적으로 상승/하락 국면이 어떻게 분포됐는지를 한눈에 확인할 수 있습니다. <strong>⇄ 날짜반전</strong> 버튼으로 날짜 표시 순서를 바꿀 수 있습니다.
+        </div>
+      </div>
+
+      <!-- 데이터 업데이트 안내 -->
+      <div class="about-section">
+        <div class="about-section-title">🕐 데이터 업데이트 주기</div>
+        <div class="about-section-body">
+          데이터는 <strong>매 영업일 장 마감 후 자동으로 업데이트</strong>됩니다.<br><br>
+          · 🇰🇷 한국: 매일 장 마감 후(오후 3시 30분 이후) 업데이트<br>
+          · 🇺🇸 미국: 매일 미국 장 마감 후(한국시간 기준 다음날 새벽) 업데이트<br><br>
+          화면 우상단의 <strong>"시트 읽음: 날짜/시각"</strong>은 현재 표시 중인 데이터가 마지막으로 갱신된 시각입니다. 장중에는 전일 데이터가 표시됩니다.
+        </div>
+      </div>
+
+      <!-- 면책 고지 -->
+      <div class="notice-box" style="border-left-color:var(--text-muted);margin-top:4px">
         <strong>⚠️ 면책 고지</strong><br><br>
-        이 서비스의 정보는 투자 조언이 아닙니다. 모든 투자 결정은 본인 책임 하에 이루어져야 합니다.
+        이 서비스에서 제공하는 모든 정보는 <strong>투자 참고용</strong>으로만 제공되며, 특정 종목이나 섹터에 대한 투자를 권유하거나 조언하지 않습니다.<br>
+        투자 결정에 따른 모든 손익은 투자자 본인에게 귀속되며, 본 서비스는 이에 대한 어떠한 책임도 지지 않습니다.
       </div>
     </div>
 
