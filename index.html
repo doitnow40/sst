@@ -402,10 +402,14 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <span class="font-size-display" id="fontSizeLabel">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
+        <!-- 오늘 실시간 갱신 버튼 (항상 표시) -->
+        <button id="kr-refresh-btn" onclick="refreshKrToday(this)"
+          style="margin-left:auto;font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,183,77,.45);background:rgba(255,183,77,.12);color:#ffb74d;cursor:pointer;font-family:var(--font-mono);white-space:nowrap"
+          title="오늘 실시간 데이터 갱신 (약 20분 지연값)">🔄 오늘 데이터 갱신</button>
       </div>
       <div id="kr-stats" class="stats-row"></div>
       <div class="table-container">
-        <div class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신 <button onclick="refreshKrToday(this)" style="margin-left:6px;font-size:8px;padding:1px 6px;border-radius:3px;border:1px solid rgba(255,183,77,.5);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 지금 갱신</button></div>
+        <div class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신</div>
         <div class="table-scroll" id="kr-table">
         <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
       </div></div>
@@ -484,10 +488,14 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <span class="font-size-display" id="fontSizeLabelUs">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
+        <!-- 오늘 실시간 갱신 버튼 (항상 표시) -->
+        <button id="us-refresh-btn" onclick="refreshUsToday(this)"
+          style="margin-left:auto;font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid rgba(239,83,80,.45);background:rgba(239,83,80,.12);color:#ef9a9a;cursor:pointer;font-family:var(--font-mono);white-space:nowrap"
+          title="오늘 실시간 데이터 갱신 (약 20분 지연값)">🔄 오늘 데이터 갱신</button>
       </div>
       <div id="us-stats" class="stats-row"></div>
       <div class="table-container">
-        <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신 <button onclick="refreshUsToday(this)" style="margin-left:6px;font-size:8px;padding:1px 6px;border-radius:3px;border:1px solid rgba(239,83,80,.5);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 지금 갱신</button></div>
+        <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신</div>
         <div class="table-scroll" id="us-table">
         <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
       </div></div>
@@ -1866,7 +1874,9 @@ function renderUsTableOnly(){
 
 // ━━━ 오늘 데이터 강제 갱신 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function refreshKrToday(btn){
-  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
+  // controls-bar 버튼과 notice 버튼 둘 다 처리
+  const ctrlBtn=document.getElementById('kr-refresh-btn');
+  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=true;b.textContent='갱신 중...';});
   S.krToday=null;
   try{
     const d=await api('kr_today',0);
@@ -1875,10 +1885,11 @@ async function refreshKrToday(btn){
     if(n&&d.date) n.style.display='';
     renderKr();
   }catch(e){}
-  if(btn){btn.disabled=false;btn.textContent='🔄 지금 갱신';}
+  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=false;b.textContent='🔄 오늘 데이터 갱신';});
 }
 async function refreshUsToday(btn){
-  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
+  const ctrlBtn=document.getElementById('us-refresh-btn');
+  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=true;b.textContent='갱신 중...';});
   S.usToday=null;
   try{
     const d=await api('us_today',0);
@@ -1887,7 +1898,7 @@ async function refreshUsToday(btn){
     if(n&&d.date) n.style.display='';
     renderUs();
   }catch(e){}
-  if(btn){btn.disabled=false;btn.textContent='🔄 지금 갱신';}
+  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=false;b.textContent='🔄 오늘 데이터 갱신';});
 }
 async function refreshKrList(btn){
   if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
