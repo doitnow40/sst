@@ -137,9 +137,11 @@ tr:hover td:first-child{color:var(--text-primary)}
 .sector-card-header{padding:10px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border)}
 .sector-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
 .sector-count{margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
-/* 섹터 평균 양수/음수에 따른 카드 배경색 */
-.sector-card.avg-up{background:rgba(239,83,80,.06);border-color:rgba(239,83,80,.2)}
-.sector-card.avg-dn{background:rgba(66,165,245,.06);border-color:rgba(66,165,245,.2)}
+/* 섹터 평균 양수/음수에 따른 카드 배경색 — 종목 영역에 더 진하게 */
+.sector-card.avg-up{border-color:rgba(239,83,80,.35)}
+.sector-card.avg-up .sector-stocks{background:rgba(239,83,80,.09)}
+.sector-card.avg-dn{border-color:rgba(66,165,245,.35)}
+.sector-card.avg-dn .sector-stocks{background:rgba(66,165,245,.09)}
 .sector-stocks{padding:8px 14px}
 /* ★ 종목 행: 메모 아이콘을 오른쪽 끝으로 이동해 종목명 정렬 통일 */
 .stock-item{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;column-gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:11px;position:relative}
@@ -355,7 +357,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-kr-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇰🇷</div>
-        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span></div></div>
+        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span> · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
       </div>
 
@@ -428,7 +430,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-kr-list" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇰🇷</div>
-        <div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 (시트에서 동적 로딩)</div></div>
+        <div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-kr">KR STOCKS</div>
       </div>
       <!-- 실시간 안내 + 갱신 버튼 -->
@@ -445,7 +447,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-us-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇺🇸</div>
-        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span></div></div>
+        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span> · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-us" id="us-status">로딩 중...</div>
       </div>
 
@@ -514,7 +516,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-us-list" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇺🇸</div>
-        <div><div class="page-title">미국 섹터 종목 LIST</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF 구성</div></div>
+        <div><div class="page-title">미국 섹터 종목 LIST</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-us">US ETF</div>
       </div>
       <!-- 실시간 안내 + 갱신 버튼 -->
@@ -531,7 +533,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-about" style="display:none">
       <div class="page-header">
         <div class="page-flag">ℹ️</div>
-        <div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">Stock Sector Tracker 소개 및 이용 안내</div></div>
+        <div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">Stock Sector Tracker 소개 및 이용 안내 · <span style="color:#80cbc4">오늘 실시간 등락률: 10분마다 자동 갱신</span></div></div>
       </div>
 
       <!-- 서비스 소개 -->
