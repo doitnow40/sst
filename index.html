@@ -965,6 +965,52 @@ function avg5row(sectorHdrs, filtered, mode){
   return h+'</tr>';
 }
 
+// ★ 20일 평균 행 (GAS avg20 데이터 사용)
+function avg20rowFromData(sectorHdrs, avg20Data, mode){
+  if(!avg20Data||!avg20Data.length) return '';
+  let h='<tr class="avg-row" style="opacity:.85"><td class="avg-row-label">20D Avg</td>';
+  sectorHdrs.forEach((name,ci)=>{
+    const val=avg20Data[ci+1]; // ci+1: 헤더배열에서 날짜 다음
+    if(val!==null&&val!==undefined&&!isNaN(parseFloat(val))){
+      const a=parseFloat(val);
+      const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):pctCell(a,15));
+      h+=`<td style="background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(2)}</td>`;
+    }else h+='<td></td>';
+  });
+  return h+'</tr>';
+}
+
+// ★ 5일 추이 SVG 스파크라인 행 (최근 5일 데이터 기반)
+function sparkline5row(sectorHdrs, filtered){
+  if(filtered.length<2) return '';
+  const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse(); // 오래된→최신 순
+  let h='<tr class="avg-row"><td class="avg-row-label" style="font-size:8px">5D 추이</td>';
+  sectorHdrs.forEach((name,ci)=>{
+    const vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
+    if(vals.length>=2){
+      // SVG 미니 라인차트 (36×14)
+      const mn=Math.min(...vals),mx=Math.max(...vals);
+      const range=mx-mn||0.001;
+      const W=36,H=14,pad=1;
+      const points=vals.map((v,i)=>{
+        const x=pad+(i/(vals.length-1))*(W-pad*2);
+        const y=H-pad-((v-mn)/range)*(H-pad*2);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const last=vals[vals.length-1],first=vals[0];
+      const col=last>first?'#ef5350':last<first?'#42a5f5':'#78909c';
+      const svg=`<svg width="${W}" height="${H}" style="display:block;margin:auto"><polyline points="${points}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="1.5" fill="${col}"/></svg>`;
+      h+=`<td style="padding:1px;background:var(--bg-card)">${svg}</td>`;
+    }else h+='<td></td>';
+  });
+  return h+'</tr>';
+}
+
+// ★ 데이터 시작 구분선 행
+function separatorRow(colCount){
+  return `<tr style="height:3px"><td colspan="${colCount+1}" style="background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.2));padding:0;height:3px"></td></tr>`;
+}
+
 // ━━━ KR HISTORY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function loadKr(){
   if(S.krOk){renderKr();return;}
@@ -1032,7 +1078,12 @@ function renderKr(){
     const isW=WATCHED_SECTORS.has(name);
     t+=`<th class="${isW?'watched-col':''}" style="background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px">${isW?'⭐ ':''}${name}</th>`;
   });
-  t+='</tr>'+avg5row(sectorHdrs,f,'kr')+'</thead><tbody>';
+  t+='</tr>'
+   +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
+   +avg5row(sectorHdrs,f,'kr')
+   +sparkline5row(sectorHdrs,f)
+   +separatorRow(sectorHdrs.length)
+   +'</thead><tbody>';
 
   f.forEach(row=>{
     t+=`<tr><td>${row[0]||''}</td>`;
@@ -1054,10 +1105,11 @@ function renderKr(){
 }
 
 // ━━━ KR 대분류 헤더 행 생성 공통 함수 ━━━━━━━━━━━━━━━━━━━━━━
-// groupMap: {섹터명 → 대분류명}
-// sectorHdrs: 섹터명 배열 (날짜 제외)
-// 반환: <tr class="group-row">...</tr> HTML 문자열
-const KR_GROUP_COLORS=['#1a3a52','#2d4a1e','#4a2c1a','#3a1a4a','#1a3a3a','#4a3a1a','#2a1a3a','#1a2a4a','#3a2a1a','#3a2a3a','#1a4a2a'];
+const KR_GROUP_COLORS=[
+  '#1565C0','#2E7D32','#6A1B9A','#BF360C','#00695C',
+  '#E65100','#4527A0','#283593','#558B2F','#AD1457',
+  '#00838F','#4E342E','#37474F','#827717','#0277BD',
+];
 const KR_GROUP_COLOR_CACHE={};
 let KR_GROUP_COLOR_IDX=0;
 
@@ -1085,7 +1137,7 @@ function buildKrGroupHeaderRow(sectorHdrs, groupMap){
       KR_GROUP_COLOR_IDX++;
     }
     const bg=KR_GROUP_COLOR_CACHE[label];
-    row+=`<th colspan="${count}" style="background:${bg};color:#d0e8ff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.2);white-space:nowrap;padding:4px 6px">▶ ${label}</th>`;
+    row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3);border-right:1px solid rgba(255,255,255,.15);white-space:nowrap;padding:4px 6px;text-shadow:0 1px 2px rgba(0,0,0,.5)">▶ ${label}</th>`;
   });
   row+=`</tr>`;
   return row;
@@ -1634,7 +1686,12 @@ function renderKrTableOnly(){
     const isW=WATCHED_SECTORS.has(name);
     t+=`<th class="${isW?'watched-col':''}" style="background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px">${isW?'⭐ ':''}${name}</th>`;
   });
-  t+='</tr>'+avg5row(sectorHdrs,f,'kr')+'</thead><tbody>';
+  t+='</tr>'
+   +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
+   +avg5row(sectorHdrs,f,'kr')
+   +sparkline5row(sectorHdrs,f)
+   +separatorRow(sectorHdrs.length)
+   +'</thead><tbody>';
   f.forEach(row=>{
     t+=`<tr><td>${row[0]||''}</td>`;
     sectorHdrs.forEach((name,ci)=>{
