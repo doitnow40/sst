@@ -248,6 +248,19 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .admin-msg.ok{background:rgba(102,187,106,.15);color:#a5d6a7;border:1px solid rgba(102,187,106,.3)}
 .admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}
 .admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}
+
+/* ━━━ 주목 섹터 ━━━ */
+/* 관리자 주목섹터 체크박스 */
+.watch-checkbox{display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 0}
+.watch-checkbox input{width:14px;height:14px;accent-color:#ff6f00;cursor:pointer}
+.watch-check-label{font-size:10px;color:var(--text-muted)}
+/* 섹터 카드 강조 */
+.sector-card.watched{border:2px solid #ff6f00 !important;box-shadow:0 0 12px rgba(255,111,0,.35)}
+.sector-card.watched .sector-card-header{background:rgba(255,111,0,.12) !important;border-bottom-color:rgba(255,111,0,.4) !important}
+.watch-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:4px}
+/* History 표 주목 섹터 헤더 강조 */
+th.watched-col{background:#7b3a00 !important;color:#ffd180 !important;outline:2px solid #ff6f00;outline-offset:-1px}
+td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 </style>
 </head>
 <body>
@@ -585,6 +598,7 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
         <div class="admin-tabs">
           <div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
           <div class="admin-tab" onclick="switchAdminTab('mgmt',this)">🗂️ 섹터/종목 관리</div>
+          <div class="admin-tab" onclick="switchAdminTab('watch',this)">⭐ 주목 섹터</div>
         </div>
 
         <!-- ① 방문자 통계 탭 -->
@@ -671,6 +685,25 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
               </div>
             </div>
 
+          </div>
+        </div>
+
+        <!-- ③ 주목 섹터 탭 -->
+        <div id="admin-tab-watch" style="display:none">
+          <div class="stats-embed-wrap">
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px">⭐ 주목 섹터 설정</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">
+              체크한 섹터는 <strong style="color:#ffd180">섹터 종목 List</strong>와 <strong style="color:#ffd180">Sector History 표</strong>에서
+              <span style="color:#ff6f00;font-weight:700">🟠 주황 테두리</span>로 강조 표시됩니다.
+            </div>
+            <div id="watch-sector-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">
+              <div class="loading-state" style="padding:30px;grid-column:1/-1"><div class="spinner"></div></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+              <button class="admin-add-btn" onclick="saveWatchSectors()" id="watch-save-btn">💾 저장</button>
+              <button class="range-btn" onclick="checkAllWatch(false)">전체 해제</button>
+              <span id="watch-save-msg" style="font-size:11px;color:#a5d6a7;display:none"></span>
+            </div>
           </div>
         </div>
 
@@ -971,7 +1004,8 @@ function renderKr(){
     let bg,fg;
     if(fixed){bg=fixed.bg;fg=fixed.fg;}
     else{const c=secColorMap[name]||{bg:'#2e3a50',fg:'#e2e8f0'};bg=c.bg;fg=c.fg;}
-    t+=`<th style="background:${bg};color:${fg};font-size:9px">${name}</th>`;
+    const isW=WATCHED_SECTORS.has(name);
+    t+=`<th class="${isW?'watched-col':''}" style="background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px">${isW?'⭐ ':''}${name}</th>`;
   });
   t+='</tr>'+avg5row(sectorHdrs,f,'kr')+'</thead><tbody>';
 
@@ -982,7 +1016,8 @@ function renderKr(){
       let c;
       if(KR_FIXED[name]?.type==='ADR') c=adrCell(val);
       else c=pctCell(val,15);
-      t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
+      const isW=WATCHED_SECTORS.has(name);
+      t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
     });
     t+='</tr>';
   });
@@ -1420,10 +1455,18 @@ async function loadKrList(){
     S.krLOk=true;
     const C=KR_SEC_COLORS;
     let h='<div class="sector-grid">';
-    sectors.forEach((sec,i)=>{const c=C[i%C.length];
-      h+=`<div class="sector-card"><div class="sector-card-header" style="background:${c.bg}22;border-bottom-color:${c.bg}55"><span class="sector-tag" style="background:${c.bg};color:${c.fg}">${sec.sector}</span><span class="sector-count">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
+    sectors.forEach((sec,i)=>{
+      const c=C[i%C.length];
+      const isWatched=WATCHED_SECTORS.has(sec.sector);
+      h+=`<div class="sector-card${isWatched?' watched':''}">`;
+      h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
+      h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
+      if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
+      h+=`<span class="sector-count">${sec.stocks.length}개 종목</span></div>`;
+      h+=`<div class="sector-stocks">`;
       sec.stocks.forEach(s=>{h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span></div>`;});
-      h+=`</div></div>`;});
+      h+=`</div></div>`;
+    });
     h+='</div>';
     wrap.innerHTML=h;
   }catch(e){wrap.innerHTML=`<div class="loading-state"><div style="color:#ef9a9a">⚠️ 로드 실패: ${e.message}</div></div>`;}
@@ -1551,6 +1594,11 @@ function switchAdminTab(tab, btn){
   if(btn) btn.classList.add('active');
   document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
   document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
+  document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
+  if(tab==='watch'){
+    if(!ADM.sectors.length) loadAdminSectors().then(renderWatchSectorList);
+    else renderWatchSectorList();
+  }
 }
 
 // ━━━ 방문자 카운터 (GAS 기반) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1677,12 +1725,50 @@ async function deleteSector(sectorName){
 }
 
 // ━━━ 종목 추가/삭제 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ★ 티커 형식 검증
+function validateTicker(ticker){
+  if(!ticker) return {ok:true, warn:null}; // 티커 없어도 추가는 허용
+  // 허용 형식: KOSPI:000000, KOSDAQ:000000, KRX:000000, KRX:KOSPI 등
+  const patterns=[
+    /^KOSPI:[0-9A-Z]{5,7}$/i,
+    /^KOSDAQ:[0-9A-Z]{5,7}$/i,
+    /^KRX:[0-9A-Z]{5,7}$/i,
+    /^NASDAQ:[0-9A-Z]{1,6}$/i,
+    /^NYSE:[0-9A-Z]{1,6}$/i,
+    /^[0-9]{6}$/, // 6자리 숫자만 (KOSPI 종목코드)
+  ];
+  const matched=patterns.some(p=>p.test(ticker.trim()));
+  if(!matched){
+    return {
+      ok:false,
+      warn:'⚠️ 티커 형식이 올바르지 않을 수 있습니다.\n'+
+           '올바른 예시: KOSPI:005930 / KOSDAQ:035720 / KRX:KOSPI\n'+
+           '그래도 추가하시겠습니까?'
+    };
+  }
+  return {ok:true, warn:null};
+}
+
 async function addStock(){
   const sector=ADM.selectedSector;
   const name=document.getElementById('new-stock-name').value.trim();
   const ticker=document.getElementById('new-stock-ticker').value.trim();
   if(!sector){showMsg('stock-msg','섹터를 먼저 선택하세요.',true);return;}
   if(!name){showMsg('stock-msg','종목명을 입력하세요.',true);return;}
+
+  // ★ 티커 유효성 검증
+  if(ticker){
+    const v=validateTicker(ticker);
+    if(!v.ok){
+      if(!confirm(v.warn)) return;
+      // 경고 후 진행 시 안내 메시지 표시
+      showMsg('stock-msg','⚠️ 티커 형식을 다시 확인하세요. 추가는 진행됩니다.',true);
+    }
+  } else {
+    showMsg('stock-msg','ℹ️ 티커를 입력하지 않으면 등락률 자동 계산이 안 될 수 있습니다.',true);
+  }
+
   const btn=document.querySelector('#new-stock-name').closest('div').querySelector('button');
   btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
   try{
@@ -1708,6 +1794,92 @@ async function deleteStock(sectorName, stockName){
   }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
 }
 
+// ━━━ 주목 섹터 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 주목 섹터 목록 (GAS에서 로드, 전역 공유)
+let WATCHED_SECTORS = new Set(); // 주목 섹터명 Set
+let watchedLoaded = false;
+
+// GAS에서 주목 섹터 목록 로드 (페이지 로드 시 1회)
+async function loadWatchedSectors(){
+  if(watchedLoaded) return;
+  try{
+    const d = await api('watched_sectors', 0);
+    WATCHED_SECTORS = new Set(d.sectors||[]);
+    watchedLoaded = true;
+  }catch(e){
+    WATCHED_SECTORS = new Set();
+    watchedLoaded = true;
+  }
+}
+
+// 관리자 주목섹터 탭 렌더링
+function renderWatchSectorList(){
+  const wrap=document.getElementById('watch-sector-list');
+  if(!ADM.sectors.length){
+    wrap.innerHTML='<div style="font-size:12px;color:var(--text-muted)">섹터/종목 관리 탭에서 먼저 섹터를 로드하세요.</div>';
+    return;
+  }
+  let h='';
+  ADM.sectors.forEach(sec=>{
+    const checked=WATCHED_SECTORS.has(sec.sector)?'checked':'';
+    const esc=sec.sector.replace(/'/g,"\\'");
+    h+=`<label class="watch-checkbox" style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;${checked?'border-color:#ff6f00;background:rgba(255,111,0,.08)':''}">
+      <input type="checkbox" id="wch_${esc}" ${checked} onchange="onWatchChange()">
+      <span style="font-size:12px;color:var(--text-primary)">${sec.sector}</span>
+    </label>`;
+  });
+  wrap.innerHTML=h;
+}
+
+function onWatchChange(){
+  // 체크된 항목 하이라이트
+  ADM.sectors.forEach(sec=>{
+    const el=document.getElementById('wch_'+sec.sector.replace(/'/g,"\\'"));
+    if(!el) return;
+    const label=el.closest('label');
+    if(el.checked){
+      label.style.borderColor='#ff6f00';
+      label.style.background='rgba(255,111,0,.08)';
+    } else {
+      label.style.borderColor='var(--border)';
+      label.style.background='var(--bg-card2)';
+    }
+  });
+}
+
+function checkAllWatch(val){
+  ADM.sectors.forEach(sec=>{
+    const el=document.getElementById('wch_'+sec.sector.replace(/'/g,"\\'"));
+    if(el){el.checked=val;}
+  });
+  onWatchChange();
+}
+
+async function saveWatchSectors(){
+  // 체크된 섹터 수집
+  const selected=[];
+  ADM.sectors.forEach(sec=>{
+    const el=document.getElementById('wch_'+sec.sector.replace(/'/g,"\\'"));
+    if(el&&el.checked) selected.push(sec.sector);
+  });
+  const btn=document.getElementById('watch-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중';
+  try{
+    await adminPost('save_watched',{sectors:selected.join(',')});
+    WATCHED_SECTORS=new Set(selected);
+    // 화면 즉시 반영
+    S.krLoaded=false; S.krLOk=false;
+    const msg=document.getElementById('watch-save-msg');
+    msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
+    msg.style.display='inline';
+    setTimeout(()=>{msg.style.display='none';},3000);
+    onWatchChange();
+  }catch(e){
+    alert('❌ 저장 실패: '+e.message);
+  }
+  btn.disabled=false; btn.innerHTML='💾 저장';
+}
+
 // ━━━ UTILS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 document.querySelector('.main').addEventListener('scroll',()=>{
   document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
@@ -1720,6 +1892,9 @@ go('kr-history',document.getElementById('nav-kr-history'));
 
 // 방문자 카운터 기록 (페이지 로드 시 1회)
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
+
+// 주목 섹터 미리 로드 (History/List 강조 표시용)
+if(!IS_DEMO) loadWatchedSectors();
 </script>
 </body>
 </html>
