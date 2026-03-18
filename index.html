@@ -27,8 +27,8 @@
   --font-body:'Noto Sans KR',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
   --font-display:'Bebas Neue',sans-serif;
-  --tbl-font-size:11px;  /* ★ 테이블 글자 크기 (JS로 제어) */
-  --tbl-cell-pad:5px 7px;
+  --tbl-font-size:7px;   /* ★ default 7px — 더 많은 섹터 한눈에 */
+  --tbl-cell-pad:3px 4px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font-body);background:var(--bg-darkest);color:var(--text-primary);height:100vh;overflow:hidden;display:flex;flex-direction:column}
@@ -110,11 +110,11 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 .table-scroll::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
 table{border-collapse:collapse;width:max-content;min-width:100%}
 thead{position:sticky;top:0;z-index:10}
-th{background:var(--bg-card2);padding:8px 7px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border);text-align:center}
-th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:90px}
+th{background:var(--bg-card2);padding:6px 4px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border);text-align:center}
+th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:80px}
 /* ★ td 글자 크기는 CSS variable로 제어 */
 td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}
-td:first-child{text-align:left;position:sticky;left:0;z-index:5;background:var(--bg-card);color:var(--text-secondary);min-width:90px}
+td:first-child{text-align:left;position:sticky;left:0;z-index:5;background:var(--bg-card);color:var(--text-secondary);min-width:80px}
 tr:hover td{filter:brightness(1.15)}
 tr:hover td:first-child{color:var(--text-primary)}
 .avg-row td{font-weight:600}
@@ -266,8 +266,8 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 <body>
 
 <header>
-  <div class="logo-icon">📡</div>
-  <div>
+  <div class="logo-icon" onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer" title="홈으로">📡</div>
+  <div onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer">
     <div class="logo-text">STOCK SECTOR TRACKER</div>
     <div class="logo-sub">한국 · 미국 섹터 등락률 트래커</div>
   </div>
@@ -367,7 +367,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
           <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-          <span class="font-size-display" id="fontSizeLabel">11</span>
+          <span class="font-size-display" id="fontSizeLabel">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
       </div>
@@ -441,7 +441,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
           <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-          <span class="font-size-display" id="fontSizeLabelUs">11</span>
+          <span class="font-size-display" id="fontSizeLabelUs">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
       </div>
@@ -718,7 +718,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ★ GAS 웹앱 URL을 여기에 붙여넣으세요
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyQjlAljqU-CWo0kqSS0S-rcSkmP4yQLy_5rpiDKzSW6_rVpSSKfQraOjOiWuzUEixs/exec';
+const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbylpQ_8HikmuS4vcH8QkDHEnZX0c7WEawxOrg29Aen7cBV7NOtOlLULJ21saQnwnIVL/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 
 const IS_DEMO = false; // 항상 실제 API 사용
@@ -790,7 +790,7 @@ const US_GROUPS={
 };
 
 // ━━━ STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const S={krR:30,usR:30,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:11};
+const S={krR:30,usR:30,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7};
 
 // ━━━ FONT SIZE CONTROL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function changeFontSize(delta){
@@ -1464,7 +1464,16 @@ async function loadKrList(){
       if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
       h+=`<span class="sector-count">${sec.stocks.length}개 종목</span></div>`;
       h+=`<div class="sector-stocks">`;
-      sec.stocks.forEach(s=>{h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span></div>`;});
+      sec.stocks.forEach(s=>{
+        const chg=s.chg;
+        let chgHtml='';
+        if(chg!==null&&chg!==undefined&&!isNaN(chg)){
+          const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
+          const sign=chg>0?'+':'';
+          chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
+        }
+        h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}</div>`;
+      });
       h+=`</div></div>`;
     });
     h+='</div>';
@@ -1476,6 +1485,18 @@ async function loadKrList(){
 function renderUsList(){
   const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
   const GN={INDEX:{l:'주요 지수 & 지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
+
+  // US History 데이터에서 최신 등락률 추출
+  const usLatest={};
+  if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
+    const H=S.usD.headers;
+    const latest=S.usD.rows[0];
+    H.slice(1).forEach((name,ci)=>{
+      const v=parseFloat(latest[ci+1]);
+      if(!isNaN(v)) usLatest[name]=v;
+    });
+  }
+
   const groups={};
   Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
   let h='<div class="sector-grid">';
@@ -1483,7 +1504,16 @@ function renderUsList(){
     if(!groups[g])return;
     const info=GN[g]||{l:g,i:'📌'};
     h+=`<div class="sector-card"><div class="sector-card-header"><span style="font-size:17px">${info.i}</span><span class="sector-tag" style="background:${GC[g]};color:#fff">${info.l}</span><span class="sector-count">${groups[g].length}개</span></div><div class="sector-stocks">`;
-    groups[g].forEach(({n,m})=>{h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span></div>`;});
+    groups[g].forEach(({n,m})=>{
+      const chg=usLatest[n];
+      let chgHtml='';
+      if(chg!==undefined&&!isNaN(chg)){
+        const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
+        const sign=chg>0?'+':'';
+        chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
+      }
+      h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}</div>`;
+    });
     h+=`</div></div>`;});
   h+='</div>';
   document.getElementById('us-list').innerHTML=h;
@@ -1505,7 +1535,11 @@ function go(page,el){
   if(page==='kr-history')loadKr();
   else if(page==='us-history')loadUs();
   else if(page==='kr-list')loadKrList();
-  else if(page==='us-list')renderUsList();
+  else if(page==='us-list'){
+    // US History 데이터 없으면 먼저 로드 후 렌더
+    if(!S.usOk) loadUs().then(()=>renderUsList());
+    else renderUsList();
+  }
   else if(page==='admin')initAdminPage();
   document.querySelector('.main').scrollTo({top:0});
 }
