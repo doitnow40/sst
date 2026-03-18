@@ -1062,17 +1062,17 @@ const KR_GROUP_COLOR_CACHE={};
 let KR_GROUP_COLOR_IDX=0;
 
 function buildKrGroupHeaderRow(sectorHdrs, groupMap){
+  if(!sectorHdrs||sectorHdrs.length===0) return '';
   // 연속된 같은 대분류를 colspan으로 묶기
   const spans=[];
-  let cur=null, start=0;
-  sectorHdrs.forEach((name,i)=>{
-    const g=groupMap[name]||'';
+  let cur=groupMap[sectorHdrs[0]]||'', start=0;
+  for(let i=1;i<=sectorHdrs.length;i++){
+    const g=i<sectorHdrs.length?(groupMap[sectorHdrs[i]]||''):'__END__';
     if(g!==cur){
-      if(cur!==null) spans.push({label:cur, count:i-start});
+      spans.push({label:cur, count:i-start});
       cur=g; start=i;
     }
-    if(i===sectorHdrs.length-1) spans.push({label:cur, count:i-start+1});
-  });
+  }
 
   let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
   spans.forEach(({label,count})=>{
@@ -1085,7 +1085,7 @@ function buildKrGroupHeaderRow(sectorHdrs, groupMap){
       KR_GROUP_COLOR_IDX++;
     }
     const bg=KR_GROUP_COLOR_CACHE[label];
-    row+=`<th colspan="${count}" style="background:${bg};color:#d0e8ff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.15);white-space:nowrap;padding:4px 6px">▶ ${label}</th>`;
+    row+=`<th colspan="${count}" style="background:${bg};color:#d0e8ff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.2);white-space:nowrap;padding:4px 6px">▶ ${label}</th>`;
   });
   row+=`</tr>`;
   return row;
