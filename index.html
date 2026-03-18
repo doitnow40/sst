@@ -249,7 +249,12 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}
 .admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}
 
-/* ━━━ 주목 섹터 ━━━ */
+/* ━━━ 메모 툴팁 ━━━ */
+.memo-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(79,195,247,.25);color:var(--accent-kr);font-size:9px;cursor:pointer;flex-shrink:0;transition:background .15s;font-style:normal;font-weight:700;border:1px solid rgba(79,195,247,.4)}
+.memo-icon:hover{background:rgba(79,195,247,.5)}
+.memo-bubble{position:absolute;bottom:calc(100% + 5px);left:0;z-index:9999;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:7px 11px;font-size:11px;color:#b0d4f1;line-height:1.6;white-space:pre-wrap;min-width:140px;max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s}
+.stock-item{position:relative}
+.stock-item:hover .memo-bubble,.memo-icon:focus+.memo-bubble{opacity:1}
 /* 관리자 주목섹터 체크박스 */
 .watch-checkbox{display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 0}
 .watch-checkbox input{width:14px;height:14px;accent-color:#ff6f00;cursor:pointer}
@@ -360,9 +365,9 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 
       <!-- ② 컨트롤 + 통계 + 표 -->
       <div class="controls-bar">
-        <button class="range-btn active-kr" onclick="setKrRange(30,this)">1개월</button>
-        <button class="range-btn" onclick="setKrRange(90,this)">3개월</button>
-        <button class="range-btn" onclick="setKrRange(180,this)">6개월</button>
+        <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
+        <button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
+        <button class="range-btn" onclick="setKrRange(132,this)">6개월</button>
         <button class="range-btn" onclick="setKrRange(365,this)">1년</button>
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
@@ -434,9 +439,9 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 
       <!-- ② 컨트롤 + 통계 + 표 -->
       <div class="controls-bar">
-        <button class="range-btn active-us" onclick="setUsRange(30,this)">1개월</button>
-        <button class="range-btn" onclick="setUsRange(90,this)">3개월</button>
-        <button class="range-btn" onclick="setUsRange(180,this)">6개월</button>
+        <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
+        <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
+        <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
         <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
@@ -678,7 +683,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
                 <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 종목 추가</div>
                 <div class="admin-input-row">
                   <input class="admin-input" id="new-stock-name" placeholder="종목명 (예: 삼성전자)" style="flex:2">
-                  <input class="admin-input" id="new-stock-ticker" placeholder="티커 (예: 005930)" style="flex:1">
+                  <input class="admin-input" id="new-stock-ticker" placeholder="티커 (예: KOSPI:005930)" style="flex:1.5">
+                </div>
+                <div class="admin-input-row" style="margin-top:5px">
+                  <input class="admin-input" id="new-stock-memo" placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
                   <button class="admin-add-btn" onclick="addStock()">추가</button>
                 </div>
                 <div class="admin-msg" id="stock-msg"></div>
@@ -790,7 +798,7 @@ const US_GROUPS={
 };
 
 // ━━━ STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const S={krR:30,usR:30,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7};
 
 // ━━━ FONT SIZE CONTROL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function changeFontSize(delta){
@@ -989,16 +997,42 @@ function renderKr(){
       <div class="stat-card"><div class="stat-label">최강 / 최약</div><div class="stat-val up">+${mx}%</div><div class="stat-sub">최약: ${mn}%</div></div>`;
   }
 
-  // 그룹 헤더 열 수 계산
-  const fixedNames=new Set(Object.keys(KR_FIXED).filter(k=>k!=='날짜'));
-  const idxCount=sectorHdrs.filter(h=>fixedNames.has(h)).length;
-  const secCount=sectorHdrs.filter(h=>!fixedNames.has(h)).length;
+  // 대분류 행 생성 (groupMap 기반)
+  const groupMap=S.krD.groupMap||{};
+  // 대분류 그룹핑: 연속된 같은 대분류를 colspan으로 묶기
+  const groupSpans=[];
+  let curGroup=null,curStart=0;
+  sectorHdrs.forEach((name,i)=>{
+    const g=groupMap[name]||'';
+    if(g!==curGroup){
+      if(curGroup!==null) groupSpans.push({label:curGroup,count:i-curStart});
+      curGroup=g; curStart=i;
+    }
+    if(i===sectorHdrs.length-1) groupSpans.push({label:curGroup,count:i-curStart+1});
+  });
 
-  let t=`<table><thead><tr class="group-row"><th></th>`;
-  if(idxCount) t+=`<th colspan="${idxCount}" style="background:#F9A825;color:#000;text-align:center">▶ 주요지수 / ADR</th>`;
-  if(secCount) t+=`<th colspan="${secCount}" style="background:#37474F;color:#90A4AE;text-align:center">▶ 섹터 평균 등락률 (${secCount}개)</th>`;
-  t+='</tr><tr><th>날짜</th>';
+  // 대분류 색상 팔레트
+  const GROUP_COLORS=['#1a3a52','#2d4a1e','#4a2c1a','#3a1a4a','#1a3a3a','#4a3a1a','#2a1a3a','#1a2a4a','#3a2a1a'];
+  let groupColorIdx=0;
+  const groupColorMap={};
 
+  let t=`<table><thead>`;
+  // 대분류 행
+  t+=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
+  groupSpans.forEach(({label,count})=>{
+    if(!label){
+      // 대분류 없는 컬럼은 빈 셀
+      for(let i=0;i<count;i++) t+=`<th style="background:var(--bg-card2)"></th>`;
+      return;
+    }
+    if(!groupColorMap[label]){groupColorMap[label]=GROUP_COLORS[groupColorIdx%GROUP_COLORS.length];groupColorIdx++;}
+    const gbg=groupColorMap[label];
+    t+=`<th colspan="${count}" style="background:${gbg};color:#cde;font-size:9px;font-weight:700;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap">▶ ${label}</th>`;
+  });
+  t+=`</tr>`;
+
+  // 섹터명 행
+  t+=`<tr><th>날짜</th>`;
   sectorHdrs.forEach(name=>{
     const fixed=KR_FIXED[name];
     let bg,fg;
@@ -1472,7 +1506,12 @@ async function loadKrList(){
           const sign=chg>0?'+':'';
           chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
         }
-        h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}</div>`;
+        // 메모 아이콘 + 툴팁
+        const memo=s.memo||'';
+        const memoHtml=memo
+          ? `<i class="memo-icon" tabindex="0" title="${memo.replace(/"/g,'&quot;')}">ℹ</i><span class="memo-bubble">${memo.replace(/</g,'&lt;')}</span>`
+          : '';
+        h+=`<div class="stock-item">${memoHtml}<span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}</div>`;
       });
       h+=`</div></div>`;
     });
@@ -1688,10 +1727,21 @@ function selectSector(sectorName){
   document.getElementById('add-stock-section').style.display='';
   let h='';
   sec.stocks.forEach(st=>{
-    h+=`<div class="admin-stock-item">
-      <span class="admin-stock-name">${st.name}</span>
-      <span class="admin-stock-ticker">${st.ticker||'KR'}</span>
-      <button class="admin-del-btn" onclick="deleteStock('${sectorName.replace(/'/g,"\\'")}','${st.name.replace(/'/g,"\\'")}')">삭제</button>
+    const esc=st.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const escSec=sectorName.replace(/'/g,"\\'");
+    const memo=st.memo||'';
+    h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="admin-stock-name">${st.name}</span>
+        <span class="admin-stock-ticker">${st.ticker||'KR'}</span>
+        <button class="admin-del-btn" onclick="deleteStock('${escSec}','${esc}')">삭제</button>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <input class="admin-input" style="flex:1;font-size:10px;padding:3px 7px"
+          id="memo_${esc}" value="${memo.replace(/"/g,'&quot;')}" placeholder="📝 주석 메모 (비워도 됨)">
+        <button class="admin-add-btn" style="font-size:10px;padding:3px 10px;white-space:nowrap"
+          onclick="saveMemo('${escSec}','${esc}')">저장</button>
+      </div>
     </div>`;
   });
   if(!h) h='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">종목이 없습니다. 아래에서 추가하세요.</div>';
@@ -1788,29 +1838,27 @@ async function addStock(){
   const sector=ADM.selectedSector;
   const name=document.getElementById('new-stock-name').value.trim();
   const ticker=document.getElementById('new-stock-ticker').value.trim();
+  const memoEl=document.getElementById('new-stock-memo');
+  const memo=memoEl?memoEl.value.trim():'';
   if(!sector){showMsg('stock-msg','섹터를 먼저 선택하세요.',true);return;}
   if(!name){showMsg('stock-msg','종목명을 입력하세요.',true);return;}
 
-  // ★ 티커 유효성 검증
   if(ticker){
     const v=validateTicker(ticker);
-    if(!v.ok){
-      if(!confirm(v.warn)) return;
-      // 경고 후 진행 시 안내 메시지 표시
-      showMsg('stock-msg','⚠️ 티커 형식을 다시 확인하세요. 추가는 진행됩니다.',true);
-    }
+    if(!v.ok){if(!confirm(v.warn)) return;showMsg('stock-msg','⚠️ 티커 형식을 다시 확인하세요. 추가는 진행됩니다.',true);}
   } else {
     showMsg('stock-msg','ℹ️ 티커를 입력하지 않으면 등락률 자동 계산이 안 될 수 있습니다.',true);
   }
 
-  const btn=document.querySelector('#new-stock-name').closest('div').querySelector('button');
+  const btn=document.querySelector('#add-stock-section .admin-add-btn');
   btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
   try{
-    await adminPost('add_stock',{sector,stock_name:name,ticker});
+    await adminPost('add_stock',{sector,stock_name:name,ticker,memo});
     document.getElementById('new-stock-name').value='';
     document.getElementById('new-stock-ticker').value='';
+    if(memoEl) memoEl.value='';
     showMsg('stock-msg','✅ "'+name+'" 추가 완료!',false);
-    S.krListLoaded=false; S.krLoaded=false;
+    S.krListLoaded=false; S.krLoaded=false; S.krLOk=false;
     await loadAdminSectors();
     selectSector(sector);
   }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
@@ -1822,10 +1870,24 @@ async function deleteStock(sectorName, stockName){
   try{
     await adminPost('delete_stock',{sector:sectorName,stock_name:stockName});
     showMsg('stock-msg','✅ "'+stockName+'" 삭제 완료',false);
-    S.krListLoaded=false; S.krLoaded=false;
+    S.krListLoaded=false; S.krLoaded=false; S.krLOk=false;
     await loadAdminSectors();
     selectSector(sectorName);
   }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
+}
+
+async function saveMemo(sectorName, stockName){
+  const el=document.getElementById('memo_'+stockName);
+  if(!el) return;
+  const memo=el.value.trim();
+  const btn=el.nextElementSibling;
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="admin-spinner"></span>';}
+  try{
+    await adminPost('update_memo',{sector:sectorName,stock_name:stockName,memo});
+    showMsg('stock-msg','✅ "'+stockName+'" 메모 저장 완료',false);
+    S.krLOk=false;
+  }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
+  if(btn){btn.disabled=false;btn.innerHTML='저장';}
 }
 
 // ━━━ 주목 섹터 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
