@@ -1019,42 +1019,11 @@ function renderKr(){
       <div class="stat-card"><div class="stat-label">최강 / 최약</div><div class="stat-val up">+${mx}%</div><div class="stat-sub">최약: ${mn}%</div></div>`;
   }
 
-  // 대분류 행 생성 (groupMap 기반)
+  // 대분류 행 생성 (groupMap 기반 — colspan 병합)
   const groupMap=S.krD.groupMap||{};
-  // 대분류 그룹핑: 연속된 같은 대분류를 colspan으로 묶기
-  const groupSpans=[];
-  let curGroup=null,curStart=0;
-  sectorHdrs.forEach((name,i)=>{
-    const g=groupMap[name]||'';
-    if(g!==curGroup){
-      if(curGroup!==null) groupSpans.push({label:curGroup,count:i-curStart});
-      curGroup=g; curStart=i;
-    }
-    if(i===sectorHdrs.length-1) groupSpans.push({label:curGroup,count:i-curStart+1});
-  });
+  const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
 
-  // 대분류 색상 팔레트
-  const GROUP_COLORS=['#1a3a52','#2d4a1e','#4a2c1a','#3a1a4a','#1a3a3a','#4a3a1a','#2a1a3a','#1a2a4a','#3a2a1a'];
-  let groupColorIdx=0;
-  const groupColorMap={};
-
-  let t=`<table><thead>`;
-  // 대분류 행
-  t+=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
-  groupSpans.forEach(({label,count})=>{
-    if(!label){
-      // 대분류 없는 컬럼은 빈 셀
-      for(let i=0;i<count;i++) t+=`<th style="background:var(--bg-card2)"></th>`;
-      return;
-    }
-    if(!groupColorMap[label]){groupColorMap[label]=GROUP_COLORS[groupColorIdx%GROUP_COLORS.length];groupColorIdx++;}
-    const gbg=groupColorMap[label];
-    t+=`<th colspan="${count}" style="background:${gbg};color:#cde;font-size:9px;font-weight:700;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap">▶ ${label}</th>`;
-  });
-  t+=`</tr>`;
-
-  // 섹터명 행
-  t+=`<tr><th>날짜</th>`;
+  let t=`<table><thead>${t_header}<tr><th>날짜</th>`;
   sectorHdrs.forEach(name=>{
     const fixed=KR_FIXED[name];
     let bg,fg;
@@ -1084,7 +1053,43 @@ function renderKr(){
   renderKrChart();
 }
 
-// ━━━ KR 차트 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ KR 대분류 헤더 행 생성 공통 함수 ━━━━━━━━━━━━━━━━━━━━━━
+// groupMap: {섹터명 → 대분류명}
+// sectorHdrs: 섹터명 배열 (날짜 제외)
+// 반환: <tr class="group-row">...</tr> HTML 문자열
+const KR_GROUP_COLORS=['#1a3a52','#2d4a1e','#4a2c1a','#3a1a4a','#1a3a3a','#4a3a1a','#2a1a3a','#1a2a4a','#3a2a1a','#3a2a3a','#1a4a2a'];
+const KR_GROUP_COLOR_CACHE={};
+let KR_GROUP_COLOR_IDX=0;
+
+function buildKrGroupHeaderRow(sectorHdrs, groupMap){
+  // 연속된 같은 대분류를 colspan으로 묶기
+  const spans=[];
+  let cur=null, start=0;
+  sectorHdrs.forEach((name,i)=>{
+    const g=groupMap[name]||'';
+    if(g!==cur){
+      if(cur!==null) spans.push({label:cur, count:i-start});
+      cur=g; start=i;
+    }
+    if(i===sectorHdrs.length-1) spans.push({label:cur, count:i-start+1});
+  });
+
+  let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
+  spans.forEach(({label,count})=>{
+    if(!label){
+      row+=`<th colspan="${count}" style="background:var(--bg-card2)"></th>`;
+      return;
+    }
+    if(!KR_GROUP_COLOR_CACHE[label]){
+      KR_GROUP_COLOR_CACHE[label]=KR_GROUP_COLORS[KR_GROUP_COLOR_IDX%KR_GROUP_COLORS.length];
+      KR_GROUP_COLOR_IDX++;
+    }
+    const bg=KR_GROUP_COLOR_CACHE[label];
+    row+=`<th colspan="${count}" style="background:${bg};color:#d0e8ff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.15);white-space:nowrap;padding:4px 6px">▶ ${label}</th>`;
+  });
+  row+=`</tr>`;
+  return row;
+}
 let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;    // 기본 1주(5일)
@@ -1119,10 +1124,10 @@ const CHART_OPTS_BASE={
     }
   },
   scales:{
-    x:{ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},maxRotation:45,autoSkip:true,maxTicksLimit:15},
-      grid:{color:'#1e2535'},border:{color:'#2e3a50'}},
-    y:{ticks:{color:'#4a5a78',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
-      grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#2e3a50'}}
+    x:{ticks:{color:'#8fa8c8',font:{size:9,family:"'JetBrains Mono',monospace"},maxRotation:45,autoSkip:true,maxTicksLimit:15},
+      grid:{color:'#1e2535'},border:{color:'#3a4a65'}},
+    y:{ticks:{color:'#8fa8c8',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
+      grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#3a4a65'}}
   }
 };
 
@@ -1218,7 +1223,7 @@ function renderKrChart(){
           }
         },
         scales:{
-          x:{ticks:{color:'#4a5a78',font:{size:9},callback:v=>v+'%'},
+          x:{ticks:{color:'#8fa8c8',font:{size:9},callback:v=>v+'%'},
             grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#2e3a50'}},
           y:{ticks:{color:'#e8edf5',font:{size:9,family:"'JetBrains Mono',monospace"}},
             grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
@@ -1368,7 +1373,7 @@ function renderUsChart(){
             callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}}
         },
         scales:{
-          x:{ticks:{color:'#4a5a78',font:{size:9},callback:v=>v+'%'},
+          x:{ticks:{color:'#8fa8c8',font:{size:9},callback:v=>v+'%'},
             grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#2e3a50'}},
           y:{ticks:{color:'#e8edf5',font:{size:9,family:"'JetBrains Mono',monospace"}},
             grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
@@ -1621,22 +1626,8 @@ function renderKrTableOnly(){
   }
   // 표 생성 (차트 제외 — renderKr 로직 중 표 부분만)
   const groupMap=S.krD.groupMap||{};
-  const groupSpans=[];
-  let curGroup=null,curStart=0;
-  sectorHdrs.forEach((name,i)=>{
-    const g=groupMap[name]||'';
-    if(g!==curGroup){if(curGroup!==null)groupSpans.push({label:curGroup,count:i-curStart});curGroup=g;curStart=i;}
-    if(i===sectorHdrs.length-1)groupSpans.push({label:curGroup,count:i-curStart+1});
-  });
-  const GROUP_COLORS=['#1a3a52','#2d4a1e','#4a2c1a','#3a1a4a','#1a3a3a','#4a3a1a','#2a1a3a','#1a2a4a','#3a2a1a'];
-  let groupColorIdx=0;const groupColorMap={};
-  let t=`<table><thead><tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
-  groupSpans.forEach(({label,count})=>{
-    if(!label){for(let i=0;i<count;i++)t+=`<th style="background:var(--bg-card2)"></th>`;return;}
-    if(!groupColorMap[label]){groupColorMap[label]=GROUP_COLORS[groupColorIdx%GROUP_COLORS.length];groupColorIdx++;}
-    t+=`<th colspan="${count}" style="background:${groupColorMap[label]};color:#cde;font-size:9px;font-weight:700;text-align:center;border-bottom:1px solid rgba(255,255,255,.1);white-space:nowrap">▶ ${label}</th>`;
-  });
-  t+=`</tr><tr><th>날짜</th>`;
+  const t_header=buildKrGroupHeaderRow(sectorHdrs, groupMap);
+  let t=`<table><thead>${t_header}<tr><th>날짜</th>`;
   sectorHdrs.forEach(name=>{
     const fixed=KR_FIXED[name];let bg,fg;
     if(fixed){bg=fixed.bg;fg=fixed.fg;}else{const c=secColorMap[name]||{bg:'#2e3a50',fg:'#e2e8f0'};bg=c.bg;fg=c.fg;}
