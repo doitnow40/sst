@@ -137,11 +137,13 @@ tr:hover td:first-child{color:var(--text-primary)}
 .sector-card-header{padding:10px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border)}
 .sector-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
 .sector-count{margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
-/* 섹터 평균 양수/음수에 따른 카드 배경색 — 종목 영역에 더 진하게 */
-.sector-card.avg-up{border-color:rgba(239,83,80,.35)}
-.sector-card.avg-up .sector-stocks{background:rgba(239,83,80,.09)}
-.sector-card.avg-dn{border-color:rgba(66,165,245,.35)}
-.sector-card.avg-dn .sector-stocks{background:rgba(66,165,245,.09)}
+/* 섹터 평균 양수/음수에 따른 카드 배경색 — 카드 전체에 진하게 */
+.sector-card.avg-up{background:rgba(239,83,80,.18);border-color:rgba(239,83,80,.7);border-width:1.5px}
+.sector-card.avg-up .sector-stocks{background:rgba(239,83,80,.15)}
+.sector-card.avg-up .sector-card-header{background:rgba(239,83,80,.12)}
+.sector-card.avg-dn{background:rgba(66,165,245,.18);border-color:rgba(66,165,245,.7);border-width:1.5px}
+.sector-card.avg-dn .sector-stocks{background:rgba(66,165,245,.15)}
+.sector-card.avg-dn .sector-card-header{background:rgba(66,165,245,.12)}
 .sector-stocks{padding:8px 14px}
 /* ★ 종목 행: 메모 아이콘을 오른쪽 끝으로 이동해 종목명 정렬 통일 */
 .stock-item{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;column-gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:11px;position:relative}
@@ -396,6 +398,11 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
       </div>
 
       <!-- ② 컨트롤 + 통계 + 표 -->
+      <!-- 항상 보이는 오늘 실시간 안내 바 (KR History) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
+        <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
+        <button onclick="refreshKrToday(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+      </div>
       <div class="controls-bar">
         <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
         <button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
@@ -407,10 +414,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <span class="font-size-display" id="fontSizeLabel">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
-        <!-- 오늘 실시간 갱신 버튼 (항상 표시) -->
-        <button id="kr-refresh-btn" onclick="refreshKrToday(this)"
-          style="margin-left:auto;font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,183,77,.45);background:rgba(255,183,77,.12);color:#ffb74d;cursor:pointer;font-family:var(--font-mono);white-space:nowrap"
-          title="오늘 실시간 데이터 갱신 (약 20분 지연값)">🔄 오늘 데이터 갱신</button>
+
       </div>
       <div id="kr-stats" class="stats-row"></div>
       <div class="table-container">
@@ -486,6 +490,11 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
         <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
         <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
+      <!-- 항상 보이는 오늘 실시간 안내 바 (US History) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
+        <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
+        <button onclick="refreshUsToday(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+      </div>
         <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
         <div class="font-ctrl">
           <span class="font-ctrl-label">글자 크기</span>
@@ -493,10 +502,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <span class="font-size-display" id="fontSizeLabelUs">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
-        <!-- 오늘 실시간 갱신 버튼 (항상 표시) -->
-        <button id="us-refresh-btn" onclick="refreshUsToday(this)"
-          style="margin-left:auto;font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid rgba(239,83,80,.45);background:rgba(239,83,80,.12);color:#ef9a9a;cursor:pointer;font-family:var(--font-mono);white-space:nowrap"
-          title="오늘 실시간 데이터 갱신 (약 20분 지연값)">🔄 오늘 데이터 갱신</button>
+
       </div>
       <div id="us-stats" class="stats-row"></div>
       <div class="table-container">
@@ -1887,9 +1893,7 @@ function renderUsTableOnly(){
 
 // ━━━ 오늘 데이터 강제 갱신 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function refreshKrToday(btn){
-  // controls-bar 버튼과 notice 버튼 둘 다 처리
-  const ctrlBtn=document.getElementById('kr-refresh-btn');
-  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=true;b.textContent='갱신 중...';});
+  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
   S.krToday=null;
   try{
     const d=await api('kr_today',0);
@@ -1898,11 +1902,10 @@ async function refreshKrToday(btn){
     if(n&&d.date) n.style.display='';
     renderKr();
   }catch(e){}
-  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=false;b.textContent='🔄 오늘 데이터 갱신';});
+  if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
 }
 async function refreshUsToday(btn){
-  const ctrlBtn=document.getElementById('us-refresh-btn');
-  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=true;b.textContent='갱신 중...';});
+  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
   S.usToday=null;
   try{
     const d=await api('us_today',0);
@@ -1911,7 +1914,7 @@ async function refreshUsToday(btn){
     if(n&&d.date) n.style.display='';
     renderUs();
   }catch(e){}
-  [btn,ctrlBtn].filter(Boolean).forEach(b=>{b.disabled=false;b.textContent='🔄 오늘 데이터 갱신';});
+  if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
 }
 async function refreshKrList(btn){
   if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
