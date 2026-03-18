@@ -111,7 +111,7 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 /* TABLE */
 .table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative}
 /* 오늘 실시간 주석 (표 우상단) */
-.table-today-notice{position:absolute;top:6px;right:14px;font-size:9px;color:#ffb74d;font-family:var(--font-mono);background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);border-radius:4px;padding:2px 7px;z-index:10;pointer-events:none}
+.table-today-notice{position:absolute;top:6px;right:14px;font-size:9px;color:#ffb74d;font-family:var(--font-mono);background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);border-radius:4px;padding:2px 7px;z-index:10;display:flex;align-items:center;gap:4px}
 .table-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 310px)}
 .table-scroll::-webkit-scrollbar{height:10px;width:10px}
 .table-scroll::-webkit-scrollbar-track{background:var(--bg-card2);border-radius:5px}
@@ -352,7 +352,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-kr-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇰🇷</div>
-        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩 · <span style="color:#ffb74d">오늘 행은 약 20분 지연된 실시간값</span></div></div>
+        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span></div></div>
         <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
       </div>
 
@@ -405,7 +405,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
       </div>
       <div id="kr-stats" class="stats-row"></div>
       <div class="table-container">
-        <span class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 행: 약 20분 지연</span>
+        <div class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신 <button onclick="refreshKrToday(this)" style="margin-left:6px;font-size:8px;padding:1px 6px;border-radius:3px;border:1px solid rgba(255,183,77,.5);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 지금 갱신</button></div>
         <div class="table-scroll" id="kr-table">
         <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
       </div></div>
@@ -424,6 +424,11 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 (시트에서 동적 로딩)</div></div>
         <div class="page-badge badge-kr">KR STOCKS</div>
       </div>
+      <!-- 실시간 안내 + 갱신 버튼 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:6px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:10px;color:#ffb74d;font-family:var(--font-mono)">
+        <span>● 종목 등락률: 오늘 실시간 Data (약 20분 지연 · 페이지 로드 시 갱신)</span>
+        <button onclick="refreshKrList(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 지금 갱신</button>
+      </div>
       <div class="ad-slot ad-slot-top"><span>광고 영역 (카카오 Adfit)</span></div>
       <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
       <div class="ad-slot ad-slot-btm"><span>광고 영역 (카카오 Adfit)</span></div>
@@ -433,7 +438,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-us-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇺🇸</div>
-        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년 · <span style="color:#ffb74d">오늘 행은 약 20분 지연된 실시간값</span></div></div>
+        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년 · <span style="color:#ffb74d">오늘 실시간 Data는 약 20분 지연된 값</span></div></div>
         <div class="page-badge badge-us" id="us-status">로딩 중...</div>
       </div>
 
@@ -482,7 +487,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
       </div>
       <div id="us-stats" class="stats-row"></div>
       <div class="table-container">
-        <span class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 행: 약 20분 지연</span>
+        <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 페이지 로드 시 갱신 <button onclick="refreshUsToday(this)" style="margin-left:6px;font-size:8px;padding:1px 6px;border-radius:3px;border:1px solid rgba(239,83,80,.5);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 지금 갱신</button></div>
         <div class="table-scroll" id="us-table">
         <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
       </div></div>
@@ -1859,7 +1864,37 @@ function renderUsTableOnly(){
   document.getElementById('us-table').innerHTML=t;
 }
 
-// ━━━ NAVIGATION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ 오늘 데이터 강제 갱신 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function refreshKrToday(btn){
+  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
+  S.krToday=null;
+  try{
+    const d=await api('kr_today',0);
+    S.krToday=d;
+    const n=document.getElementById('kr-today-notice');
+    if(n&&d.date) n.style.display='';
+    renderKr();
+  }catch(e){}
+  if(btn){btn.disabled=false;btn.textContent='🔄 지금 갱신';}
+}
+async function refreshUsToday(btn){
+  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
+  S.usToday=null;
+  try{
+    const d=await api('us_today',0);
+    S.usToday=d;
+    const n=document.getElementById('us-today-notice');
+    if(n&&d.date) n.style.display='';
+    renderUs();
+  }catch(e){}
+  if(btn){btn.disabled=false;btn.textContent='🔄 지금 갱신';}
+}
+async function refreshKrList(btn){
+  if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
+  S.krLOk=false; S.krSectors=null;
+  await loadKrList();
+  if(btn){btn.disabled=false;btn.textContent='🔄 지금 갱신';}
+}
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
 function go(page,el){
   PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
@@ -1916,11 +1951,17 @@ function renderKrListFiltered(){
   sectors.forEach((sec,i)=>{
     const c=C[i%C.length];
     const isWatched=WATCHED_SECTORS.has(sec.sector);
+    // 섹터 평균 계산
+    const chgVals=sec.stocks.map(s=>s.chg).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+    const secAvg=chgVals.length?(chgVals.reduce((a,b)=>a+b,0)/chgVals.length):null;
+    const avgHtml=secAvg!==null
+      ? `<span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:4px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
+      : '';
     h+=`<div class="sector-card${isWatched?' watched':''}">`;
     h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
     h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
     if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-    h+=`<span class="sector-count">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
+    h+=`${avgHtml}<span class="sector-count" style="margin-left:auto">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
     sec.stocks.forEach(s=>{
       const chg=s.chg;
       let chgHtml='';
