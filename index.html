@@ -106,8 +106,11 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 /* TABLE */
 .table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .table-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 310px)}
-.table-scroll::-webkit-scrollbar{height:5px;width:5px}
-.table-scroll::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+.table-scroll::-webkit-scrollbar{height:10px;width:10px}
+.table-scroll::-webkit-scrollbar-track{background:var(--bg-card2);border-radius:5px}
+.table-scroll::-webkit-scrollbar-thumb{background:#3a4a65;border-radius:5px;border:2px solid var(--bg-card2)}
+.table-scroll::-webkit-scrollbar-thumb:hover{background:#4a5a80}
+.table-scroll::-webkit-scrollbar-corner{background:var(--bg-card2)}
 table{border-collapse:collapse;width:max-content;min-width:100%}
 thead{position:sticky;top:0;z-index:10}
 th{background:var(--bg-card2);padding:6px 4px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border);text-align:center}
@@ -984,7 +987,8 @@ function avg20rowFromData(sectorHdrs, avg20Data, mode){
 function sparkline5row(sectorHdrs, filtered){
   if(filtered.length<2) return '';
   const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse(); // 오래된→최신 순
-  let h='<tr class="avg-row"><td class="avg-row-label" style="font-size:8px">5D 추이</td>';
+  // 헤더: 색상 의미 범례 포함
+  let h=`<tr class="avg-row"><td class="avg-row-label" style="font-size:8px;line-height:1.5">5D 추이<br><span style="color:#ef5350;font-size:7px">▲상승</span>&nbsp;<span style="color:#42a5f5;font-size:7px">▼하락</span></td>`;
   sectorHdrs.forEach((name,ci)=>{
     const vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
     if(vals.length>=2){
@@ -1469,6 +1473,8 @@ function renderUsChart(){
   });
   const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
   usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+  // ★ 마우스 위치 기준 값 내림차순 정렬 (KR 차트와 동일)
+  usOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
   usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
   usChartAllOn=true;
 }
