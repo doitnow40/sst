@@ -41,7 +41,12 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 .header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
 
 /* ★ 시트 읽은 시각 표시 (LIVE 대신) */
-.sheet-read-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-secondary);font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap}
+.sheet-read-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-secondary);font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;cursor:help;position:relative}
+.sheet-read-badge:hover::after{content:attr(data-tooltip);position:absolute;top:calc(100% + 6px);right:0;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:8px 12px;font-size:10px;color:#b0d4f1;white-space:pre;line-height:1.8;z-index:9999;pointer-events:none;min-width:220px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.countdown-badge{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap}
+.countdown-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.countdown-dot.kr{background:#4fc3f7}
+.countdown-dot.us{background:#ef5350}
 .sheet-read-dot{width:5px;height:5px;background:#66bb6a;border-radius:50%}
 .clock{font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
 
@@ -148,6 +153,7 @@ tr:hover td:first-child{color:var(--text-primary)}
 .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;color:var(--text-muted);gap:14px}
 .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent-kr);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* NOTICE */
 .notice-box{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent-gold);border-radius:7px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:var(--text-secondary);line-height:1.8}
@@ -288,10 +294,15 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div class="logo-sub">한국 · 미국 섹터 등락률 트래커</div>
   </div>
   <div class="header-right">
-    <!-- ★ LIVE 제거 → 시트 읽은 시각으로 교체 -->
-    <div class="sheet-read-badge" id="sheetReadBadge" title="Google Sheets를 마지막으로 읽은 시각 (KST)">
+    <div class="sheet-read-badge" id="sheetReadBadge"
+      data-tooltip="🇰🇷 한국: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 미국: 매일 06:00 KST 자동 업데이트&#10;&#10;※ 장중에는 전일 데이터가 표시됩니다">
       <div class="sheet-read-dot"></div>
-      <span id="sheetReadTime">시트 읽는 중...</span>
+      <span id="sheetReadTime">데이터 로딩 중...</span>
+    </div>
+    <!-- 다음 업데이트 카운트다운 -->
+    <div class="countdown-badge" id="countdown-badge" title="다음 데이터 자동 업데이트까지 남은 시간">
+      <div class="countdown-dot" id="countdown-dot"></div>
+      <span id="countdown-text">--:--:--</span>
     </div>
     <div class="clock" id="clock">--:--:--</div>
   </div>
@@ -338,7 +349,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-kr-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇰🇷</div>
-        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 시트에서 동적 로딩</div></div>
+        <div><div class="page-title">한국 섹터 HISTORY</div><div class="page-subtitle">섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩 · <span style="color:#ffb74d">오늘 행은 약 20분 지연된 실시간값</span></div></div>
         <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
       </div>
 
@@ -417,7 +428,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
     <div id="page-us-history" style="display:none">
       <div class="page-header">
         <div class="page-flag">🇺🇸</div>
-        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년</div></div>
+        <div><div class="page-title">미국 섹터 HISTORY</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년 · <span style="color:#ffb74d">오늘 행은 약 20분 지연된 실시간값</span></div></div>
         <div class="page-badge badge-us" id="us-status">로딩 중...</div>
       </div>
 
@@ -564,7 +575,12 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           데이터는 <strong>매 영업일 장 마감 후 자동으로 업데이트</strong>됩니다.<br><br>
           · 🇰🇷 한국: 매일 장 마감 후(오후 3시 30분 이후) 업데이트<br>
           · 🇺🇸 미국: 매일 미국 장 마감 후(한국시간 기준 다음날 새벽) 업데이트<br><br>
-          화면 우상단의 <strong>"시트 읽음: 날짜/시각"</strong>은 현재 표시 중인 데이터가 마지막으로 갱신된 시각입니다. 장중에는 전일 데이터가 표시됩니다.
+          화면 우상단의 <strong>"데이터 기준: 날짜/시각"</strong>은 현재 표시 중인 데이터가 마지막으로 갱신된 시각입니다. 장중에는 전일 데이터가 표시됩니다.<br><br>
+          <strong>📡 오늘(장중) 실시간 행</strong><br>
+          섹터 History 표 최상단에 <span style="color:#ffb74d">오늘 날짜로 표시된 행</span>은 현재 장중 실시간 등락률을 반영한 행입니다.<br>
+          · 🇰🇷 한국: 각 종목의 현재 등락률 평균으로 계산<br>
+          · 🇺🇸 미국: 각 ETF의 현재 등락률로 표시<br>
+          · ⚠️ <strong>약 20분 지연된 값</strong>이 표시됩니다 (데이터 제공 특성상 실시간이 아닌 20분 지연값). 장 종료 후에는 최종 확정값으로 자동 교체됩니다.
         </div>
       </div>
 
@@ -823,7 +839,7 @@ const US_GROUPS={
 };
 
 // ━━━ STATE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null};
 
 // ━━━ FONT SIZE CONTROL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function changeFontSize(delta){
@@ -911,7 +927,7 @@ async function api(type,range){
 function updateSheetReadTime(sheetReadAt){
   if(!sheetReadAt) return;
   const el=document.getElementById('sheetReadTime');
-  if(el) el.textContent='시트 읽음: '+sheetReadAt+' (KST)';
+  if(el) el.textContent='데이터 기준: '+sheetReadAt+' (KST)';
 }
 
 // ━━━ DEMO DATA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1028,12 +1044,23 @@ async function loadKr(){
       document.getElementById('kr-status').textContent=d.count+'일 데이터';
     }
     updateSheetReadTime(d.sheetReadAt);
-    S.krD=d;S.krOk=true;renderKr();
+    S.krD=d; S.krOk=true;
+    // 오늘 실시간 데이터 병렬 로드
+    if(!IS_DEMO) loadKrToday();
+    renderKr();
   }catch(e){
     document.getElementById('kr-status').textContent='❌ 오류';
     document.getElementById('kr-table').innerHTML=
       `<div class="loading-state"><div style="color:#ef9a9a">⚠️ 로드 실패: ${e.message}<br><small style="color:var(--text-muted)">GAS 웹앱 배포 및 URL 설정을 확인하세요</small></div></div>`;
   }
+}
+
+async function loadKrToday(){
+  try{
+    const d=await api('kr_today',0);
+    S.krToday=d; // {sectors:{섹터명:값}, date, delayed}
+    renderKr(); // 오늘 행 포함해서 재렌더
+  }catch(e){ S.krToday=null; }
 }
 
 function renderKr(){
@@ -1088,6 +1115,22 @@ function renderKr(){
    +sparkline5row(sectorHdrs,f)
    +separatorRow(sectorHdrs.length)
    +'</thead><tbody>';
+
+  // ★ 오늘 실시간 행 (최상단, GOOGLEFINANCE 20분 지연)
+  if(S.krToday&&S.krToday.sectors){
+    const todayMap=S.krToday.sectors;
+    const todayDate=S.krToday.date||'오늘';
+    t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
+    t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:9px">${todayDate}<br><span style="font-size:7px;color:var(--text-muted)">▲20분지연</span></td>`;
+    sectorHdrs.forEach(name=>{
+      const val=todayMap[name];
+      if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
+      const c=KR_FIXED[name]?.type==='ADR'?adrCell(val):pctCell(val,15);
+      const isW=WATCHED_SECTORS.has(name);
+      t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+    });
+    t+=`</tr>`;
+  }
 
   f.forEach(row=>{
     t+=`<tr><td>${row[0]||''}</td>`;
@@ -1294,9 +1337,19 @@ function renderKrChart(){
   // ── 라인 차트 ──
   document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
   wrap.style.height='280px';
-  const labels=chartRows.map(r=>r[0]);
 
-  // Top5 계산 (코스피·코스닥 제외 섹터 기준)
+  // ★ 오늘 실시간 데이터를 차트 맨 오른쪽에 추가
+  const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+  const todayDate=S.krToday?S.krToday.date:'';
+  const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
+
+  // 오늘 날짜가 이미 chartRows에 없는 경우에만 추가
+  const latestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
+  const addToday=hasTodayData&&todayDate!==latestDate;
+
+  const labels=[...chartRows.map(r=>r[0]),...(addToday?[todayDate+'★']:[] )];
+
+  // Top5 계산
   const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
   const avgForTop=pureSecNames.map(name=>{
     const ci=H.indexOf(name);
@@ -1304,18 +1357,22 @@ function renderKrChart(){
     return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
   }).sort((a,b)=>b.avg-a.avg);
   const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
-  // 코스피·코스닥은 항상 ON
   top5.add('코스피'); top5.add('코스닥');
 
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
     const data=chartRows.map(r=>{const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
+    // 오늘 데이터 포인트 추가
+    if(addToday){
+      const tv=todayMap[name];
+      data.push(tv!==undefined&&!isNaN(tv)?tv:null);
+    }
     const isIndex=name==='코스피'||name==='코스닥';
     const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
     return{label:name,data,borderColor:color,backgroundColor:color+'22',
       borderWidth:isIndex?2.5:1.5,pointRadius:isIndex?3:2,pointHoverRadius:6,
       tension:0.3,fill:false,spanGaps:true,order:isIndex?0:1,
-      hidden:!top5.has(name)}; // ★ top5 아니면 기본 hidden
+      hidden:!top5.has(name)};
   });
   krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:CHART_OPTS_BASE});
   krChartAllOn=true;
@@ -1443,7 +1500,14 @@ function renderUsChart(){
   // ── 라인 차트 ──
   document.getElementById('us-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
   wrap.style.height='320px';
-  const labels=chartRows.map(r=>r[0]);
+
+  // ★ 오늘 실시간 포인트 추가
+  const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+  const usTodayDate=S.usToday?S.usToday.date:'';
+  const usLatestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
+  const addUsToday=usTodayDate&&usTodayDate!==usLatestDate&&Object.keys(usTodayMap).length>0;
+
+  const labels=[...chartRows.map(r=>r[0]),...(addUsToday?[usTodayDate+'★']:[])];
 
   // Top5 계산 (YIELD/VIX 제외)
   const rankableNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
@@ -1453,12 +1517,16 @@ function renderUsChart(){
     return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
   }).sort((a,b)=>b.avg-a.avg);
   const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
-  // 주요 지수는 항상 ON
   ['S&P500','Nasdaq'].forEach(n=>top5.add(n));
 
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
     const data=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return null;const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
+    // 오늘 포인트 추가
+    if(addUsToday){
+      const tv=usTodayMap[name];
+      data.push(tv!==undefined&&!isNaN(tv)?tv:null);
+    }
     const m=US_META[name]||{};
     const isMainIndex=['S&P500','Nasdaq','DowJones','Russell2K'].includes(name);
     let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
@@ -1469,11 +1537,10 @@ function renderUsChart(){
     return{label:name,data,borderColor:color,backgroundColor:color+'22',
       borderWidth:isMainIndex?2.5:1.5,pointRadius:isMainIndex?3:2,pointHoverRadius:6,
       tension:0.3,fill:false,spanGaps:true,order:isMainIndex?0:1,
-      hidden:!top5.has(name)}; // ★ top5 아니면 기본 hidden
+      hidden:!top5.has(name)};
   });
   const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
   usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
-  // ★ 마우스 위치 기준 값 내림차순 정렬 (KR 차트와 동일)
   usOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
   usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
   usChartAllOn=true;
@@ -1501,12 +1568,22 @@ async function loadUs(){
     if(IS_DEMO){d=demoUs();document.getElementById('us-status').textContent='⚠️ 데모 모드';}
     else{d=await api('us_history',365);document.getElementById('us-status').textContent=d.count+'일 데이터';}
     updateSheetReadTime(d.sheetReadAt);
-    S.usD=d;S.usOk=true;renderUs();
+    S.usD=d; S.usOk=true;
+    if(!IS_DEMO) loadUsToday();
+    renderUs();
   }catch(e){
     document.getElementById('us-status').textContent='❌ 오류';
     document.getElementById('us-table').innerHTML=
       `<div class="loading-state"><div style="color:#ef9a9a">⚠️ 로드 실패: ${e.message}</div></div>`;
   }
+}
+
+async function loadUsToday(){
+  try{
+    const d=await api('us_today',0);
+    S.usToday=d;
+    renderUs();
+  }catch(e){ S.usToday=null; }
 }
 
 function renderUs(){
@@ -1539,6 +1616,21 @@ function renderUs(){
   t+='</tr><tr><th>Date</th>';
   sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px">${h}</th>`;});
   t+='</tr>'+avg5row(sh,f,'us')+'</thead><tbody>';
+
+  // ★ 오늘 실시간 행 (US Live Summary 기반, 20분 지연)
+  if(S.usToday&&S.usToday.sectors){
+    const todayMap=S.usToday.sectors;
+    const todayDate=S.usToday.date||'오늘';
+    t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
+    t+=`<td style="color:var(--accent-us);font-weight:700;font-size:9px">${todayDate}<br><span style="font-size:7px;color:var(--text-muted)">▲20분지연</span></td>`;
+    sh.forEach(name=>{
+      const val=todayMap[name];
+      if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
+      const c=usCell(name,val);
+      t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+    });
+    t+=`</tr>`;
+  }
 
   f.forEach(row=>{
     if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
@@ -2223,7 +2315,76 @@ async function saveWatchSectors(){
 document.querySelector('.main').addEventListener('scroll',()=>{
   document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
 });
-function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function tick(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  updateCountdown(now);
+}
+
+// ━━━ 다음 업데이트 카운트다운 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🇰🇷 한국: 매일 20:00 KST
+// 🇺🇸 미국: 매일 06:00 KST
+function updateCountdown(now){
+  const txt=document.getElementById('countdown-text');
+  const dot=document.getElementById('countdown-dot');
+  if(!txt||!dot) return;
+
+  // KST 기준 현재 시각
+  const kst=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const h=kst.getHours(), m=kst.getMinutes(), s=kst.getSeconds();
+  const nowSec=h*3600+m*60+s;
+
+  // 업데이트 시각 (초)
+  const KR_SEC=20*3600; // 20:00
+  const US_SEC=6*3600;  // 06:00
+
+  // 각 업데이트까지 남은 초 계산
+  function secsUntil(target){
+    let diff=target-nowSec;
+    if(diff<=0) diff+=86400; // 다음날
+    return diff;
+  }
+  const krLeft=secsUntil(KR_SEC);
+  const usLeft=secsUntil(US_SEC);
+
+  // 더 가까운 업데이트 선택
+  let isKr, left;
+  if(krLeft<=usLeft){isKr=true;left=krLeft;}
+  else{isKr=false;left=usLeft;}
+
+  // 30분 이내면 임박 표시
+  const imminent=left<=1800;
+
+  const hh=String(Math.floor(left/3600)).padStart(2,'0');
+  const mm=String(Math.floor((left%3600)/60)).padStart(2,'0');
+  const ss=String(left%60).padStart(2,'0');
+
+  const flag=isKr?'🇰🇷':'🇺🇸';
+  txt.textContent=`${flag} ${hh}:${mm}:${ss}`;
+  dot.className='countdown-dot '+(isKr?'kr':'us');
+
+  // 색상: 임박 시 주황/빨강
+  const badge=document.getElementById('countdown-badge');
+  if(badge){
+    if(left<=300){  // 5분 이내 — 빨강 깜빡
+      badge.style.borderColor='#ef5350';
+      badge.style.color='#ef9a9a';
+      badge.style.animation='pulse 1s infinite';
+    } else if(imminent){ // 30분 이내 — 주황
+      badge.style.borderColor='#ff6f00';
+      badge.style.color='#ffb74d';
+      badge.style.animation='';
+    } else {
+      badge.style.borderColor='var(--border)';
+      badge.style.color='var(--text-muted)';
+      badge.style.animation='';
+    }
+    // 툴팁 업데이트
+    const nextKr=new Date(kst); nextKr.setHours(20,0,0,0); if(krLeft<60) nextKr.setDate(nextKr.getDate()+1);
+    const nextUs=new Date(kst); nextUs.setHours(6,0,0,0);  if(usLeft<60) nextUs.setDate(nextUs.getDate()+1);
+    badge.title=`🇰🇷 한국 업데이트: 오늘 20:00 KST (${Math.floor(krLeft/60)}분 후)\n🇺🇸 미국 업데이트: 내일 06:00 KST (${Math.floor(usLeft/60)}분 후)`;
+  }
+}
 tick();setInterval(tick,1000);
 
 // ━━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
