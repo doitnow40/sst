@@ -128,10 +128,18 @@ tr:hover td:first-child{color:var(--text-primary)}
 .sector-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px}
 .sector-count{margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)}
 .sector-stocks{padding:8px 14px}
-.stock-item{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:11px}
+/* ★ 종목 행: 메모 아이콘을 오른쪽 끝으로 이동해 종목명 정렬 통일 */
+.stock-item{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;column-gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:11px;position:relative}
 .stock-item:last-child{border-bottom:none}
-.stock-name{color:var(--text-primary)}
-.stock-ticker{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px}
+.stock-name{color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stock-ticker{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+/* ━━━ FAB 버튼 그룹 (우하단 고정) ━━━ */
+#fab-group{position:fixed;bottom:20px;right:62px;display:flex;flex-direction:row;gap:7px;align-items:center;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none}
+#fab-group.visible{opacity:1;pointer-events:auto}
+.fab-btn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(79,195,247,.4);background:rgba(30,37,53,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text-secondary);transition:all .2s;user-select:none}
+.fab-btn:hover{border-color:var(--accent-kr);color:var(--text-primary);background:rgba(79,195,247,.18)}
+.fab-btn.active{border-color:#ff6f00;color:#ff6f00;background:rgba(255,111,0,.18)}
 
 /* LOADING */
 .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;color:var(--text-muted);gap:14px}
@@ -720,7 +728,13 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 
   </main>
 </div>
-<div id="scrollTop" onclick="document.querySelector('.main').scrollTo({top:0,behavior:'smooth'})">↑</div>
+<div id="scrollTop" onclick="document.querySelector('.main').scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</div>
+
+<!-- ★ FAB 버튼 그룹 (섹터 종목 List 페이지에서만 표시) -->
+<div id="fab-group">
+  <div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬">🔤</div>
+  <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
+</div>
 
 <script>
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1484,48 +1498,19 @@ async function loadKrList(){
   const wrap=document.getElementById('kr-list');
   try{
     let sectors;
-    if(IS_DEMO){sectors=KR_FALLBACK.map(s=>({sector:s.sector,stocks:s.stocks.map(n=>({name:n,ticker:''}))}))}
+    if(IS_DEMO){sectors=KR_FALLBACK.map(s=>({sector:s.sector,stocks:s.stocks.map(n=>({name:n,ticker:'',chg:null,memo:''}))}))}
     else{const d=await api('kr_list',0);sectors=d.sectors;if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);}
     S.krLOk=true;
-    const C=KR_SEC_COLORS;
-    let h='<div class="sector-grid">';
-    sectors.forEach((sec,i)=>{
-      const c=C[i%C.length];
-      const isWatched=WATCHED_SECTORS.has(sec.sector);
-      h+=`<div class="sector-card${isWatched?' watched':''}">`;
-      h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
-      h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
-      if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-      h+=`<span class="sector-count">${sec.stocks.length}개 종목</span></div>`;
-      h+=`<div class="sector-stocks">`;
-      sec.stocks.forEach(s=>{
-        const chg=s.chg;
-        let chgHtml='';
-        if(chg!==null&&chg!==undefined&&!isNaN(chg)){
-          const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
-          const sign=chg>0?'+':'';
-          chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
-        }
-        // 메모 아이콘 + 툴팁
-        const memo=s.memo||'';
-        const memoHtml=memo
-          ? `<i class="memo-icon" tabindex="0" title="${memo.replace(/"/g,'&quot;')}">ℹ</i><span class="memo-bubble">${memo.replace(/</g,'&lt;')}</span>`
-          : '';
-        h+=`<div class="stock-item">${memoHtml}<span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}</div>`;
-      });
-      h+=`</div></div>`;
-    });
-    h+='</div>';
-    wrap.innerHTML=h;
+    S.krSectors=sectors; // ★ 원본 저장 (정렬/필터용)
+    renderKrListFiltered(); // 정렬/필터 적용해서 렌더
   }catch(e){wrap.innerHTML=`<div class="loading-state"><div style="color:#ef9a9a">⚠️ 로드 실패: ${e.message}</div></div>`;}
 }
 
 // ━━━ US LIST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderUsList(){
+function renderUsList(sorted){
   const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
   const GN={INDEX:{l:'주요 지수 & 지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
 
-  // US History 데이터에서 최신 등락률 추출
   const usLatest={};
   if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
     const H=S.usD.headers;
@@ -1538,10 +1523,14 @@ function renderUsList(){
 
   const groups={};
   Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
+  // 그룹 내 정렬
+  if(sorted) Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n));});
+
   let h='<div class="sector-grid">';
   ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
     if(!groups[g])return;
     const info=GN[g]||{l:g,i:'📌'};
+    // 주목필터: US는 그룹별 카드라 watchedOnly 적용 안 함 (그룹 전체 표시)
     h+=`<div class="sector-card"><div class="sector-card-header"><span style="font-size:17px">${info.i}</span><span class="sector-tag" style="background:${GC[g]};color:#fff">${info.l}</span><span class="sector-count">${groups[g].length}개</span></div><div class="sector-stocks">`;
     groups[g].forEach(({n,m})=>{
       const chg=usLatest[n];
@@ -1551,7 +1540,7 @@ function renderUsList(){
         const sign=chg>0?'+':'';
         chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
       }
-      h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}</div>`;
+      h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
     });
     h+=`</div></div>`;});
   h+='</div>';
@@ -1575,12 +1564,74 @@ function go(page,el){
   else if(page==='us-history')loadUs();
   else if(page==='kr-list')loadKrList();
   else if(page==='us-list'){
-    // US History 데이터 없으면 먼저 로드 후 렌더
     if(!S.usOk) loadUs().then(()=>renderUsList());
     else renderUsList();
   }
   else if(page==='admin')initAdminPage();
   document.querySelector('.main').scrollTo({top:0});
+  // FAB: 섹터 종목 List 페이지에서만 표시
+  const fab=document.getElementById('fab-group');
+  if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
+  if(page!=='kr-list'&&page!=='us-list'){listSorted=false;watchedOnly=false;document.getElementById('fab-sort')?.classList.remove('active');document.getElementById('fab-watch')?.classList.remove('active');}
+}
+
+// ━━━ FAB: 섹터 리스트 정렬/필터 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let listSorted=false;
+let watchedOnly=false;
+
+function toggleListSort(){
+  listSorted=!listSorted;
+  document.getElementById('fab-sort').classList.toggle('active',listSorted);
+  rerenderCurrentList();
+}
+function toggleWatchedOnly(){
+  watchedOnly=!watchedOnly;
+  document.getElementById('fab-watch').classList.toggle('active',watchedOnly);
+  rerenderCurrentList();
+}
+function rerenderCurrentList(){
+  const krVisible=document.getElementById('page-kr-list')?.style.display!=='none';
+  const usVisible=document.getElementById('page-us-list')?.style.display!=='none';
+  if(krVisible) renderKrListFiltered();
+  if(usVisible) renderUsList(listSorted);
+}
+
+// KR List 정렬/필터 렌더 (원본 S.krSectors 기반)
+function renderKrListFiltered(){
+  const wrap=document.getElementById('kr-list');
+  if(!wrap||!S.krLOk||!S.krSectors) return;
+  let sectors=[...S.krSectors];
+  if(watchedOnly) sectors=sectors.filter(s=>WATCHED_SECTORS.has(s.sector));
+  if(listSorted) sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
+  const C=KR_SEC_COLORS;
+  let h='<div class="sector-grid">';
+  sectors.forEach((sec,i)=>{
+    const c=C[i%C.length];
+    const isWatched=WATCHED_SECTORS.has(sec.sector);
+    h+=`<div class="sector-card${isWatched?' watched':''}">`;
+    h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
+    h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
+    if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
+    h+=`<span class="sector-count">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
+    sec.stocks.forEach(s=>{
+      const chg=s.chg;
+      let chgHtml='';
+      if(chg!==null&&chg!==undefined&&!isNaN(chg)){
+        const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
+        const sign=chg>0?'+':'';
+        chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
+      }
+      const memo=s.memo||'';
+      const memoHtml=memo
+        ?`<i class="memo-icon" tabindex="0" title="${memo.replace(/"/g,'&quot;')}">ℹ</i><span class="memo-bubble">${memo.replace(/</g,'&lt;')}</span>`
+        :`<span style="width:14px;flex-shrink:0;display:inline-block"></span>`;
+      h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}${memoHtml}</div>`;
+    });
+    h+=`</div></div>`;
+  });
+  if(watchedOnly&&sectors.length===0) h+=`<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:12px">⭐ 주목 섹터가 없습니다.<br>관리자 페이지 > 주목 섹터에서 설정해주세요.</div>`;
+  h+='</div>';
+  wrap.innerHTML=h;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1968,7 +2019,8 @@ async function saveWatchSectors(){
     const msg=document.getElementById('watch-save-msg');
     msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
     msg.style.display='inline';
-    setTimeout(()=>{msg.style.display='none';},3000);
+    setTimeout(()=>{msg.style.display='none';},3000);  
+setTimeout(()=>{msg.스타일. display='none'; },3000);
     onWatchChange();
   }catch(e){
     alert('❌ 저장 실패: '+e.message);
