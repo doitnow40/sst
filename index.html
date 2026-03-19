@@ -7,7 +7,7 @@
 <!-- 📈 파비콘: 주식 차트 상승 아이콘 (SVG 인라인) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Courier+Prime:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- ★ Google Analytics GA4 — 측정 ID를 교체하세요 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
@@ -27,7 +27,7 @@
   --accent-kr:#4fc3f7; --accent-us:#ef5350; --accent-gold:#ffc107;
   --sidebar-w:220px; --header-h:56px;
   --font-body:'Noto Sans KR',sans-serif;
-  --font-mono:'Courier Prime','Courier New',monospace;
+  --font-mono:'Inter','Helvetica Neue',sans-serif;
   --font-display:'Bebas Neue',sans-serif;
   --tbl-font-size:7px;   /* ★ default 7px — 더 많은 섹터 한눈에 */
   --tbl-cell-pad:3px 4px;
@@ -125,9 +125,9 @@ thead{position:sticky;top:0;z-index:10}
 th{background:var(--bg-card2);padding:6px 4px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border);text-align:center}
 th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:80px}
 /* ★ td 글자 크기는 CSS variable로 제어 */
-td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-feature-settings:'zero' 0,'tnum' 1;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}
-/* 0 슬래시 제거: slashed-zero 기능 끄기 */
-th,td{font-feature-settings:'zero' 0,'tnum' 1,'kern' 1}
+td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'case' 1;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}
+/* Inter 숫자: tabular, 슬래시 0 없음 */
+th,td{font-feature-settings:'tnum' 1,'case' 1,'kern' 1}
 td:first-child{text-align:left;position:sticky;left:0;z-index:5;background:var(--bg-card);color:var(--text-secondary);min-width:80px}
 tr:hover td{filter:brightness(1.15)}
 tr:hover td:first-child{color:var(--text-primary)}
