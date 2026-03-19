@@ -1347,29 +1347,36 @@ function renderKrChart(){
     const alreadyHasToday=chartRows.some(r=>r[0]===todayHmDate);
 
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
-    // 오늘 컬럼 헤더 (맨 왼쪽, 최신)
-    if(hasToday&&!alreadyHasToday) html+=`<th style="color:var(--accent-kr);font-weight:700">${todayHmDate.slice(5)}★</th>`;
+    // 최신→과거(reverse=true): 오늘★ 맨 왼쪽 | 과거→최신(reverse=false): 오늘★ 맨 오른쪽
+    const todayTh=hasToday&&!alreadyHasToday
+      ?`<th style="color:var(--accent-kr);font-weight:700">${todayHmDate.slice(5)}★</th>`
+      :'';
+    if(krHeatmapReverse) html+=todayTh;
     dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
+    if(!krHeatmapReverse) html+=todayTh;
     html+='</tr></thead><tbody>';
 
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       html+=`<tr><td>${name}</td>`;
-      // 오늘 실시간 값
-      if(hasToday&&!alreadyHasToday){
+      // 오늘 실시간 값 (reverse=true: 맨 왼쪽, false: 맨 오른쪽)
+      const todayTd=()=>{
+        if(!hasToday||alreadyHasToday) return '';
         const tv=(todayHmMajor[name]!==undefined)?todayHmMajor[name]:todayHmMap[name];
         const isIndex=name==='코스피'||name==='코스닥';
         const c=(tv!==undefined&&tv!==null)?
           (isIndex?pctCell(tv,5):pctCell(tv,15)):
           {bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
-        html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}border-left:2px solid rgba(79,195,247,.5)">${c.t||''}</td>`;
-      }
+        return `<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold;':''}border-left:2px solid rgba(79,195,247,.5)">${c.t||''}</td>`;
+      };
+      if(krHeatmapReverse) html+=todayTd();
       dispRows.forEach(r=>{
         const v=r[colIdx];
         const isIndex=name==='코스피'||name==='코스닥';
         const c=isIndex?pctCell(v,5):pctCell(v,15);
         html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
       });
+      if(!krHeatmapReverse) html+=todayTd();
       html+='</tr>';
     });
     html+='</tbody></table></div>';
@@ -1538,15 +1545,19 @@ function renderUsChart(){
     const usAlreadyHasToday=chartRows.some(r=>r[0]===usTodayHmDate);
 
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
-    if(usHasToday&&!usAlreadyHasToday) html+=`<th style="color:var(--accent-us);font-weight:700">${usTodayHmDate.slice(5)}★</th>`;
+    const usTodayTh=usHasToday&&!usAlreadyHasToday
+      ?`<th style="color:var(--accent-us);font-weight:700">${usTodayHmDate.slice(5)}★</th>`
+      :'';
+    if(usHeatmapReverse) html+=usTodayTh;
     dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
+    if(!usHeatmapReverse) html+=usTodayTh;
     html+='</tr></thead><tbody>';
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       const m=US_META[name]||{};
       html+=`<tr><td>${name}</td>`;
-      // 오늘 실시간 값
-      if(usHasToday&&!usAlreadyHasToday){
+      const usTodayTd=()=>{
+        if(!usHasToday||usAlreadyHasToday) return '';
         const tv=usTodayHmMap[name];
         let c;
         if(tv!==undefined&&tv!==null){
@@ -1554,8 +1565,9 @@ function renderUsChart(){
           else if(m.type==='VIX') c=vixCell(tv);
           else c=pctCell(tv,6);
         }else{c={bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};}
-        html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}border-left:2px solid rgba(239,83,80,.5)">${c.t||''}</td>`;
-      }
+        return `<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold;':''}border-left:2px solid rgba(239,83,80,.5)">${c.t||''}</td>`;
+      };
+      if(usHeatmapReverse) html+=usTodayTd();
       dispRows.forEach(r=>{
         const v=r[colIdx];
         if(String(v)==='휴장'){html+=`<td style="color:var(--text-muted);font-size:8px">휴장</td>`;return;}
@@ -1565,6 +1577,7 @@ function renderUsChart(){
         else c=pctCell(v,6);
         html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
       });
+      if(!usHeatmapReverse) html+=usTodayTd();
       html+='</tr>';
     });
     html+='</tbody></table></div>';
