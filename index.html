@@ -1256,7 +1256,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;    // 기본 1주(5일)
 let krChartType='line'; // 'line' | 'ranking' | 'heatmap'
-let krHeatmapReverse=false; // 히트맵 날짜 반전
+let krHeatmapReverse=true;  // ★ 기본값: 최신 날짜가 왼쪽
 
 const CHART_COLORS=[
   '#4fc3f7','#ef5350','#66bb6a','#ffa726','#ab47bc',
@@ -1307,7 +1307,15 @@ function setKrChartType(type,btn){
   if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
   // 히트맵일 때만 반전 버튼 표시
   const revBtn=document.getElementById('kr-reverse-btn');
-  if(revBtn) revBtn.style.display=(type==='heatmap')?'':'none';
+  if(revBtn){
+    revBtn.style.display=(type==='heatmap')?'':'none';
+    // 기본값 reverse=true이므로 버튼 활성화 표시
+    if(type==='heatmap'){
+      revBtn.style.background=krHeatmapReverse?'rgba(79,195,247,0.2)':'';
+      revBtn.style.borderColor=krHeatmapReverse?'var(--accent-kr)':'';
+      revBtn.style.color=krHeatmapReverse?'var(--accent-kr)':'';
+    }
+  }
   renderKrChart();
 }
 
@@ -1327,14 +1335,35 @@ function renderKrChart(){
     document.getElementById('kr-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
     if(krChart){krChart.destroy();krChart=null;}
     wrap.style.height='auto';
-    // 날짜 순서 반전 옵션
+    // 날짜 순서: 기본 최신→과거 (reverse=true)
     const dispRows=krHeatmapReverse?[...chartRows].reverse():chartRows;
+
+    // ★ 오늘 실시간 컬럼 데이터
+    const todayHmMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayHmMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
+    const todayHmDate=S.krToday?S.krToday.date:'';
+    const hasToday=todayHmDate&&(Object.keys(todayHmMap).length>0||Object.keys(todayHmMajor).length>0);
+    // 오늘이 이미 chartRows에 있는지 확인
+    const alreadyHasToday=chartRows.some(r=>r[0]===todayHmDate);
+
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
+    // 오늘 컬럼 헤더 (맨 왼쪽, 최신)
+    if(hasToday&&!alreadyHasToday) html+=`<th style="color:var(--accent-kr);font-weight:700">${todayHmDate.slice(5)}★</th>`;
     dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
     html+='</tr></thead><tbody>';
+
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       html+=`<tr><td>${name}</td>`;
+      // 오늘 실시간 값
+      if(hasToday&&!alreadyHasToday){
+        const tv=(todayHmMajor[name]!==undefined)?todayHmMajor[name]:todayHmMap[name];
+        const isIndex=name==='코스피'||name==='코스닥';
+        const c=(tv!==undefined&&tv!==null)?
+          (isIndex?pctCell(tv,5):pctCell(tv,15)):
+          {bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
+        html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}border-left:2px solid rgba(79,195,247,.5)">${c.t||''}</td>`;
+      }
       dispRows.forEach(r=>{
         const v=r[colIdx];
         const isIndex=name==='코스피'||name==='코스닥';
@@ -1460,7 +1489,7 @@ let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=5;
 let usChartType='line';
-let usHeatmapReverse=false;
+let usHeatmapReverse=true;  // ★ 기본값: 최신 날짜가 왼쪽
 
 function setUsChartPeriod(days,btn){
   usChartPeriod=days;
@@ -1475,7 +1504,14 @@ function setUsChartType(type,btn){
   const toggleBtn=document.querySelector('#page-us-history .chart-toggle-all:last-child');
   if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
   const revBtn=document.getElementById('us-reverse-btn');
-  if(revBtn) revBtn.style.display=(type==='heatmap')?'':'none';
+  if(revBtn){
+    revBtn.style.display=(type==='heatmap')?'':'none';
+    if(type==='heatmap'){
+      revBtn.style.background=usHeatmapReverse?'rgba(239,83,80,0.2)':'';
+      revBtn.style.borderColor=usHeatmapReverse?'var(--accent-us)':'';
+      revBtn.style.color=usHeatmapReverse?'var(--accent-us)':'';
+    }
+  }
   renderUsChart();
 }
 
@@ -1494,13 +1530,32 @@ function renderUsChart(){
     if(usChart){usChart.destroy();usChart=null;}
     wrap.style.height='auto';
     const dispRows=usHeatmapReverse?[...chartRows].reverse():chartRows;
+
+    // ★ 오늘 실시간 컬럼
+    const usTodayHmMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+    const usTodayHmDate=S.usToday?S.usToday.date:'';
+    const usHasToday=usTodayHmDate&&Object.keys(usTodayHmMap).length>0;
+    const usAlreadyHasToday=chartRows.some(r=>r[0]===usTodayHmDate);
+
     let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th>`;
+    if(usHasToday&&!usAlreadyHasToday) html+=`<th style="color:var(--accent-us);font-weight:700">${usTodayHmDate.slice(5)}★</th>`;
     dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
     html+='</tr></thead><tbody>';
     sectorNames.forEach(name=>{
       const colIdx=H.indexOf(name);
       const m=US_META[name]||{};
       html+=`<tr><td>${name}</td>`;
+      // 오늘 실시간 값
+      if(usHasToday&&!usAlreadyHasToday){
+        const tv=usTodayHmMap[name];
+        let c;
+        if(tv!==undefined&&tv!==null){
+          if(m.type==='YIELD') c=yldCell(tv);
+          else if(m.type==='VIX') c=vixCell(tv);
+          else c=pctCell(tv,6);
+        }else{c={bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};}
+        html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}border-left:2px solid rgba(239,83,80,.5)">${c.t||''}</td>`;
+      }
       dispRows.forEach(r=>{
         const v=r[colIdx];
         if(String(v)==='휴장'){html+=`<td style="color:var(--text-muted);font-size:8px">휴장</td>`;return;}
