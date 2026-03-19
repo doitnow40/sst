@@ -816,6 +816,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 
 <!-- ★ FAB 버튼 그룹 (섹터 종목 List 페이지에서만 표시) -->
 <div id="fab-group">
+  <div class="fab-btn" id="fab-rate-sort" onclick="toggleRateSort()" title="등락률 순 정렬">📊</div>
   <div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬">🔤</div>
   <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
 </div>
@@ -1834,7 +1835,20 @@ function renderUsList(sorted){
 
   const groups={};
   Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
-  if(sorted) Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n));});
+  // 정렬: 가나다 or 등락률
+  if(sorted){
+    Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n));});
+  } else if(rateSort!==0){
+    Object.keys(groups).forEach(g=>{
+      groups[g].sort((a,b)=>{
+        const va=dataMap[a.n],vb=dataMap[b.n];
+        if(va===undefined&&vb===undefined) return 0;
+        if(va===undefined) return 1;
+        if(vb===undefined) return -1;
+        return rateSort===1?(vb-va):(va-vb);
+      });
+    });
+  }
 
   let h='<div class="sector-grid">';
   ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
@@ -2114,15 +2128,45 @@ function go(page,el){
   // FAB: 섹터 종목 List 페이지에서만 표시
   const fab=document.getElementById('fab-group');
   if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
-  if(page!=='kr-list'&&page!=='us-list'){listSorted=false;watchedOnly=false;document.getElementById('fab-sort')?.classList.remove('active');document.getElementById('fab-watch')?.classList.remove('active');}
+  if(page!=='kr-list'&&page!=='us-list'){
+    listSorted=false; watchedOnly=false; rateSort=0;
+    document.getElementById('fab-sort')?.classList.remove('active');
+    document.getElementById('fab-watch')?.classList.remove('active');
+    const rb=document.getElementById('fab-rate-sort');
+    if(rb){rb.classList.remove('active');rb.textContent='📊';rb.title='등락률 순 정렬';}
+  }
   // 리스트 페이지 떠날 때 모드 초기화는 안 함 (돌아올 때 유지)
 }
 
 // ━━━ FAB: 섹터 리스트 정렬/필터 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 let listSorted=false;
+let rateSort=0; // 0=원래순서, 1=내림차순(상승↓), 2=오름차순(하락↑)
+
+function toggleRateSort(){
+  // 가나다 정렬과 상호 배타적
+  if(listSorted){ listSorted=false; document.getElementById('fab-sort').classList.remove('active'); }
+  rateSort=(rateSort+1)%3;
+  const btn=document.getElementById('fab-rate-sort');
+  if(rateSort===0){
+    btn.classList.remove('active');
+    btn.title='등락률 순 정렬';
+    btn.textContent='📊';
+  } else if(rateSort===1){
+    btn.classList.add('active');
+    btn.title='등락률 높은 순 (클릭 시 낮은 순)';
+    btn.textContent='📈';
+  } else {
+    btn.classList.add('active');
+    btn.title='등락률 낮은 순 (클릭 시 원래 순서)';
+    btn.textContent='📉';
+  }
+  rerenderCurrentList();
+}
 let watchedOnly=false;
 
 function toggleListSort(){
+  // 등락률 정렬과 상호 배타적
+  if(rateSort!==0){ rateSort=0; const rb=document.getElementById('fab-rate-sort'); if(rb){rb.classList.remove('active');rb.textContent='📊';rb.title='등락률 순 정렬';} }
   listSorted=!listSorted;
   document.getElementById('fab-sort').classList.toggle('active',listSorted);
   rerenderCurrentList();
@@ -2145,7 +2189,24 @@ function renderKrListFiltered(){
   if(!wrap||!S.krLOk||!S.krSectors) return;
   let sectors=[...S.krSectors];
   if(watchedOnly) sectors=sectors.filter(s=>WATCHED_SECTORS.has(s.sector));
-  if(listSorted) sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
+  // 정렬: 가나다 or 등락률 (상호배타)
+  if(listSorted){
+    sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
+  } else if(rateSort!==0){
+    // 각 섹터의 현재 모드 평균 계산
+    const getSectorAvg=(sec)=>{
+      const useT=(krListMode==='today');
+      const vals=sec.stocks.map(s=>useT?s.chg:s.prevChg).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+      return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+    };
+    sectors=[...sectors].sort((a,b)=>{
+      const va=getSectorAvg(a),vb=getSectorAvg(b);
+      if(va===null&&vb===null) return 0;
+      if(va===null) return 1;
+      if(vb===null) return -1;
+      return rateSort===1?(vb-va):(va-vb); // 1=내림차순, 2=오름차순
+    });
+  }
 
   // ★ 최근 영업일은 각 종목의 prevChg 필드에서 직접 읽음 (lastBizMap 불필요)
 
