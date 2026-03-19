@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Sector Tracker | 한국·미국 섹터 등락률 트래커</title>
+<title>Stock Sector Tracker v1.0 | 한국·미국 섹터 등락률 트래커</title>
+<!-- 📈 파비콘: 주식 차트 상승 아이콘 (SVG 인라인) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -300,7 +302,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
   <div class="logo-icon" onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer" title="홈으로">📡</div>
   <div onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer">
     <div class="logo-text">STOCK SECTOR TRACKER</div>
-    <div class="logo-sub">한국 · 미국 섹터 등락률 트래커</div>
+    <div class="logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
   </div>
   <div class="header-right">
     <div class="sheet-read-badge" id="sheetReadBadge"
