@@ -847,7 +847,7 @@ const IS_DEMO = false; // 항상 실제 API 사용
 // ━━━ US 섹터 메타 (색상/타입/그룹) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ★ KR 섹터 메타는 하드코딩하지 않음 → 시트 헤더 동적 로딩으로 해결
 const US_META = {
-  'S&P500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
+  'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX',label:'S&P500'},
   'Nasdaq':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'DowJones':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'Russell2K': {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1675,7 +1675,7 @@ function renderUsChart(){
     return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
   }).sort((a,b)=>b.avg-a.avg);
   const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
-  ['S&P500','Nasdaq'].forEach(n=>top5.add(n));
+  ['SP500','Nasdaq'].forEach(n=>top5.add(n));
 
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
@@ -1686,9 +1686,9 @@ function renderUsChart(){
       data.push(tv!==undefined&&!isNaN(tv)?tv:null);
     }
     const m=US_META[name]||{};
-    const isMainIndex=['S&P500','Nasdaq','DowJones','Russell2K'].includes(name);
+    const isMainIndex=['SP500','Nasdaq','DowJones','Russell2K'].includes(name);
     let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
-    if(name==='S&P500')color='#FFD700';
+    if(name==='SP500')color='#FFD700';
     else if(name==='Nasdaq')color='#4fc3f7';
     else if(name==='DowJones')color='#ff9800';
     else if(name==='Russell2K')color='#ab47bc';
@@ -1755,7 +1755,7 @@ function renderUs(){
 
   // Stats
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
@@ -1890,7 +1890,7 @@ function renderUsList(sorted){
         const sign=chg>0?'+':'';
         chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
       }
-      h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
+      h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${m.label||n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
     });
     h+=`</div></div>`;});
   h+='</div>';
@@ -2036,7 +2036,7 @@ function renderUsTableOnly(){
   const f=rows.slice(0,S.usR);
   const sh=H.slice(1);
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
