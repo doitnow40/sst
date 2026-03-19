@@ -2098,7 +2098,7 @@ function renderKrListFiltered(){
 
     const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
     const avgHtml=secAvg!==null
-      ? `<span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:4px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
+      ? `<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:6px;letter-spacing:-.3px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
       : '';
 
     h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
