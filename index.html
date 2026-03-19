@@ -652,7 +652,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <strong>📋 데이터 정확성 안내</strong><br><br>
         본 서비스에서 제공하는 모든 정보는 정확하게 제공하는 것을 목표로 하지만, 데이터 수집 과정에서 오류가 발생할 수 있습니다.<br>
         표시되는 모든 데이터는 <strong>참고용</strong>으로만 사용하시기 바랍니다.<br><br>
-        💌 <strong>건의 사항 및 오류 신고</strong>: <a href="mailto:estartooza@gmail.com" style="color:#4fc3f7;text-decoration:none">estartooza@gmail.com</a>
+        💌 <strong>건의 사항 및 오류 신고</strong>: estartooza [at] gmail.com
       </div>
 
       <!-- 면책 고지 -->
@@ -847,7 +847,7 @@ const IS_DEMO = false; // 항상 실제 API 사용
 // ━━━ US 섹터 메타 (색상/타입/그룹) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ★ KR 섹터 메타는 하드코딩하지 않음 → 시트 헤더 동적 로딩으로 해결
 const US_META = {
-  'S&P500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
+  'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'Nasdaq':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'DowJones':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'Russell2K': {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1675,7 +1675,7 @@ function renderUsChart(){
     return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
   }).sort((a,b)=>b.avg-a.avg);
   const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
-  ['S&P500','Nasdaq'].forEach(n=>top5.add(n));
+  ['SP500','Nasdaq'].forEach(n=>top5.add(n));
 
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
@@ -1686,9 +1686,9 @@ function renderUsChart(){
       data.push(tv!==undefined&&!isNaN(tv)?tv:null);
     }
     const m=US_META[name]||{};
-    const isMainIndex=['S&P500','Nasdaq','DowJones','Russell2K'].includes(name);
+    const isMainIndex=['SP500','Nasdaq','DowJones','Russell2K'].includes(name);
     let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
-    if(name==='S&P500')color='#FFD700';
+    if(name==='SP500')color='#FFD700';
     else if(name==='Nasdaq')color='#4fc3f7';
     else if(name==='DowJones')color='#ff9800';
     else if(name==='Russell2K')color='#ab47bc';
@@ -1755,7 +1755,7 @@ function renderUs(){
 
   // Stats
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
@@ -2036,7 +2036,7 @@ function renderUsTableOnly(){
   const f=rows.slice(0,S.usR);
   const sh=H.slice(1);
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
@@ -2297,7 +2297,7 @@ function renderKrListFiltered(){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ADMIN_CONFIG = {
   CLIENT_ID: '339396064098-c30aqitomqthhegfdtgv9j199eor2l8m.apps.googleusercontent.com',
-  ALLOWED_EMAILS: ['doitnow40@gmail.com'],
+  ALLOWED_EMAILS: ['doitnow40@gmail.com', 'estartooza@gmail.com'],
   GA_ID: 'G-3PTKMRYZZ3',
 };
 
@@ -2764,7 +2764,7 @@ tick();setInterval(tick,1000);
 // ━━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 go('kr-history',document.getElementById('nav-kr-history'));
 
-// 방문자 카운터 기록 (페이지 로드 시 1회)
+문자 카운트
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 
 // 주목 섹터 미리 로드 (History/List 강조 표시용)
