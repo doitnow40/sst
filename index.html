@@ -7,7 +7,7 @@
 <!-- 📈 파비콘: 주식 차트 상승 아이콘 (SVG 인라인) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Roboto+Mono:wght@400;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Courier+Prime:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- ★ Google Analytics GA4 — 측정 ID를 교체하세요 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
@@ -27,7 +27,7 @@
   --accent-kr:#4fc3f7; --accent-us:#ef5350; --accent-gold:#ffc107;
   --sidebar-w:220px; --header-h:56px;
   --font-body:'Noto Sans KR',sans-serif;
-  --font-mono:'Roboto Mono','JetBrains Mono',monospace;
+  --font-mono:'Courier Prime','Courier New',monospace;
   --font-display:'Bebas Neue',sans-serif;
   --tbl-font-size:7px;   /* ★ default 7px — 더 많은 섹터 한눈에 */
   --tbl-cell-pad:3px 4px;
@@ -125,7 +125,9 @@ thead{position:sticky;top:0;z-index:10}
 th{background:var(--bg-card2);padding:6px 4px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border);text-align:center}
 th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:80px}
 /* ★ td 글자 크기는 CSS variable로 제어 */
-td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}
+td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-feature-settings:'zero' 0,'tnum' 1;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}
+/* 0 슬래시 제거: slashed-zero 기능 끄기 */
+th,td{font-feature-settings:'zero' 0,'tnum' 1,'kern' 1}
 td:first-child{text-align:left;position:sticky;left:0;z-index:5;background:var(--bg-card);color:var(--text-secondary);min-width:80px}
 tr:hover td{filter:brightness(1.15)}
 tr:hover td:first-child{color:var(--text-primary)}
@@ -915,7 +917,7 @@ const DB=[21,101,192],MB=[144,195,255],W=[255,255,255],MR=[255,160,160],DR=[183,
 
 function pctCell(v,mx){
   mx=mx||15;const n=parseFloat(v);
-  if(v===null||v===undefined||v===''||isNaN(n))return{bg:'#1e2535',fg:'#4a5a78',b:false,t:''};
+  if(v===null||v===undefined||v===''||isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
   let bg;
   if(n<=-mx)bg=DB;else if(n>=mx)bg=DR;
   else if(n<0){const t=Math.abs(n)/mx,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
@@ -925,7 +927,7 @@ function pctCell(v,mx){
   return{bg:(n===0)?'#ebedf2':hex(bg[0],bg[1],bg[2]),fg,b:Math.abs(n)>=mx*.2,t:n.toFixed(2)};
 }
 function adrCell(v){
-  const n=parseFloat(v);if(isNaN(n))return{bg:'#1e2535',fg:'#4a5a78',b:false,t:''};
+  const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
   const dev=n-100,R=15;let bg;
   if(dev<=-R)bg=DB;else if(dev>=R)bg=DR;
   else if(dev<0){const t=Math.abs(dev)/R,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
@@ -933,7 +935,7 @@ function adrCell(v){
   return{bg:hex(bg[0],bg[1],bg[2]),fg:(dev<=-7||dev>=7)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:Math.abs(dev)>=5,t:n.toFixed(2)};
 }
 function yldCell(v){
-  const n=parseFloat(v);if(isNaN(n))return{bg:'#1e2535',fg:'#4a5a78',b:false,t:''};
+  const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
   const dev=n-4.0;let bg;
   if(n<=0)bg=DB;else if(n>=6)bg=DR;
   else if(dev<0){const t=Math.abs(dev)/4,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
@@ -941,7 +943,7 @@ function yldCell(v){
   return{bg:hex(bg[0],bg[1],bg[2]),fg:(n<=1.5||n>=5.5)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:(n<=1||n>=5),t:n.toFixed(3)};
 }
 function vixCell(v){
-  const n=parseFloat(v);if(isNaN(n))return{bg:'#1e2535',fg:'#4a5a78',b:false,t:''};
+  const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
   const DG=[27,94,32],ER=[80,0,0];let bg;
   if(n<=10)bg=DG;
   else if(n<=20){const t=(n-10)/10;bg=[lp(DG[0],W[0],t),lp(DG[1],W[1],t),lp(DG[2],W[2],t)];}
@@ -1181,7 +1183,7 @@ function renderKr(){
     const todayDate=S.krToday.date||'오늘';
     // 오늘 날짜 주석 (표 우상단에 한번만 표시 — 아래 table-container에서 처리)
     t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
-    t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:9px">${todayDate}</td>`;
+    t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
     sectorHdrs.forEach(name=>{
       // majorIndex 우선, 없으면 sectors에서 찾기
       const val=(majorMap[name]!==undefined)?majorMap[name]:todayMap[name];
@@ -1690,7 +1692,7 @@ function renderUs(){
     const todayMap=S.usToday.sectors;
     const todayDate=S.usToday.date||'오늘';
     t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
-    t+=`<td style="color:var(--accent-us);font-weight:700;font-size:9px">${todayDate}</td>`;
+    t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
     sh.forEach(name=>{
       const val=todayMap[name];
       if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
