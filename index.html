@@ -437,10 +437,17 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-kr">KR STOCKS</div>
       </div>
-      <!-- 실시간 안내 + 갱신 버튼 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:6px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:10px;color:#ffb74d;font-family:var(--font-mono)">
-        <span>● 종목 등락률: 오늘 실시간 Data (약 20분 지연 · 10분마다 자동 갱신)</span>
-        <button onclick="refreshKrList(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 지금 갱신</button>
+      <!-- 실시간 안내 + 갱신 버튼 + 날짜 모드 토글 -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:10px;color:#ffb74d;font-family:var(--font-mono)">
+        <span id="kr-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
+        <div style="display:flex;gap:5px;margin-left:auto">
+          <button id="kr-list-btn-today" onclick="setKrListMode('today',this)"
+            style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
+          <button id="kr-list-btn-lastbiz" onclick="setKrListMode('lastbiz',this)"
+            style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer">📅 최근 영업일</button>
+          <button onclick="refreshKrList(this)"
+            style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 갱신</button>
+        </div>
       </div>
       <div class="ad-slot ad-slot-top"><span>광고 영역 (카카오 Adfit)</span></div>
       <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
@@ -525,10 +532,17 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div><div class="page-title">미국 섹터 종목 LIST</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
         <div class="page-badge badge-us">US ETF</div>
       </div>
-      <!-- 실시간 안내 + 갱신 버튼 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:6px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:10px;color:#ef9a9a;font-family:var(--font-mono)">
-        <span>● ETF 등락률: 오늘 실시간 Data (약 20분 지연 · 10분마다 자동 갱신)</span>
-        <button onclick="refreshUsListData(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 지금 갱신</button>
+      <!-- 실시간 안내 + 갱신 버튼 + 날짜 모드 토글 -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:10px;color:#ef9a9a;font-family:var(--font-mono)">
+        <span id="us-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
+        <div style="display:flex;gap:5px;margin-left:auto">
+          <button id="us-list-btn-today" onclick="setUsListMode('today',this)"
+            style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
+          <button id="us-list-btn-lastbiz" onclick="setUsListMode('lastbiz',this)"
+            style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer">📅 최근 영업일</button>
+          <button onclick="refreshUsListData(this)"
+            style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 갱신</button>
+        </div>
       </div>
       <div class="ad-slot ad-slot-top"><span>광고 영역 (카카오 Adfit)</span></div>
       <div id="us-list"></div>
@@ -1727,29 +1741,35 @@ function renderUsList(sorted){
   const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
   const GN={INDEX:{l:'주요 지수 & 지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
 
-  const usLatest={};
+  const useToday=(usListMode==='today');
+
+  // 오늘 실시간 데이터
+  const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+
+  // 최근 영업일 데이터 (usD rows[0])
+  const usLastBiz={};
   if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
     const H=S.usD.headers;
     const latest=S.usD.rows[0];
     H.slice(1).forEach((name,ci)=>{
       const v=parseFloat(latest[ci+1]);
-      if(!isNaN(v)) usLatest[name]=v;
+      if(!isNaN(v)) usLastBiz[name]=v;
     });
   }
 
+  const dataMap=useToday?usTodayMap:usLastBiz;
+
   const groups={};
   Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
-  // 그룹 내 정렬
   if(sorted) Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n));});
 
   let h='<div class="sector-grid">';
   ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
     if(!groups[g])return;
     const info=GN[g]||{l:g,i:'📌'};
-    // 주목필터: US는 그룹별 카드라 watchedOnly 적용 안 함 (그룹 전체 표시)
     h+=`<div class="sector-card"><div class="sector-card-header"><span style="font-size:17px">${info.i}</span><span class="sector-tag" style="background:${GC[g]};color:#fff">${info.l}</span><span class="sector-count">${groups[g].length}개</span></div><div class="sector-stocks">`;
     groups[g].forEach(({n,m})=>{
-      const chg=usLatest[n];
+      const chg=dataMap[n];
       let chgHtml='';
       if(chg!==undefined&&!isNaN(chg)){
         const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
@@ -1763,7 +1783,48 @@ function renderUsList(sorted){
   document.getElementById('us-list').innerHTML=h;
 }
 
-// ━━━ 차트 보여주기/숨기기 토글 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━ 섹터 List 날짜 모드 (오늘 실시간 vs 최근 영업일) ━━━━━━
+let krListMode='today'; // 'today' | 'lastbiz'
+let usListMode='today';
+
+function setKrListMode(mode, btn){
+  krListMode=mode;
+  // 버튼 스타일 업데이트
+  const btnToday=document.getElementById('kr-list-btn-today');
+  const btnLast=document.getElementById('kr-list-btn-lastbiz');
+  const label=document.getElementById('kr-list-mode-label');
+  if(btnToday&&btnLast){
+    if(mode==='today'){
+      btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700';
+      btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer';
+      if(label) label.textContent='● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)';
+    } else {
+      btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer';
+      btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700';
+      if(label) label.textContent='● 최근 영업일 등락률 표시 중';
+    }
+  }
+  renderKrListFiltered();
+}
+
+function setUsListMode(mode, btn){
+  usListMode=mode;
+  const btnToday=document.getElementById('us-list-btn-today');
+  const btnLast=document.getElementById('us-list-btn-lastbiz');
+  const label=document.getElementById('us-list-mode-label');
+  if(btnToday&&btnLast){
+    if(mode==='today'){
+      btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700';
+      btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer';
+      if(label) label.textContent='● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)';
+    } else {
+      btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer';
+      btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700';
+      if(label) label.textContent='● 최근 영업일 등락률 표시 중';
+    }
+  }
+  renderUsList(listSorted);
+}
 let krChartVisible=true;
 let usChartVisible=true;
 
@@ -1981,6 +2042,7 @@ function go(page,el){
   const fab=document.getElementById('fab-group');
   if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
   if(page!=='kr-list'&&page!=='us-list'){listSorted=false;watchedOnly=false;document.getElementById('fab-sort')?.classList.remove('active');document.getElementById('fab-watch')?.classList.remove('active');}
+  // 리스트 페이지 떠날 때 모드 초기화는 안 함 (돌아올 때 유지)
 }
 
 // ━━━ FAB: 섹터 리스트 정렬/필터 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2011,30 +2073,59 @@ function renderKrListFiltered(){
   let sectors=[...S.krSectors];
   if(watchedOnly) sectors=sectors.filter(s=>WATCHED_SECTORS.has(s.sector));
   if(listSorted) sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
+
+  // ★ 최근 영업일 섹터 평균 맵 구성 (kr_history 첫 행 기반)
+  const lastBizMap={};
+  if(S.krD&&S.krD.rows&&S.krD.rows.length>0&&S.krD.headers){
+    const H=S.krD.headers;
+    const row=S.krD.rows[0];
+    H.slice(1).forEach((name,ci)=>{
+      const v=parseFloat(row[ci+1]);
+      if(!isNaN(v)) lastBizMap[name]=v;
+    });
+  }
+
   const C=KR_SEC_COLORS;
   let h='<div class="sector-grid">';
   sectors.forEach((sec,i)=>{
     const c=C[i%C.length];
     const isWatched=WATCHED_SECTORS.has(sec.sector);
-    // 섹터 평균 계산
-    const chgVals=sec.stocks.map(s=>s.chg).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
-    const secAvg=chgVals.length?(chgVals.reduce((a,b)=>a+b,0)/chgVals.length):null;
+
+    // 모드에 따라 종목별 chg 결정
+    // today: 각 종목의 s.chg (GOOGLEFINANCE 실시간)
+    // lastbiz: S.krD 첫 행의 섹터 평균을 섹터 레벨에서만 표시, 종목 chg는 null
+    const useToday=(krListMode==='today');
+
+    const chgVals=sec.stocks.map(s=>useToday?s.chg:null).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+    // lastbiz 모드에서는 섹터 평균을 history에서 가져옴
+    let secAvg=null;
+    if(useToday){
+      secAvg=chgVals.length?(chgVals.reduce((a,b)=>a+b,0)/chgVals.length):null;
+    } else {
+      secAvg=lastBizMap[sec.sector]!==undefined?lastBizMap[sec.sector]:null;
+    }
+
+    const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
     const avgHtml=secAvg!==null
       ? `<span style="font-family:var(--font-mono);font-size:10px;font-weight:700;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:4px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
       : '';
-    const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
+
     h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
     h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
     h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
     if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
     h+=`${avgHtml}<span class="sector-count" style="margin-left:auto">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
+
     sec.stocks.forEach(s=>{
-      const chg=s.chg;
+      const chg=useToday?s.chg:null;
       let chgHtml='';
       if(chg!==null&&chg!==undefined&&!isNaN(chg)){
         const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
         const sign=chg>0?'+':'';
         chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
+      } else if(!useToday){
+        // lastbiz 모드: 종목별 개별 값 없음 → 섹터 평균 표시 안내
+        chgHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);flex-shrink:0">-</span>`;
       }
       const memo=s.memo||'';
       const memoHtml=memo
