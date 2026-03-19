@@ -2074,16 +2074,7 @@ function renderKrListFiltered(){
   if(watchedOnly) sectors=sectors.filter(s=>WATCHED_SECTORS.has(s.sector));
   if(listSorted) sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
 
-  // ★ 최근 영업일 섹터 평균 맵 구성 (kr_history 첫 행 기반)
-  const lastBizMap={};
-  if(S.krD&&S.krD.rows&&S.krD.rows.length>0&&S.krD.headers){
-    const H=S.krD.headers;
-    const row=S.krD.rows[0];
-    H.slice(1).forEach((name,ci)=>{
-      const v=parseFloat(row[ci+1]);
-      if(!isNaN(v)) lastBizMap[name]=v;
-    });
-  }
+  // ★ 최근 영업일은 각 종목의 prevChg 필드에서 직접 읽음 (lastBizMap 불필요)
 
   const C=KR_SEC_COLORS;
   let h='<div class="sector-grid">';
@@ -2091,18 +2082,18 @@ function renderKrListFiltered(){
     const c=C[i%C.length];
     const isWatched=WATCHED_SECTORS.has(sec.sector);
 
-    // 모드에 따라 종목별 chg 결정
-    // today: 각 종목의 s.chg (GOOGLEFINANCE 실시간)
-    // lastbiz: S.krD 첫 행의 섹터 평균을 섹터 레벨에서만 표시, 종목 chg는 null
+    // 모드에 따라 등락률 소스 결정
     const useToday=(krListMode==='today');
 
-    const chgVals=sec.stocks.map(s=>useToday?s.chg:null).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
-    // lastbiz 모드에서는 섹터 평균을 history에서 가져옴
+    // 섹터 평균 계산
     let secAvg=null;
     if(useToday){
+      const chgVals=sec.stocks.map(s=>s.chg).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
       secAvg=chgVals.length?(chgVals.reduce((a,b)=>a+b,0)/chgVals.length):null;
     } else {
-      secAvg=lastBizMap[sec.sector]!==undefined?lastBizMap[sec.sector]:null;
+      // lastbiz: 각 종목의 prevChg로 섹터 평균 계산
+      const prevVals=sec.stocks.map(s=>s.prevChg).filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+      secAvg=prevVals.length?(prevVals.reduce((a,b)=>a+b,0)/prevVals.length):null;
     }
 
     const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
@@ -2117,14 +2108,13 @@ function renderKrListFiltered(){
     h+=`${avgHtml}<span class="sector-count" style="margin-left:auto">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
 
     sec.stocks.forEach(s=>{
-      const chg=useToday?s.chg:null;
+      const chg=useToday?s.chg:s.prevChg;
       let chgHtml='';
       if(chg!==null&&chg!==undefined&&!isNaN(chg)){
         const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
         const sign=chg>0?'+':'';
         chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
       } else if(!useToday){
-        // lastbiz 모드: 종목별 개별 값 없음 → 섹터 평균 표시 안내
         chgHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);flex-shrink:0">-</span>`;
       }
       const memo=s.memo||'';
