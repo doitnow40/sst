@@ -652,7 +652,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <strong>📋 데이터 정확성 안내</strong><br><br>
         본 서비스에서 제공하는 모든 정보는 정확하게 제공하는 것을 목표로 하지만, 데이터 수집 과정에서 오류가 발생할 수 있습니다.<br>
         표시되는 모든 데이터는 <strong>참고용</strong>으로만 사용하시기 바랍니다.<br><br>
-        💌 <strong>건의 사항 및 오류 신고</strong>: <a href="mailto:estartooza&#64;gmail&#46;com" style="color:#4fc3f7;text-decoration:none">estartooza&#64;gmail&#46;com</a>
+        💌 <strong>건의 사항 및 오류 신고</strong>: <a href="mailto:estartooza@gmail.com" style="color:#4fc3f7;text-decoration:none">estartooza@gmail.com</a>
       </div>
 
       <!-- 면책 고지 -->
@@ -835,7 +835,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
   <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ★ GAS 웹앱 URL을 여기에 붙여넣으세요
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2297,7 +2297,7 @@ function renderKrListFiltered(){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ADMIN_CONFIG = {
   CLIENT_ID: '339396064098-c30aqitomqthhegfdtgv9j199eor2l8m.apps.googleusercontent.com',
-  ALLOWED_EMAILS: ['estartooza@gmail.com'],
+  ALLOWED_EMAILS: ['doitnow40@gmail.com'],
   GA_ID: 'G-3PTKMRYZZ3',
 };
 
@@ -2764,4 +2764,11 @@ tick();setInterval(tick,1000);
 // ━━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 go('kr-history',document.getElementById('nav-kr-history'));
 
-// 방
+// 방문자 카운터 기록 (페이지 로드 시 1회)
+if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
+
+// 주목 섹터 미리 로드 (History/List 강조 표시용)
+if(!IS_DEMO) loadWatchedSectors();
+</script>
+</body>
+</html>
