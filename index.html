@@ -1252,6 +1252,7 @@ function renderKr(){
         <div class="stat-card"><div class="stat-label">최약 (최근 영업일)</div><div class="stat-val dn">${mn}%</div><div class="stat-sub">${mnName}</div></div>
       </div>
       ${todayStatHtml}`;
+  } // ← if(f.length) 닫기
 
   // 대분류 행 생성 (groupMap 기반 — colspan 병합)
   const groupMap=S.krD.groupMap||{};
