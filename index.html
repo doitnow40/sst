@@ -1486,33 +1486,36 @@ function renderKrChart(){
 
     // ── wrap에 두 차트 영역 동적 생성 ──
     const ROW_H = 24;
-    const upH   = Math.max(80,  upData.length * ROW_H + 55);
-    const dnH   = Math.max(80, dnData.length  * ROW_H + 55);
+    const chartH = Math.max(120, Math.max(upData.length, dnData.length) * ROW_H + 55);
 
     wrap.innerHTML = `
-      <div style="margin-bottom:6px">
-        <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
-          text-shadow:0 0 8px #ff0000;letter-spacing:1px">
-          📈 상승 섹터 (${upData.length}개)
+      <div style="display:flex;gap:8px;width:100%">
+        <!-- 좌측: 상승 섹터 -->
+        <div style="flex:1;min-width:0">
+          <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+            text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">
+            📈 상승 섹터 (${upData.length}개)
+          </div>
+          <div style="height:${chartH}px;position:relative">
+            <canvas id="kr-rank-up-canvas"></canvas>
+          </div>
         </div>
-        <div style="height:${upH}px;position:relative">
-          <canvas id="kr-rank-up-canvas"></canvas>
-        </div>
-      </div>
-      <div style="border-top:1px solid rgba(66,165,245,0.3);padding-top:6px">
-        <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
-          text-shadow:0 0 8px #0088ff;letter-spacing:1px">
-          📉 하락 섹터 (${dnData.length}개)
-        </div>
-        <div style="height:${dnH}px;position:relative">
-          <canvas id="kr-rank-dn-canvas"></canvas>
+        <!-- 우측: 하락 섹터 -->
+        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
+          <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+            text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
+            📉 하락 섹터 (${dnData.length}개)
+          </div>
+          <div style="height:${chartH}px;position:relative">
+            <canvas id="kr-rank-dn-canvas"></canvas>
+          </div>
         </div>
       </div>`;
 
     // 고정 높이 + 내부 스크롤
-    const totalH = upH + dnH + 80;
-    wrap.style.height = Math.min(560, totalH) + 'px';
-    wrap.style.overflowY = totalH > 560 ? 'auto' : 'visible';
+    const totalH = chartH + 40;
+    wrap.style.height = Math.min(600, totalH) + 'px';
+    wrap.style.overflowY = totalH > 600 ? 'auto' : 'visible';
 
     // 차트 렌더 (nextTick으로 DOM 확보 후)
     requestAnimationFrame(()=>{
@@ -1737,32 +1740,35 @@ function renderUsChart(){
     }
 
     const ROW_H=22;
-    const upH=Math.max(80,upData.length*ROW_H+55);
-    const dnH=Math.max(80,dnData.length*ROW_H+55);
+    const chartH=Math.max(120,Math.max(upData.length,dnData.length)*ROW_H+55);
 
     wrap.innerHTML=`
-      <div style="margin-bottom:6px">
-        <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
-          text-shadow:0 0 8px #ff0000;letter-spacing:1px">
-          📈 상승 섹터 (${upData.length}개)
+      <div style="display:flex;gap:8px;width:100%">
+        <!-- 좌측: 상승 섹터 -->
+        <div style="flex:1;min-width:0">
+          <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+            text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">
+            📈 상승 섹터 (${upData.length}개)
+          </div>
+          <div style="height:${chartH}px;position:relative">
+            <canvas id="us-rank-up-canvas"></canvas>
+          </div>
         </div>
-        <div style="height:${upH}px;position:relative">
-          <canvas id="us-rank-up-canvas"></canvas>
-        </div>
-      </div>
-      <div style="border-top:1px solid rgba(66,165,245,0.3);padding-top:6px">
-        <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
-          text-shadow:0 0 8px #0088ff;letter-spacing:1px">
-          📉 하락 섹터 (${dnData.length}개)
-        </div>
-        <div style="height:${dnH}px;position:relative">
-          <canvas id="us-rank-dn-canvas"></canvas>
+        <!-- 우측: 하락 섹터 -->
+        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
+          <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+            text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
+            📉 하락 섹터 (${dnData.length}개)
+          </div>
+          <div style="height:${chartH}px;position:relative">
+            <canvas id="us-rank-dn-canvas"></canvas>
+          </div>
         </div>
       </div>`;
 
-    const totalH=upH+dnH+80;
-    wrap.style.height=Math.min(520,totalH)+'px';
-    wrap.style.overflowY=totalH>520?'auto':'visible';
+    const totalH=chartH+40;
+    wrap.style.height=Math.min(580,totalH)+'px';
+    wrap.style.overflowY=totalH>580?'auto':'visible';
 
     requestAnimationFrame(()=>{
       const upCanvas=document.getElementById('us-rank-up-canvas');
