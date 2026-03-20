@@ -2746,6 +2746,8 @@ async function batchMoveStock(dir){
   document.getElementById('admin-stock-panel-title').textContent='📋 '+ADM.selectedSector+' 종목 ('+newStocks.length+'개)';
   renderStockList(sec, ADM.selectedSector);
 }
+
+async function moveStock(idx, dir){
   const sec=ADM.sectors.find(s=>s.sector===ADM.selectedSector);
   if(!sec) return;
   const stocks=sec.stocks;
