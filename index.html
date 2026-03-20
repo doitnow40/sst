@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <!-- ★ Google Analytics GA4 — 측정 ID를 교체하세요 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
 <script>
@@ -652,7 +653,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <strong>📋 데이터 정확성 안내</strong><br><br>
         본 서비스에서 제공하는 모든 정보는 정확하게 제공하는 것을 목표로 하지만, 데이터 수집 과정에서 오류가 발생할 수 있습니다.<br>
         표시되는 모든 데이터는 <strong>참고용</strong>으로만 사용하시기 바랍니다.<br><br>
-        💌 <strong>건의 사항 및 오류 신고</strong>: <a href="mailto:estartooza@gmail.com" style="color:#4fc3f7;text-decoration:none">estartooza@gmail.com</a>
+        💌 <strong>건의 사항 및 오류 신고</strong>: estartooza [at] gmail.com
       </div>
 
       <!-- 면책 고지 -->
@@ -836,8 +837,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 </div>
 
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  ★ GAS 웹앱 URL을 여기에 붙여넣으세요
+// ━━━ chartjs-plugin-datalabels 등록 (랭킹 차트 전용) ━━━━━━━
+// 전역 등록하되 기본은 비활성화, 랭킹 차트에서만 display:true
+if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+Chart.defaults.plugins.datalabels = { display: false };
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyQjlAljqU-CWo0kqSS0S-rcSkmP4yQLy_5rpiDKzSW6_rVpSSKfQraOjOiWuzUEixs/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
@@ -847,7 +850,7 @@ const IS_DEMO = false; // 항상 실제 API 사용
 // ━━━ US 섹터 메타 (색상/타입/그룹) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ★ KR 섹터 메타는 하드코딩하지 않음 → 시트 헤더 동적 로딩으로 해결
 const US_META = {
-  'S&P500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
+  'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'Nasdaq':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'DowJones':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
   'Russell2K': {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1283,6 +1286,8 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;    // 기본 1주(5일)
 let krChartType='line'; // 'line' | 'ranking' | 'heatmap'
+let krRankLimit=30; // 랭킹 차트 표시 섹터 수 (null=전체)
+let usRankLimit=null; // US는 섹터 수가 적으므로 전체 표시
 let krHeatmapReverse=true;  // ★ 기본값: 최신 날짜가 왼쪽
 
 const CHART_COLORS=[
@@ -1411,8 +1416,9 @@ function renderKrChart(){
     return;
   }
 
-  // canvas 복원 (히트맵에서 돌아올 때)
-  if(!wrap.querySelector('canvas')){
+  // canvas 복원 (히트맵/랭킹에서 라인으로 돌아올 때)
+  wrap.style.overflowY='';
+  if(!wrap.querySelector('#kr-chart-canvas')){
     wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
     wrap.style.height='280px';
   }
@@ -1422,41 +1428,99 @@ function renderKrChart(){
 
   if(krChartType==='ranking'){
     document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
-    // 기간 평균 계산
-    const avgData=sectorNames.map(name=>{
+    if(krChart){krChart.destroy();krChart=null;}
+
+    // 기간 평균 계산 후 상승/하락 분리
+    const allAvg=sectorNames.map(name=>{
       const colIdx=H.indexOf(name);
       const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
       return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
-    }).sort((a,b)=>b.avg-a.avg); // 내림차순
+    }).sort((a,b)=>b.avg-a.avg);
+    const upData  = allAvg.filter(d=>d.avg>=0);
+    const dnData  = allAvg.filter(d=>d.avg<0).reverse(); // 하락은 오름차순(덜 나쁜 것이 위)
 
-    const labels=avgData.map(d=>d.name);
-    const data=avgData.map(d=>+d.avg.toFixed(2));
-    const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
-    const borderColors=data.map(v=>v>=0?'#ef5350':'#42a5f5');
+    // ── 네온 datalabels 공통 설정 ──
+    function neonLabel(isUp){
+      const col = isUp ? '#ff6b6b' : '#4fc3f7';
+      const shadow = isUp ? '#ff0000' : '#0088ff';
+      return {
+        display:true, anchor:'end', align:'end',
+        color: col,
+        font:{size:11, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
+        formatter: v=>(v>0?'+':'')+v.toFixed(2)+'%',
+        padding:{left:4},
+        textShadowColor: shadow,
+        textShadowBlur: 8,
+      };
+    }
 
-    krChart=new Chart(canvas,{
-      type:'bar',
-      data:{labels,datasets:[{label:'기간 평균 등락률',data,backgroundColor:colors,borderColor:borderColors,borderWidth:1}]},
-      options:{
-        indexAxis:'y', // 수평 막대
-        responsive:true,maintainAspectRatio:false,
-        plugins:{
-          legend:{display:false},
-          tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
-            titleColor:'#e8edf5',bodyColor:'#8a9ab5',
-            callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}
+    // ── 상승/하락 각각 차트 생성 함수 ──
+    function makeRankChart(canvasEl, avgArr, isUp){
+      const labels = avgArr.map(d=>d.name);
+      const data   = avgArr.map(d=>+d.avg.toFixed(2));
+      const bg     = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
+      const border = isUp ? '#ff6b6b' : '#4fc3f7';
+      return new Chart(canvasEl,{
+        type:'bar',
+        data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
+        options:{
+          indexAxis:'y', responsive:true, maintainAspectRatio:false,
+          layout:{padding:{right:70}},
+          plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
+              titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+              callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}},
+            datalabels: neonLabel(isUp)
+          },
+          scales:{
+            x:{position:'top',
+              ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
+              grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
+            y:{ticks:{color:'#e8edf5',font:{size:9}},
+              grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
-        },
-        scales:{
-          x:{ticks:{color:'#8fa8c8',font:{size:9},callback:v=>v+'%'},
-            grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#2e3a50'}},
-          y:{ticks:{color:'#e8edf5',font:{size:9,family:"'JetBrains Mono',monospace"}},
-            grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
         }
-      }
+      });
+    }
+
+    // ── wrap에 두 차트 영역 동적 생성 ──
+    const ROW_H = 24;
+    const upH   = Math.max(80,  upData.length * ROW_H + 55);
+    const dnH   = Math.max(80, dnData.length  * ROW_H + 55);
+
+    wrap.innerHTML = `
+      <div style="margin-bottom:6px">
+        <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+          text-shadow:0 0 8px #ff0000;letter-spacing:1px">
+          📈 상승 섹터 (${upData.length}개)
+        </div>
+        <div style="height:${upH}px;position:relative">
+          <canvas id="kr-rank-up-canvas"></canvas>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(66,165,245,0.3);padding-top:6px">
+        <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+          text-shadow:0 0 8px #0088ff;letter-spacing:1px">
+          📉 하락 섹터 (${dnData.length}개)
+        </div>
+        <div style="height:${dnH}px;position:relative">
+          <canvas id="kr-rank-dn-canvas"></canvas>
+        </div>
+      </div>`;
+
+    // 고정 높이 + 내부 스크롤
+    const totalH = upH + dnH + 80;
+    wrap.style.height = Math.min(560, totalH) + 'px';
+    wrap.style.overflowY = totalH > 560 ? 'auto' : 'visible';
+
+    // 차트 렌더 (nextTick으로 DOM 확보 후)
+    requestAnimationFrame(()=>{
+      const upCanvas = document.getElementById('kr-rank-up-canvas');
+      const dnCanvas = document.getElementById('kr-rank-dn-canvas');
+      if(upCanvas && upData.length) makeRankChart(upCanvas, upData, true);
+      if(dnCanvas && dnData.length) makeRankChart(dnCanvas, dnData, false);
     });
-    // 섹터 수에 따라 높이 동적 조정
-    wrap.style.height=Math.max(240,sectorNames.length*22)+'px';
     return;
   }
 
@@ -1612,7 +1676,8 @@ function renderUsChart(){
     return;
   }
 
-  if(!wrap.querySelector('canvas')){
+  wrap.style.overflowY='';
+  if(!wrap.querySelector('#us-chart-canvas')){
     wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
     wrap.style.height='320px';
   }
@@ -1622,36 +1687,89 @@ function renderUsChart(){
 
   if(usChartType==='ranking'){
     document.getElementById('us-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
-    // YIELD/VIX 제외 (스케일이 달라서 랭킹 왜곡)
+    if(usChart){usChart.destroy();usChart=null;}
+
     const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
-    const avgData=rankNames.map(name=>{
+    const allAvg=rankNames.map(name=>{
       const colIdx=H.indexOf(name);
       const vals=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return NaN;return parseFloat(r[colIdx]);}).filter(v=>!isNaN(v));
       return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
     }).sort((a,b)=>b.avg-a.avg);
-    const labels=avgData.map(d=>d.name);
-    const data=avgData.map(d=>+d.avg.toFixed(2));
-    const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
-    const borderColors=data.map(v=>v>=0?'#ef5350':'#42a5f5');
-    usChart=new Chart(canvas,{
-      type:'bar',
-      data:{labels,datasets:[{label:'기간 평균 등락률',data,backgroundColor:colors,borderColor:borderColors,borderWidth:1}]},
-      options:{
-        indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},
-          tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
-            titleColor:'#e8edf5',bodyColor:'#8a9ab5',
-            callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}}
-        },
-        scales:{
-          x:{ticks:{color:'#8fa8c8',font:{size:9},callback:v=>v+'%'},
-            grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#2e3a50'}},
-          y:{ticks:{color:'#e8edf5',font:{size:9,family:"'JetBrains Mono',monospace"}},
-            grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
+
+    const upData = allAvg.filter(d=>d.avg>=0);
+    const dnData = allAvg.filter(d=>d.avg<0).reverse();
+
+    function usNeonLabel(isUp){
+      const col = isUp ? '#ff6b6b' : '#4fc3f7';
+      return {
+        display:true, anchor:'end', align:'end', color:col,
+        font:{size:11,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
+        formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',
+        padding:{left:4}, textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:8
+      };
+    }
+    function makeUsRankChart(canvasEl, avgArr, isUp){
+      const labels=avgArr.map(d=>d.name);
+      const data=avgArr.map(d=>+d.avg.toFixed(2));
+      return new Chart(canvasEl,{
+        type:'bar',
+        data:{labels,datasets:[{data,
+          backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',
+          borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3}]},
+        options:{
+          indexAxis:'y',responsive:true,maintainAspectRatio:false,
+          layout:{padding:{right:70}},
+          plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
+              titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+              callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}},
+            datalabels: usNeonLabel(isUp)
+          },
+          scales:{
+            x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
+              grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
+            y:{ticks:{color:'#e8edf5',font:{size:9}},
+              grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
+          }
         }
-      }
+      });
+    }
+
+    const ROW_H=22;
+    const upH=Math.max(80,upData.length*ROW_H+55);
+    const dnH=Math.max(80,dnData.length*ROW_H+55);
+
+    wrap.innerHTML=`
+      <div style="margin-bottom:6px">
+        <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+          text-shadow:0 0 8px #ff0000;letter-spacing:1px">
+          📈 상승 섹터 (${upData.length}개)
+        </div>
+        <div style="height:${upH}px;position:relative">
+          <canvas id="us-rank-up-canvas"></canvas>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(66,165,245,0.3);padding-top:6px">
+        <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+          text-shadow:0 0 8px #0088ff;letter-spacing:1px">
+          📉 하락 섹터 (${dnData.length}개)
+        </div>
+        <div style="height:${dnH}px;position:relative">
+          <canvas id="us-rank-dn-canvas"></canvas>
+        </div>
+      </div>`;
+
+    const totalH=upH+dnH+80;
+    wrap.style.height=Math.min(520,totalH)+'px';
+    wrap.style.overflowY=totalH>520?'auto':'visible';
+
+    requestAnimationFrame(()=>{
+      const upCanvas=document.getElementById('us-rank-up-canvas');
+      const dnCanvas=document.getElementById('us-rank-dn-canvas');
+      if(upCanvas&&upData.length) makeUsRankChart(upCanvas,upData,true);
+      if(dnCanvas&&dnData.length) makeUsRankChart(dnCanvas,dnData,false);
     });
-    wrap.style.height=Math.max(320,rankNames.length*18)+'px';
     return;
   }
 
@@ -1675,7 +1793,7 @@ function renderUsChart(){
     return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
   }).sort((a,b)=>b.avg-a.avg);
   const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
-  ['S&P500','Nasdaq'].forEach(n=>top5.add(n));
+  ['SP500','Nasdaq'].forEach(n=>top5.add(n));
 
   const datasets=sectorNames.map((name,si)=>{
     const colIdx=H.indexOf(name);
@@ -1686,9 +1804,9 @@ function renderUsChart(){
       data.push(tv!==undefined&&!isNaN(tv)?tv:null);
     }
     const m=US_META[name]||{};
-    const isMainIndex=['S&P500','Nasdaq','DowJones','Russell2K'].includes(name);
+    const isMainIndex=['SP500','Nasdaq','DowJones','Russell2K'].includes(name);
     let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
-    if(name==='S&P500')color='#FFD700';
+    if(name==='SP500')color='#FFD700';
     else if(name==='Nasdaq')color='#4fc3f7';
     else if(name==='DowJones')color='#ff9800';
     else if(name==='Russell2K')color='#ab47bc';
@@ -1755,7 +1873,7 @@ function renderUs(){
 
   // Stats
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
@@ -2036,7 +2154,7 @@ function renderUsTableOnly(){
   const f=rows.slice(0,S.usR);
   const sh=H.slice(1);
   if(f.length){
-    const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+    const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
       <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
@@ -2297,7 +2415,7 @@ function renderKrListFiltered(){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const ADMIN_CONFIG = {
   CLIENT_ID: '339396064098-c30aqitomqthhegfdtgv9j199eor2l8m.apps.googleusercontent.com',
-  ALLOWED_EMAILS: ['doitnow40@gmail.com'],
+  ALLOWED_EMAILS: ['doitnow40@gmail.com', 'estartooza@gmail.com'],
   GA_ID: 'G-3PTKMRYZZ3',
 };
 
@@ -2764,10 +2882,10 @@ tick();setInterval(tick,1000);
 // ━━━ INIT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 go('kr-history',document.getElementById('nav-kr-history'));
 
-// 방문자 카운터 기록 (페이지 로드 시 1회)
+문자 카운트
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 
-// 주목 섹터 미리 로드 (History/List 강조 표시용)
+// 주목 섹터 미리 로드
 if(!IS_DEMO) loadWatchedSectors();
 </script>
 </body>
