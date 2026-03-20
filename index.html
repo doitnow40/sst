@@ -44,9 +44,12 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 .header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
 
 /* ★ 시트 읽은 시각 표시 (LIVE 대신) */
-.sheet-read-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-secondary);font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;cursor:help;position:relative}
+/* 헤더 뱃지 — 모두 동일 스타일 */
+.hdr-badge{display:flex;align-items:center;gap:5px;font-size:9px;color:#8fa8c8;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;position:relative}
+.hdr-badge:hover::after{content:attr(data-tooltip);position:absolute;top:calc(100% + 6px);right:0;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:8px 12px;font-size:10px;color:#b0d4f1;white-space:pre;line-height:1.8;z-index:9999;pointer-events:none;min-width:220px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.sheet-read-badge{display:flex;align-items:center;gap:5px;font-size:9px;color:#8fa8c8;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;cursor:help;position:relative}
 .sheet-read-badge:hover::after{content:attr(data-tooltip);position:absolute;top:calc(100% + 6px);right:0;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:8px 12px;font-size:10px;color:#b0d4f1;white-space:pre;line-height:1.8;z-index:9999;pointer-events:none;min-width:220px;box-shadow:0 4px 16px rgba(0,0,0,.5)}
-.countdown-badge{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap}
+.countdown-badge{display:flex;align-items:center;gap:5px;font-size:9px;color:#8fa8c8;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap}
 .countdown-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .countdown-dot.kr{background:#4fc3f7}
 .countdown-dot.us{background:#ef5350}
@@ -319,13 +322,20 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
       <div class="sheet-read-dot" style="background:var(--accent-kr);animation:pulse 2s infinite"></div>
       <span id="realtimeTime">실시간 --:--</span>
     </div>
-    <!-- 다음 업데이트 카운트다운 -->
-    <div class="countdown-badge" id="countdown-badge" title="다음 데이터 자동 업데이트까지 남은 시간">
-      <div class="countdown-dot" id="countdown-dot"></div>
-      <span style="font-size:9px;color:var(--text-muted);margin-right:2px">업데이트까지</span>
-      <span id="countdown-text">--:--:--</span>
+    <!-- KR 카운트다운 -->
+    <div class="countdown-badge" id="kr-countdown-badge">
+      <div class="countdown-dot kr"></div>
+      <span style="color:var(--text-muted)">🇰🇷 종가 반영까지</span>
+      <span id="kr-countdown-text" style="color:#4fc3f7">--:--:--</span>
+      <span style="color:var(--text-muted)">남음</span>
     </div>
-    <div class="clock" id="clock">--:--:--</div>
+    <!-- US 카운트다운 -->
+    <div class="countdown-badge" id="us-countdown-badge">
+      <div class="countdown-dot us"></div>
+      <span style="color:var(--text-muted)">🇺🇸 종가 반영까지</span>
+      <span id="us-countdown-text" style="color:#ef9a9a">--:--:--</span>
+      <span style="color:var(--text-muted)">남음</span>
+    </div>
   </div>
 </header>
 
@@ -1444,11 +1454,13 @@ function renderKrChart(){
       const col = isUp ? '#ff6b6b' : '#4fc3f7';
       const shadow = isUp ? '#ff0000' : '#0088ff';
       return {
-        display:true, anchor:'end', align:'end',
+        display:true,
+        anchor: isUp ? 'end' : 'start',
+        align:  isUp ? 'end' : 'start',
         color: col,
         font:{size:11, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
         formatter: v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding:{left:4},
+        padding: isUp ? {left:4} : {right:4},
         textShadowColor: shadow,
         textShadowBlur: 8,
       };
@@ -1492,7 +1504,7 @@ function renderKrChart(){
       <div style="display:flex;gap:8px;width:100%">
         <!-- 좌측: 상승 섹터 -->
         <div style="flex:1;min-width:0">
-          <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+          <div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">
             📈 상승 섹터 (${upData.length}개)
           </div>
@@ -1502,7 +1514,7 @@ function renderKrChart(){
         </div>
         <!-- 우측: 하락 섹터 -->
         <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
-          <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+          <div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
             📉 하락 섹터 (${dnData.length}개)
           </div>
@@ -1705,10 +1717,14 @@ function renderUsChart(){
     function usNeonLabel(isUp){
       const col = isUp ? '#ff6b6b' : '#4fc3f7';
       return {
-        display:true, anchor:'end', align:'end', color:col,
+        display:true,
+        anchor: isUp ? 'end' : 'start',
+        align:  isUp ? 'end' : 'start',
+        color:col,
         font:{size:11,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
         formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding:{left:4}, textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:8
+        padding: isUp ? {left:4} : {right:4},
+        textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:8
       };
     }
     function makeUsRankChart(canvasEl, avgArr, isUp){
@@ -1746,7 +1762,7 @@ function renderUsChart(){
       <div style="display:flex;gap:8px;width:100%">
         <!-- 좌측: 상승 섹터 -->
         <div style="flex:1;min-width:0">
-          <div style="font-size:9px;color:#ff6b6b;font-family:monospace;padding:2px 6px;
+          <div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">
             📈 상승 섹터 (${upData.length}개)
           </div>
@@ -1756,7 +1772,7 @@ function renderUsChart(){
         </div>
         <!-- 우측: 하락 섹터 -->
         <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
-          <div style="font-size:9px;color:#4fc3f7;font-family:monospace;padding:2px 6px;
+          <div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
             📉 하락 섹터 (${dnData.length}개)
           </div>
@@ -2814,74 +2830,51 @@ document.querySelector('.main').addEventListener('scroll',()=>{
   document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
 });
 function tick(){
-  const now=new Date();
-  document.getElementById('clock').textContent=now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-  updateCountdown(now);
+  updateCountdown(new Date());
 }
 
-// ━━━ 다음 업데이트 카운트다운 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🇰🇷 한국: 매일 20:00 KST
-// 🇺🇸 미국: 매일 06:00 KST
+// ━━━ 다음 업데이트 카운트다운 (KR/US 각각 표시) ━━━━━━━━━━
+// 🇰🇷 한국: 매일 20:00 KST  |  🇺🇸 미국: 매일 06:00 KST
 function updateCountdown(now){
-  const txt=document.getElementById('countdown-text');
-  const dot=document.getElementById('countdown-dot');
-  if(!txt||!dot) return;
-
-  // KST 기준 현재 시각
   const kst=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-  const h=kst.getHours(), m=kst.getMinutes(), s=kst.getSeconds();
+  const h=kst.getHours(),m=kst.getMinutes(),s=kst.getSeconds();
   const nowSec=h*3600+m*60+s;
-
-  // 업데이트 시각 (초)
-  const KR_SEC=20*3600; // 20:00
-  const US_SEC=6*3600;  // 06:00
-
-  // 각 업데이트까지 남은 초 계산
-  function secsUntil(target){
-    let diff=target-nowSec;
-    if(diff<=0) diff+=86400; // 다음날
-    return diff;
+  function secsUntil(t){let d=t-nowSec;if(d<=0)d+=86400;return d;}
+  function fmt(sec){
+    const hh=String(Math.floor(sec/3600)).padStart(2,'0');
+    const mm=String(Math.floor((sec%3600)/60)).padStart(2,'0');
+    const ss=String(sec%60).padStart(2,'0');
+    return `${hh}:${mm}:${ss}`;
   }
-  const krLeft=secsUntil(KR_SEC);
-  const usLeft=secsUntil(US_SEC);
-
-  // 더 가까운 업데이트 선택
-  let isKr, left;
-  if(krLeft<=usLeft){isKr=true;left=krLeft;}
-  else{isKr=false;left=usLeft;}
-
-  // 30분 이내면 임박 표시
-  const imminent=left<=1800;
-
-  const hh=String(Math.floor(left/3600)).padStart(2,'0');
-  const mm=String(Math.floor((left%3600)/60)).padStart(2,'0');
-  const ss=String(left%60).padStart(2,'0');
-
-  const flag=isKr?'🇰🇷':'🇺🇸';
-  txt.textContent=`${flag} ${hh}:${mm}:${ss}`;
-  dot.className='countdown-dot '+(isKr?'kr':'us');
-
-  // 색상: 임박 시 주황/빨강
-  const badge=document.getElementById('countdown-badge');
-  if(badge){
-    if(left<=300){  // 5분 이내 — 빨강 깜빡
-      badge.style.borderColor='#ef5350';
-      badge.style.color='#ef9a9a';
+  function applyStyle(badge,txt,left,color,urgentColor){
+    if(!badge||!txt) return;
+    txt.textContent=fmt(left);
+    if(left<=300){
+      badge.style.borderColor=urgentColor;
+      txt.style.color=urgentColor;
       badge.style.animation='pulse 1s infinite';
-    } else if(imminent){ // 30분 이내 — 주황
+    } else if(left<=1800){
       badge.style.borderColor='#ff6f00';
-      badge.style.color='#ffb74d';
+      txt.style.color='#ffb74d';
       badge.style.animation='';
     } else {
       badge.style.borderColor='var(--border)';
-      badge.style.color='var(--text-muted)';
+      txt.style.color=color;
       badge.style.animation='';
     }
-    // 툴팁 업데이트
-    const nextKr=new Date(kst); nextKr.setHours(20,0,0,0); if(krLeft<60) nextKr.setDate(nextKr.getDate()+1);
-    const nextUs=new Date(kst); nextUs.setHours(6,0,0,0);  if(usLeft<60) nextUs.setDate(nextUs.getDate()+1);
-    badge.title=`🇰🇷 한국 업데이트: 오늘 20:00 KST (${Math.floor(krLeft/60)}분 후)\n🇺🇸 미국 업데이트: 내일 06:00 KST (${Math.floor(usLeft/60)}분 후)`;
   }
+  const krLeft=secsUntil(20*3600);
+  const usLeft=secsUntil(6*3600);
+  applyStyle(
+    document.getElementById('kr-countdown-badge'),
+    document.getElementById('kr-countdown-text'),
+    krLeft,'#4fc3f7','#ef5350'
+  );
+  applyStyle(
+    document.getElementById('us-countdown-badge'),
+    document.getElementById('us-countdown-text'),
+    usLeft,'#ef9a9a','#ef5350'
+  );
 }
 tick();setInterval(tick,1000);
 
