@@ -772,6 +772,13 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
                   <span>🇰🇷 섹터 목록</span>
                   <span id="admin-sector-count" style="font-size:10px;color:var(--text-muted)"></span>
                 </div>
+                <!-- 섹터 필터링 -->
+                <div style="padding:6px 8px;border-bottom:1px solid var(--border)">
+                  <input id="sector-filter-input" class="admin-input"
+                    style="width:100%;font-size:10px;padding:4px 8px"
+                    placeholder="🔍 섹터명 필터 (입력 시 자동 적용)"
+                    oninput="filterAdminSectors(this.value)">
+                </div>
                 <div id="admin-sector-items">
                   <div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
                 </div>
@@ -1477,7 +1484,7 @@ function renderKrChart(){
         data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          layout:{padding:{right:70}},
+          layout:{padding: isUp ? {right:70} : {left:70, right:4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1737,7 +1744,7 @@ function renderUsChart(){
           borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          layout:{padding:{right:70}},
+          layout:{padding: isUp ? {right:70} : {left:70, right:4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -2553,9 +2560,12 @@ async function loadAdminSectors(){
   }
 }
 
-function renderAdminSectors(){
+function renderAdminSectors(filterKw){
+  const kw=(filterKw||'').trim().toLowerCase();
+  let list=ADM.sectors;
+  if(kw) list=list.filter(s=>s.sector.toLowerCase().includes(kw));
   let h='';
-  ADM.sectors.forEach((sec,i)=>{
+  list.forEach((sec,i)=>{
     const sel=ADM.selectedSector===sec.sector;
     h+=`<div class="admin-sector-item${sel?' selected':''}" onclick="selectSector('${sec.sector.replace(/'/g,"\\'")}')">
       <span>${sec.sector}</span>
@@ -2567,23 +2577,39 @@ function renderAdminSectors(){
   document.getElementById('admin-sector-items').innerHTML=h;
 }
 
+function filterAdminSectors(kw){
+  renderAdminSectors(kw);
+}
+
 function selectSector(sectorName){
   ADM.selectedSector=sectorName;
-  renderAdminSectors();
+  const kw=document.getElementById('sector-filter-input')?.value||'';
+  renderAdminSectors(kw);
   const sec=ADM.sectors.find(s=>s.sector===sectorName);
   if(!sec) return;
   document.getElementById('admin-stock-panel-title').textContent='📋 '+sectorName+' 종목 ('+sec.stocks.length+'개)';
   document.getElementById('add-stock-section').style.display='';
+  renderStockList(sec, sectorName);
+}
+
+function renderStockList(sec, sectorName){
   let h='';
-  sec.stocks.forEach(st=>{
+  sec.stocks.forEach((st,idx)=>{
     const esc=st.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
     const escSec=sectorName.replace(/'/g,"\\'");
     const memo=st.memo||'';
-    h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px">
-      <div style="display:flex;align-items:center;gap:8px">
+    h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px" id="stock-item-${idx}">
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="chk-${idx}" style="flex-shrink:0;cursor:pointer" title="이 종목 선택">
         <span class="admin-stock-name">${st.name}</span>
         <span class="admin-stock-ticker">${st.ticker||'KR'}</span>
-        <button class="admin-del-btn" onclick="deleteStock('${escSec}','${esc}')">삭제</button>
+        <div style="display:flex;gap:2px;margin-left:auto;flex-shrink:0">
+          <button onclick="moveStock(${idx},'top')" title="최상위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">⇈</button>
+          <button onclick="moveStock(${idx},'up')" title="한칸 위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">↑</button>
+          <button onclick="moveStock(${idx},'down')" title="한칸 아래로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">↓</button>
+          <button onclick="moveStock(${idx},'bottom')" title="최하위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">⇊</button>
+          <button class="admin-del-btn" onclick="deleteStock('${escSec}','${esc}')">삭제</button>
+        </div>
       </div>
       <div style="display:flex;gap:5px;align-items:center">
         <input class="admin-input" style="flex:1;font-size:10px;padding:3px 7px"
@@ -2595,6 +2621,37 @@ function selectSector(sectorName){
   });
   if(!h) h='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">종목이 없습니다. 아래에서 추가하세요.</div>';
   document.getElementById('admin-stock-list').innerHTML=h;
+}
+
+async function moveStock(idx, dir){
+  const sec=ADM.sectors.find(s=>s.sector===ADM.selectedSector);
+  if(!sec) return;
+  const stocks=sec.stocks;
+  const n=stocks.length;
+  if(n<2) return;
+  let newIdx=idx;
+  if(dir==='top') newIdx=0;
+  else if(dir==='up') newIdx=Math.max(0,idx-1);
+  else if(dir==='down') newIdx=Math.min(n-1,idx+1);
+  else if(dir==='bottom') newIdx=n-1;
+  if(newIdx===idx) return;
+
+  // 배열 순서 변경
+  const [item]=stocks.splice(idx,1);
+  stocks.splice(newIdx,0,item);
+
+  // GAS에 순서 저장
+  const orderedNames=stocks.map(s=>s.name).join(',');
+  showMsg('stock-msg','저장 중...',false);
+  try{
+    await adminPost('reorder_stocks',{sector:ADM.selectedSector, order:orderedNames});
+    showMsg('stock-msg','✅ 순서 저장 완료',false);
+  }catch(e){
+    showMsg('stock-msg','❌ 저장 실패: '+e.message,true);
+  }
+  // 화면 갱신
+  document.getElementById('admin-stock-panel-title').textContent='📋 '+ADM.selectedSector+' 종목 ('+stocks.length+'개)';
+  renderStockList(sec, ADM.selectedSector);
 }
 
 // ━━━ GAS API (관리자 쓰기 작업) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
