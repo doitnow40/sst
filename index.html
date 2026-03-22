@@ -142,7 +142,9 @@ tr:hover td:first-child{color:var(--text-primary)}
 .sector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .sector-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:border-color .2s,transform .2s}
 .sector-card:hover{border-color:var(--border-light);transform:translateY(-1px)}
-.sector-card-header{padding:10px 14px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border)}
+.sector-card-header{padding:0;border-bottom:1px solid var(--border);display:flex;flex-direction:column}
+.sector-card-title{padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;box-sizing:border-box;letter-spacing:-.2px}
+.sector-card-meta{padding:4px 12px 6px;display:flex;align-items:center;gap:6px;border-top:1px solid rgba(255,255,255,.06)}
 .sector-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}
 .sector-count{margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
 /* 섹터 평균 양수/음수에 따른 카드 배경색 — 카드 전체에 진하게 */
@@ -2161,7 +2163,10 @@ function renderUsList(sorted){
   ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
     if(!groups[g])return;
     const info=GN[g]||{l:g,i:'📌'};
-    h+=`<div class="sector-card"><div class="sector-card-header"><span style="font-size:17px">${info.i}</span><span class="sector-tag" style="background:${GC[g]};color:#fff">${info.l}</span><span class="sector-count">${groups[g].length}개</span></div><div class="sector-stocks">`;
+    h+=`<div class="sector-card"><div class="sector-card-header" style="background:${GC[g]}22;border-bottom-color:${GC[g]}55">`;
+    h+=`<div class="sector-card-title" style="background:${GC[g]};color:#fff">${info.i} ${info.l}</div>`;
+    h+=`<div class="sector-card-meta"><span class="sector-count" style="font-size:10px;color:var(--text-muted)">${groups[g].length}개</span></div>`;
+    h+=`</div><div class="sector-stocks">`;
     groups[g].forEach(({n,m})=>{
       const chg=dataMap[n];
       let chgHtml='';
@@ -2594,14 +2599,17 @@ function renderKrListFiltered(){
 
     const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
     const avgHtml=secAvg!==null
-      ? `<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:6px;letter-spacing:-.3px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
+      ? `<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:auto;letter-spacing:-.3px">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
       : '';
 
     h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
     h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
-    h+=`<span class="sector-tag" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</span>`;
+    h+=`<div class="sector-card-title" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</div>`;
+    h+=`<div class="sector-card-meta">`;
+    h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
     if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-    h+=`${avgHtml}<span class="sector-count" style="margin-left:auto">${sec.stocks.length}개 종목</span></div><div class="sector-stocks">`;
+    h+=`${avgHtml}</div></div><div class="sector-stocks">`;
+
 
     sec.stocks.forEach(s=>{
       const chg=useToday?s.chg:s.prevChg;
