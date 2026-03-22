@@ -108,9 +108,9 @@ header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid 
 
 /* STATS */
 .stats-row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-bottom:14px}
-.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
-.stat-val{font-family:var(--font-mono);font-size:16px;font-weight:600}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;white-space:nowrap}
+.stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;white-space:nowrap}
+.stat-val{font-family:var(--font-mono);font-size:16px;font-weight:600;white-space:nowrap}
 .stat-val.up{color:#ef5350}.stat-val.dn{color:#42a5f5}.stat-val.neu{color:var(--text-secondary)}
 .stat-sub{font-size:9px;color:var(--text-muted);margin-top:1px}
 
@@ -1215,35 +1215,19 @@ function renderKr(){
     const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
     const todayDate=S.krToday?S.krToday.date:'';
     const hasTodayStats=todayDate&&Object.keys(todayMap).length>0;
-    let todayStatHtml='';
+    let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
     if(hasTodayStats){
       const tVals=pureSectors.map(name=>{
         const v=todayMap[name];
         return (v!==undefined&&!isNaN(v))?v:null;
       }).filter(v=>v!==null);
-      const tAvg=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(2):'-';
+      tAvg=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(2):'-';
       const tMxVal=tVals.length?Math.max(...tVals):null;
       const tMnVal=tVals.length?Math.min(...tVals):null;
-      const tMx=tMxVal!==null?tMxVal.toFixed(2):'-';
-      const tMn=tMnVal!==null?tMnVal.toFixed(2):'-';
-      const tMxName=tMxVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMxVal)]:'';
-      const tMnName=tMnVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMnVal)]:'';
-      todayStatHtml=`
-        <div class="stat-card" style="border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
-          <div class="stat-label" style="color:#ffb74d">📡 오늘 섹터 평균</div>
-          <div class="stat-val ${parseFloat(tAvg)>=0?'up':'dn'}">${parseFloat(tAvg)>=0?'+':''}${tAvg}%</div>
-          <div class="stat-sub" style="color:#ffb74d">${todayDate}</div>
-        </div>
-        <div class="stat-card" style="border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
-          <div class="stat-label" style="color:#ffb74d">📡 오늘 최강</div>
-          <div class="stat-val up">+${tMx}%</div>
-          <div class="stat-sub">${tMxName}</div>
-        </div>
-        <div class="stat-card" style="border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
-          <div class="stat-label" style="color:#ffb74d">📡 오늘 최약</div>
-          <div class="stat-val dn">${tMn}%</div>
-          <div class="stat-sub">${tMnName}</div>
-        </div>`;
+      tMx=tMxVal!==null?tMxVal.toFixed(2):'-';
+      tMn=tMnVal!==null?tMnVal.toFixed(2):'-';
+      tMxName=tMxVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMxVal)]:'';
+      tMnName=tMnVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMnVal)]:'';
     }
 
     document.getElementById('kr-stats').innerHTML=`
@@ -1566,11 +1550,14 @@ function renderKrChart(){
         anchor: 'end',
         align:  isUp ? 'end' : 'start',
         color: col,
-        font:{size:11, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
+        backgroundColor: null,
+        borderWidth: 0,
+        font:{size:10, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
         formatter: v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding: {left:4, right:4},
+        padding: {left:2, right:2},
         textShadowColor: shadow,
-        textShadowBlur: 8,
+        textShadowBlur: 6,
+        clip: false,
       };
     }
 
@@ -1580,14 +1567,16 @@ function renderKrChart(){
       const data   = avgArr.map(d=>+d.avg.toFixed(2));
       const bg     = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
       const border = isUp ? '#ff6b6b' : '#4fc3f7';
-      // 하락 차트: y축을 left에 두고, x축 min을 살짝 더 확장해 레이블 공간 확보
-      const xMin = isUp ? undefined : Math.min(...data) * 1.35;
+      const maxAbs = Math.max(...data.map(Math.abs));
+      const xMin = isUp ? 0 : -(maxAbs * 1.5);
+      const xMax = isUp ? maxAbs * 1.5 : 0;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          layout:{padding: isUp ? {right:70} : {left:4, right:70}},
+          clip: false,
+          layout:{padding: {top:0, bottom:0, left:4, right: isUp ? 60 : 4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1596,7 +1585,7 @@ function renderKrChart(){
             datalabels: neonLabel(isUp)
           },
           scales:{
-            x:{position:'top', min: xMin,
+            x:{position:'top', min: xMin, max: xMax,
               ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{
@@ -1833,16 +1822,21 @@ function renderUsChart(){
         anchor: 'end',
         align:  isUp ? 'end' : 'start',
         color:col,
-        font:{size:11,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
+        backgroundColor: null,
+        borderWidth: 0,
+        font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
         formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding:{left:4, right:4},
-        textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:8
+        padding:{left:2, right:2},
+        textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:6,
+        clip: false,
       };
     }
     function makeUsRankChart(canvasEl, avgArr, isUp){
       const labels=avgArr.map(d=>d.name);
       const data=avgArr.map(d=>+d.avg.toFixed(2));
-      const xMin = isUp ? undefined : Math.min(...data) * 1.35;
+      const maxAbs=Math.max(...data.map(Math.abs));
+      const xMin=isUp?0:-(maxAbs*1.5);
+      const xMax=isUp?maxAbs*1.5:0;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,
@@ -1850,7 +1844,8 @@ function renderUsChart(){
           borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          layout:{padding: isUp ? {right:70} : {left:4, right:70}},
+          clip:false,
+          layout:{padding:{top:0,bottom:0,left:4,right:isUp?60:4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1859,11 +1854,11 @@ function renderUsChart(){
             datalabels: usNeonLabel(isUp)
           },
           scales:{
-            x:{position:'top', min: xMin,
+            x:{position:'top', min:xMin, max:xMax,
               ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{
-              position: 'left',
+              position:'left',
               ticks:{color:'#e8edf5',font:{size:9}},
               grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
