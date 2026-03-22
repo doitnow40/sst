@@ -1547,13 +1547,16 @@ function renderKrChart(){
       const shadow = isUp ? '#ff0000' : '#0088ff';
       return {
         display:true,
-        anchor: isUp ? 'end'   : 'start',
-        align:  isUp ? 'end'   : 'start',
+        anchor: 'end',
+        align:  'end',
         color: col,
         backgroundColor: null,
         borderWidth: 0,
         font:{size:10, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
-        formatter: v=>(v>0?'+':'')+v.toFixed(2)+'%',
+        formatter: (v, ctx) => {
+          const orig = ctx.chart.data.datasets[0]._origData?.[ctx.dataIndex];
+          return orig !== undefined ? (orig>0?'+':'')+orig.toFixed(2)+'%' : (v>0?'+':'')+v.toFixed(2)+'%';
+        },
         padding: {left:2, right:2},
         textShadowColor: shadow,
         textShadowBlur: 6,
@@ -1563,31 +1566,36 @@ function renderKrChart(){
 
     // ── 상승/하락 각각 차트 생성 함수 ──
     function makeRankChart(canvasEl, avgArr, isUp){
-      const labels = avgArr.map(d=>d.name);
-      const data   = avgArr.map(d=>+d.avg.toFixed(2));
-      const bg     = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
-      const border = isUp ? '#ff6b6b' : '#4fc3f7';
-      const maxAbs = Math.max(...data.map(Math.abs));
-      // 하락: 좌측에 레이블 공간 확보, 상승: 우측에 확보
-      const xMin = isUp ? 0             : -(maxAbs * 1.55);
-      const xMax = isUp ? maxAbs * 1.45 : 0;
+      const labels  = avgArr.map(d=>d.name);
+      const origData = avgArr.map(d=>+d.avg.toFixed(2));
+      // 하락 차트: 절댓값으로 렌더(왼쪽→오른쪽), 레이블에서 원래 음수값 표시
+      const data    = isUp ? origData : origData.map(v=>Math.abs(v));
+      const bg      = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
+      const border  = isUp ? '#ff6b6b' : '#4fc3f7';
+      const maxAbs  = Math.max(...data);
+      const xMax    = maxAbs * 1.45;
+      const dataset = {data, backgroundColor:bg, borderColor:border, borderWidth:1, borderRadius:3};
+      dataset._origData = origData; // 레이블용 원본 저장
       return new Chart(canvasEl,{
         type:'bar',
-        data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
+        data:{labels, datasets:[dataset]},
         options:{
           indexAxis:'y', responsive:true, maintainAspectRatio:false,
           clip: false,
-          layout:{padding:{top:0, bottom:0, left: isUp ? 4 : 56, right: isUp ? 56 : 4}},
+          layout:{padding:{top:0, bottom:0, left:4, right:56}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
               titleColor:'#e8edf5',bodyColor:'#8a9ab5',
-              callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}},
+              callbacks:{label(ctx){
+                const orig = ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;
+                return ` ${orig.toFixed(2)}%`;
+              }}},
             datalabels: neonLabel(isUp)
           },
           scales:{
-            x:{position:'top', min: xMin, max: xMax,
-              ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
+            x:{position:'top', min:0, max:xMax,
+              ticks:{color:'#8fa8c8',font:{size:8},callback:v=> isUp ? v+'%' : '-'+v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{position:'left',
               ticks:{color:'#e8edf5',font:{size:9}},
@@ -1819,13 +1827,16 @@ function renderUsChart(){
       const col = isUp ? '#ff6b6b' : '#4fc3f7';
       return {
         display:true,
-        anchor: isUp ? 'end'   : 'start',
-        align:  isUp ? 'end'   : 'start',
+        anchor: 'end',
+        align:  'end',
         color:col,
         backgroundColor: null,
         borderWidth: 0,
         font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
-        formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',
+        formatter:(v,ctx)=>{
+          const orig=ctx.chart.data.datasets[0]._origData?.[ctx.dataIndex];
+          return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';
+        },
         padding:{left:2, right:2},
         textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:6,
         clip: false,
@@ -1833,29 +1844,34 @@ function renderUsChart(){
     }
     function makeUsRankChart(canvasEl, avgArr, isUp){
       const labels=avgArr.map(d=>d.name);
-      const data=avgArr.map(d=>+d.avg.toFixed(2));
-      const maxAbs=Math.max(...data.map(Math.abs));
-      const xMin=isUp?0:-(maxAbs*1.55);
-      const xMax=isUp?maxAbs*1.45:0;
+      const origData=avgArr.map(d=>+d.avg.toFixed(2));
+      const data=isUp?origData:origData.map(v=>Math.abs(v));
+      const maxAbs=Math.max(...data);
+      const xMax=maxAbs*1.45;
+      const dataset={data,
+        backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',
+        borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};
+      dataset._origData=origData;
       return new Chart(canvasEl,{
         type:'bar',
-        data:{labels,datasets:[{data,
-          backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',
-          borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3}]},
+        data:{labels,datasets:[dataset]},
         options:{
           indexAxis:'y',responsive:true,maintainAspectRatio:false,
           clip:false,
-          layout:{padding:{top:0,bottom:0,left:isUp?4:56,right:isUp?56:4}},
+          layout:{padding:{top:0,bottom:0,left:4,right:56}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
               titleColor:'#e8edf5',bodyColor:'#8a9ab5',
-              callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`}}},
+              callbacks:{label(ctx){
+                const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;
+                return ` ${orig.toFixed(2)}%`;
+              }}},
             datalabels: usNeonLabel(isUp)
           },
           scales:{
-            x:{position:'top', min:xMin, max:xMax,
-              ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
+            x:{position:'top', min:0, max:xMax,
+              ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{position:'left',
               ticks:{color:'#e8edf5',font:{size:9}},
