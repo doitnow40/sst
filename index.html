@@ -433,6 +433,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
               <button class="chart-period-btn kr active" onclick="setKrChartPeriod(5,this)">1주</button>
               <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
               <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
+              <button class="chart-period-btn kr" id="kr-today-chart-btn" onclick="setKrChartPeriod(0,this)" style="color:#ffb74d">📡 오늘</button>
             </div>
             <div class="chart-ctrl-group" id="kr-chart-type-controls">
               <button class="chart-type-btn active" onclick="setKrChartType('line',this)" title="추이 선 차트">📈 추이</button>
@@ -533,6 +534,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
               <button class="chart-period-btn us active" onclick="setUsChartPeriod(5,this)">1주</button>
               <button class="chart-period-btn us" onclick="setUsChartPeriod(10,this)">2주</button>
               <button class="chart-period-btn us" onclick="setUsChartPeriod(22,this)">1개월</button>
+              <button class="chart-period-btn us" id="us-today-chart-btn" onclick="setUsChartPeriod(0,this)" style="color:#ef9a9a">📡 오늘</button>
             </div>
             <div class="chart-ctrl-group">
               <button class="chart-type-btn active" onclick="setUsChartType('line',this)" title="추이 선 차트">📈 추이</button>
@@ -1458,14 +1460,76 @@ function setKrChartType(type,btn){
 function renderKrChart(){
   if(!S.krD) return;
   const{headers:H,rows}=S.krD;
+  const wrap=document.getElementById('kr-chart-wrap');
+  if(!wrap) return;
+
+  // ── 오늘 실시간 전용 모드 (krChartPeriod===0) ──────────────────
+  if(krChartPeriod===0){
+    const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
+    const todayDate=S.krToday?S.krToday.date:'';
+    const hasToday=todayDate&&Object.keys(todayMap).length>0;
+    const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+    const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
+
+    if(krChartType==='heatmap'){
+      document.getElementById('kr-chart-title').textContent='🗓️ 섹터 히트맵 (오늘 실시간)';
+      if(krChart){krChart.destroy();krChart=null;}
+      wrap.style.height='auto';
+      if(!hasToday){wrap.innerHTML='<div class="loading-state" style="padding:30px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+      let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th><th style="color:#ffb74d;font-weight:700">${todayDate}★</th></tr></thead><tbody>`;
+      sectorNames.forEach(name=>{
+        const v=todayMap[name]??todayMajor[name];
+        const c=v!==undefined&&v!==null?pctCell(v,15):{bg:'',fg:'var(--text-muted)',b:false,t:'-'};
+        html+=`<tr><td>${name}</td><td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td></tr>`;
+      });
+      html+='</tbody></table></div>';
+      wrap.innerHTML=html; return;
+    }
+
+    if(krChartType==='ranking'){
+      document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
+      if(krChart){krChart.destroy();krChart=null;}
+      if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+      const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+      const allAvg=pureNames.map(name=>{
+        const v=todayMap[name];
+        return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
+      }).filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg);
+      const upData=allAvg.filter(d=>d.avg>=0);
+      const dnData=allAvg.filter(d=>d.avg<0).reverse();
+      function neonLabel(isUp){const col=isUp?'#ff6b6b':'#4fc3f7';const shadow=isUp?'#ff0000':'#0088ff';return{display:true,anchor:'end',align:isUp?'end':'start',color:col,backgroundColor:null,borderWidth:0,font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',padding:{left:2,right:2},textShadowColor:shadow,textShadowBlur:6,clip:false};}
+      function makeRankChart(canvasEl,avgArr,isUp){const labels=avgArr.map(d=>d.name);const origData=avgArr.map(d=>d.avg);const data=isUp?origData:origData.map(v=>Math.abs(v));const maxAbs=Math.max(...data);const xMax=maxAbs*1.45;const dataset={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};dataset._origData=origData;return new Chart(canvasEl,{type:'bar',data:{labels,datasets:[dataset]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,layout:{padding:{top:0,bottom:0,left:4,right:56}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},datalabels:neonLabel(isUp)},scales:{x:{position:'top',min:0,max:xMax,ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},y:{position:'left',ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});}
+      const ROW_H=24;const chartH=Math.max(120,Math.max(upData.length,dnData.length)*ROW_H+55);
+      wrap.innerHTML=`<div style="display:flex;gap:8px;width:100%"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">📈 상승 섹터 (${upData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-up-canvas"></canvas></div></div><div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px"><div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">📉 하락 섹터 (${dnData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-dn-canvas"></canvas></div></div></div>`;
+      const totalH=chartH+40;wrap.style.height=Math.min(600,totalH)+'px';wrap.style.overflowY=totalH>600?'auto':'visible';
+      requestAnimationFrame(()=>{const upCanvas=document.getElementById('kr-rank-up-canvas');const dnCanvas=document.getElementById('kr-rank-dn-canvas');if(upCanvas&&upData.length)makeRankChart(upCanvas,upData,true);if(dnCanvas&&dnData.length)makeRankChart(dnCanvas,dnData,false);});
+      return;
+    }
+
+    // 오늘 라인 차트: 단일 데이터 포인트 → 바 차트로 표시
+    document.getElementById('kr-chart-title').textContent=`📡 오늘 실시간 등락률 (${todayDate})`;
+    if(krChart){krChart.destroy();krChart=null;}
+    if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+    wrap.style.height='280px';wrap.style.overflowY='';
+    if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';}
+    const canvas=document.getElementById('kr-chart-canvas');
+    if(!canvas)return;
+    if(krChart){krChart.destroy();krChart=null;}
+    const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+    const vals=allNames.map(name=>{const v=todayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
+    const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
+    const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
+    krChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'오늘 등락률',data,backgroundColor:colors,borderColor:colors.map(c=>c.replace('0.75','1')),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`;}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},grid:{color:'rgba(46,58,80,0.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}});
+    krChartAllOn=true; return;
+  }
+  // ── 기존 기간 모드 ────────────────────────────────────────────────
+
   const chartRows=[...rows.slice(0,krChartPeriod)].reverse();
   const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
   const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 
-  const wrap=document.getElementById('kr-chart-wrap');
-  if(!wrap) return;
-
-  const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':'1개월';
+  const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
 
   if(krChartType==='heatmap'){
     document.getElementById('kr-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
@@ -1742,12 +1806,74 @@ function setUsChartType(type,btn){
 function renderUsChart(){
   if(!S.usD) return;
   const{headers:H,rows}=S.usD;
-  const chartRows=[...rows.slice(0,usChartPeriod)].reverse();
-  const sectorNames=H.slice(1);
   const wrap=document.getElementById('us-chart-wrap');
   if(!wrap) return;
 
-  const periodLabel=usChartPeriod===5?'1주':usChartPeriod===10?'2주':'1개월';
+  // ── 오늘 실시간 전용 모드 (usChartPeriod===0) ──────────────────
+  if(usChartPeriod===0){
+    const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+    const usTodayDate=S.usToday?S.usToday.date:'';
+    const usHasToday=usTodayDate&&Object.keys(usTodayMap).length>0;
+    const sectorNames=H.slice(1);
+
+    if(usChartType==='heatmap'){
+      document.getElementById('us-chart-title').textContent='🗓️ 섹터 히트맵 (오늘 실시간)';
+      if(usChart){usChart.destroy();usChart=null;}
+      wrap.style.height='auto';
+      if(!usHasToday){wrap.innerHTML='<div class="loading-state" style="padding:30px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+      let html=`<div class="heatmap-wrap"><table class="heatmap-table"><thead><tr><th>섹터</th><th style="color:var(--accent-us);font-weight:700">${usTodayDate}★</th></tr></thead><tbody>`;
+      sectorNames.forEach(name=>{
+        const m=US_META[name]||{};
+        const v=usTodayMap[name];
+        let c;
+        if(v!==undefined&&v!==null){
+          if(m.type==='YIELD')c=yldCell(v);
+          else if(m.type==='VIX')c=vixCell(v);
+          else c=pctCell(v,6);
+        }else{c={bg:'',fg:'var(--text-muted)',b:false,t:'-'};}
+        html+=`<tr><td>${name}</td><td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td></tr>`;
+      });
+      html+='</tbody></table></div>';
+      wrap.innerHTML=html; return;
+    }
+
+    if(usChartType==='ranking'){
+      document.getElementById('us-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
+      if(usChart){usChart.destroy();usChart=null;}
+      if(!usHasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+      const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+      const allAvg=rankNames.map(name=>{const v=usTodayMap[name];return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};}).filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg);
+      const upData=allAvg.filter(d=>d.avg>=0);const dnData=allAvg.filter(d=>d.avg<0).reverse();
+      function usNeonLabel(isUp){const col=isUp?'#ff6b6b':'#4fc3f7';return{display:true,anchor:'end',align:isUp?'end':'start',color:col,backgroundColor:null,borderWidth:0,font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},formatter:(v,ctx)=>{const orig=ctx.chart.data.datasets[0]._origData?.[ctx.dataIndex];return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';},padding:{left:2,right:2},textShadowColor:isUp?'#ff0000':'#0088ff',textShadowBlur:6,clip:false};}
+      function makeUsRankChart(canvasEl,avgArr,isUp){const labels=avgArr.map(d=>d.name);const origData=avgArr.map(d=>d.avg);const data=isUp?origData:origData.map(v=>Math.abs(v));const maxAbs=Math.max(...data);const xMax=maxAbs*1.45;const dataset={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};dataset._origData=origData;return new Chart(canvasEl,{type:'bar',data:{labels,datasets:[dataset]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,layout:{padding:{top:0,bottom:0,left:4,right:56}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},datalabels:usNeonLabel(isUp)},scales:{x:{position:'top',min:0,max:xMax,ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},y:{position:'left',ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});}
+      const ROW_H=22;const chartH=Math.max(120,Math.max(upData.length,dnData.length)*ROW_H+55);
+      wrap.innerHTML=`<div style="display:flex;gap:8px;width:100%"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">📈 상승 섹터 (${upData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="us-rank-up-canvas"></canvas></div></div><div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px"><div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">📉 하락 섹터 (${dnData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="us-rank-dn-canvas"></canvas></div></div></div>`;
+      const totalH=chartH+40;wrap.style.height=Math.min(580,totalH)+'px';wrap.style.overflowY=totalH>580?'auto':'visible';
+      requestAnimationFrame(()=>{const upCanvas=document.getElementById('us-rank-up-canvas');const dnCanvas=document.getElementById('us-rank-dn-canvas');if(upCanvas&&upData.length)makeUsRankChart(upCanvas,upData,true);if(dnCanvas&&dnData.length)makeUsRankChart(dnCanvas,dnData,false);});
+      return;
+    }
+
+    // 오늘 라인 차트 → 바 차트
+    document.getElementById('us-chart-title').textContent=`📡 오늘 실시간 등락률 (${usTodayDate})`;
+    if(usChart){usChart.destroy();usChart=null;}
+    if(!usHasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
+    wrap.style.height='320px';wrap.style.overflowY='';
+    if(!wrap.querySelector('#us-chart-canvas')){wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';wrap.style.height='320px';}
+    const canvas=document.getElementById('us-chart-canvas');if(!canvas)return;
+    if(usChart){usChart.destroy();usChart=null;}
+    const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+    const vals=rankNames.map(name=>{const v=usTodayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
+    const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
+    const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
+    usChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'오늘 등락률',data,backgroundColor:colors,borderColor:colors.map(c=>c.replace('0.75','1')),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`;}}},datalabels:{display:false}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},grid:{color:'rgba(46,58,80,0.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}});
+    usChartAllOn=true; return;
+  }
+  // ── 기존 기간 모드 ────────────────────────────────────────────────
+
+  const chartRows=[...rows.slice(0,usChartPeriod)].reverse();
+  const sectorNames=H.slice(1);
+
+  const periodLabel=usChartPeriod===5?'1주':usChartPeriod===10?'2주':usChartPeriod===0?'오늘':'1개월';
 
   if(usChartType==='heatmap'){
     document.getElementById('us-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
