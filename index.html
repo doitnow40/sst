@@ -1547,8 +1547,8 @@ function renderKrChart(){
       const shadow = isUp ? '#ff0000' : '#0088ff';
       return {
         display:true,
-        anchor: 'end',
-        align:  isUp ? 'end' : 'start',
+        anchor: isUp ? 'end'   : 'start',
+        align:  isUp ? 'end'   : 'end',
         color: col,
         backgroundColor: null,
         borderWidth: 0,
@@ -1568,15 +1568,16 @@ function renderKrChart(){
       const bg     = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
       const border = isUp ? '#ff6b6b' : '#4fc3f7';
       const maxAbs = Math.max(...data.map(Math.abs));
-      const xMin = isUp ? 0 : -(maxAbs * 1.5);
-      const xMax = isUp ? maxAbs * 1.5 : 0;
+      // 하락: 좌측에 레이블 공간 확보, 상승: 우측에 확보
+      const xMin = isUp ? 0             : -(maxAbs * 1.55);
+      const xMax = isUp ? maxAbs * 1.45 : 0;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y', responsive:true, maintainAspectRatio:false,
           clip: false,
-          layout:{padding: {top:0, bottom:0, left:4, right: isUp ? 60 : 4}},
+          layout:{padding:{top:0, bottom:0, left: isUp ? 4 : 56, right: isUp ? 56 : 4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1588,8 +1589,7 @@ function renderKrChart(){
             x:{position:'top', min: xMin, max: xMax,
               ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
-            y:{
-              position: 'left',
+            y:{position:'left',
               ticks:{color:'#e8edf5',font:{size:9}},
               grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
@@ -1819,8 +1819,8 @@ function renderUsChart(){
       const col = isUp ? '#ff6b6b' : '#4fc3f7';
       return {
         display:true,
-        anchor: 'end',
-        align:  isUp ? 'end' : 'start',
+        anchor: isUp ? 'end'   : 'start',
+        align:  isUp ? 'end'   : 'end',
         color:col,
         backgroundColor: null,
         borderWidth: 0,
@@ -1835,8 +1835,8 @@ function renderUsChart(){
       const labels=avgArr.map(d=>d.name);
       const data=avgArr.map(d=>+d.avg.toFixed(2));
       const maxAbs=Math.max(...data.map(Math.abs));
-      const xMin=isUp?0:-(maxAbs*1.5);
-      const xMax=isUp?maxAbs*1.5:0;
+      const xMin=isUp?0:-(maxAbs*1.55);
+      const xMax=isUp?maxAbs*1.45:0;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,
@@ -1845,7 +1845,7 @@ function renderUsChart(){
         options:{
           indexAxis:'y',responsive:true,maintainAspectRatio:false,
           clip:false,
-          layout:{padding:{top:0,bottom:0,left:4,right:isUp?60:4}},
+          layout:{padding:{top:0,bottom:0,left:isUp?4:56,right:isUp?56:4}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1857,8 +1857,7 @@ function renderUsChart(){
             x:{position:'top', min:xMin, max:xMax,
               ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
-            y:{
-              position:'left',
+            y:{position:'left',
               ticks:{color:'#e8edf5',font:{size:9}},
               grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
