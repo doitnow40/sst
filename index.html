@@ -1119,7 +1119,7 @@ function sparkline5row(sectorHdrs, filtered){
   if(filtered.length<2) return '';
   const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse(); // 오래된→최신 순
   // 헤더: 색상 의미 범례 포함
-  let h=`<tr class="avg-row"><td class="avg-row-label" style="font-size:8px;line-height:1.5">5D 추이<br><span style="color:#ef5350;font-size:7px">▲상승</span>&nbsp;<span style="color:#42a5f5;font-size:7px">▼하락</span></td>`;
+  let h=`<tr class="avg-row" style="background:rgba(255,255,255,.07)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:rgba(255,255,255,.07)">5D 추이<br><span style="color:#ef5350;font-size:7px">▲상승</span>&nbsp;<span style="color:#42a5f5;font-size:7px">▼하락</span></td>`;
   sectorHdrs.forEach((name,ci)=>{
     const vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
     if(vals.length>=2){
@@ -1135,8 +1135,8 @@ function sparkline5row(sectorHdrs, filtered){
       const last=vals[vals.length-1],first=vals[0];
       const col=last>first?'#ef5350':last<first?'#42a5f5':'#78909c';
       const svg=`<svg width="${W}" height="${H}" style="display:block;margin:auto"><polyline points="${points}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="1.5" fill="${col}"/></svg>`;
-      h+=`<td style="padding:1px;background:var(--bg-card)">${svg}</td>`;
-    }else h+='<td></td>';
+      h+=`<td style="padding:1px;background:rgba(255,255,255,.07)">${svg}</td>`;
+    }else h+=`<td style="background:rgba(255,255,255,.07)"></td>`;
   });
   return h+'</tr>';
 }
