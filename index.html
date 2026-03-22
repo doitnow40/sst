@@ -2730,21 +2730,36 @@ function renderKrListFiltered(){
       : '';
 
     h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
-    h+=`<div class="sector-card-header" style="${isWatched?'background:rgba(255,111,0,.15);border-bottom-color:rgba(255,111,0,.4)':secAvg===null?'':'background:'+(secAvg>0?'rgba(239,83,80,.12)':'rgba(66,165,245,.12)')+';border-bottom-color:'+(secAvg>0?'rgba(239,83,80,.35)':'rgba(66,165,245,.35)')}">`;
+    h+=`<div class="sector-card-header" style="${isWatched?'background:rgba(249,201,0,.12);border-bottom-color:rgba(249,201,0,.4)':'background:rgba(255,255,255,.04);border-bottom-color:rgba(255,255,255,.1)'}">`;
 
-    // 타이틀바 배경: 주목=앰버, 상승=빨강, 하락=파랑, 보합=다크
+    // 타이틀바: 주목=노랑, 상승/하락/보합=밝은 회색계열
     const titleBg = isWatched
-      ? 'linear-gradient(90deg,#b35d00,#e07800)'
-      : secAvg > 0
-        ? 'linear-gradient(90deg,#b71c1c,#c62828)'
-        : secAvg < 0
-          ? 'linear-gradient(90deg,#0d47a1,#1565c0)'
-          : 'var(--bg-card2)';
-    const titleFg = '#fff';
+      ? 'linear-gradient(90deg,#c89600,#f9c900)'
+      : 'linear-gradient(90deg,#2a3550,#303d58)';
+    const titleFg = isWatched ? '#1a1a00' : '#c8d8f0';
     h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}">${sec.sector}</div>`;
-    h+=`<div class="sector-card-meta">`;
+
+    // 막대 시각화: 최대±15% 기준, 10칸, 상승=빨강/하락=파랑
+    const BAR_MAX=15, BARS=10;
+    let barHtml='';
+    if(secAvg!==null){
+      const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
+      const isUp=secAvg>=0;
+      const filledColor=isUp?'#e53935':'#1e88e5';
+      const emptyColor='rgba(255,255,255,.1)';
+      const barStyle=`width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0`;
+      barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+      for(let i=0;i<BARS;i++){
+        const active = isUp ? (i < filled) : (BARS-1-i < filled);
+        barHtml+=`<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
+      }
+      barHtml+='</div>';
+    }
+
+    h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
     h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
     if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
+    h+=`${barHtml}`;
     h+=`${avgHtml}</div></div><div class="sector-stocks">`;
 
 
