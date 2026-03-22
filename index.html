@@ -1247,10 +1247,10 @@ function renderKr(){
     }
 
     document.getElementById('kr-stats').innerHTML=`
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+      <div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">
 
         <!-- 그룹1: 등록 정보 -->
-        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:160px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
@@ -1259,7 +1259,7 @@ function renderKr(){
         </div>
 
         <!-- 그룹2: 최근 영업일 -->
-        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${latestDate})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)">
@@ -1281,7 +1281,7 @@ function renderKr(){
 
         <!-- 그룹3: 오늘 실시간 (있을 때만) -->
         ${hasTodayStats?`
-        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 <span style="font-weight:400;opacity:.7">(${todayDate})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
@@ -1563,12 +1563,12 @@ function renderKrChart(){
       const shadow = isUp ? '#ff0000' : '#0088ff';
       return {
         display:true,
-        anchor: isUp ? 'end' : 'start',
+        anchor: 'end',
         align:  isUp ? 'end' : 'start',
         color: col,
         font:{size:11, weight:'bold', family:"'Courier Prime','Courier New',monospace"},
         formatter: v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding: isUp ? {left:4} : {right:4},
+        padding: {left:4, right:4},
         textShadowColor: shadow,
         textShadowBlur: 8,
       };
@@ -1580,12 +1580,14 @@ function renderKrChart(){
       const data   = avgArr.map(d=>+d.avg.toFixed(2));
       const bg     = isUp ? 'rgba(239,83,80,0.7)' : 'rgba(66,165,245,0.7)';
       const border = isUp ? '#ff6b6b' : '#4fc3f7';
+      // 하락 차트: y축을 left에 두고, x축 min을 살짝 더 확장해 레이블 공간 확보
+      const xMin = isUp ? undefined : Math.min(...data) * 1.35;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,backgroundColor:bg,borderColor:border,borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y', responsive:true, maintainAspectRatio:false,
-          layout:{padding: isUp ? {right:70} : {left:70, right:4}},
+          layout:{padding: isUp ? {right:70} : {left:4, right:70}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1594,12 +1596,12 @@ function renderKrChart(){
             datalabels: neonLabel(isUp)
           },
           scales:{
-            x:{position:'top',
+            x:{position:'top', min: xMin,
               ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{
-              position: isUp ? 'left' : 'right',
-              ticks:{color:'#e8edf5',font:{size:9}, mirror: !isUp},
+              position: 'left',
+              ticks:{color:'#e8edf5',font:{size:9}},
               grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
         }
@@ -1623,7 +1625,7 @@ function renderKrChart(){
           </div>
         </div>
         <!-- 우측: 하락 섹터 -->
-        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
+        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px">
           <div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
             📉 하락 섹터 (${dnData.length}개)
@@ -1828,18 +1830,19 @@ function renderUsChart(){
       const col = isUp ? '#ff6b6b' : '#4fc3f7';
       return {
         display:true,
-        anchor: isUp ? 'end' : 'start',
+        anchor: 'end',
         align:  isUp ? 'end' : 'start',
         color:col,
         font:{size:11,weight:'bold',family:"'Courier Prime','Courier New',monospace"},
         formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',
-        padding: isUp ? {left:4} : {right:4},
+        padding:{left:4, right:4},
         textShadowColor:isUp?'#ff0000':'#0088ff', textShadowBlur:8
       };
     }
     function makeUsRankChart(canvasEl, avgArr, isUp){
       const labels=avgArr.map(d=>d.name);
       const data=avgArr.map(d=>+d.avg.toFixed(2));
+      const xMin = isUp ? undefined : Math.min(...data) * 1.35;
       return new Chart(canvasEl,{
         type:'bar',
         data:{labels,datasets:[{data,
@@ -1847,7 +1850,7 @@ function renderUsChart(){
           borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3}]},
         options:{
           indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          layout:{padding: isUp ? {right:70} : {left:70, right:4}},
+          layout:{padding: isUp ? {right:70} : {left:4, right:70}},
           plugins:{
             legend:{display:false},
             tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1856,11 +1859,12 @@ function renderUsChart(){
             datalabels: usNeonLabel(isUp)
           },
           scales:{
-            x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
+            x:{position:'top', min: xMin,
+              ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},
               grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
             y:{
-              position: isUp ? 'left' : 'right',
-              ticks:{color:'#e8edf5',font:{size:9}, mirror: !isUp},
+              position: 'left',
+              ticks:{color:'#e8edf5',font:{size:9}},
               grid:{color:'#1e2535'},border:{color:'#2e3a50'}}
           }
         }
@@ -1883,7 +1887,7 @@ function renderUsChart(){
           </div>
         </div>
         <!-- 우측: 하락 섹터 -->
-        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:8px">
+        <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px">
           <div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;
             text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
             📉 하락 섹터 (${dnData.length}개)
@@ -2010,16 +2014,16 @@ function renderUs(){
     const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+      <div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">
         <!-- 그룹1: 등록 정보 -->
-        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:120px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
           </div>
         </div>
         <!-- 그룹2: 최근 영업일 -->
-        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#ef9a9a;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':(sp>=0?'+':'')+sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
@@ -2281,15 +2285,15 @@ function renderKrTableOnly(){
       tMnName=tMnVal!==null?pureSectors[tVals.indexOf(tMnVal)]:'';
     }
     document.getElementById('kr-stats').innerHTML=`
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
-        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:160px">
+      <div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
             <div class="stat-card" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">${pureSectors.length}</div><div class="stat-sub">트래킹 중</div></div>
           </div>
         </div>
-        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)"><div class="stat-label">전체 섹터평균</div><div class="stat-val ${parseFloat(avg)>=0?'up':'dn'}">${parseFloat(avg)>=0?'+':''}${avg}%</div></div>
@@ -2298,7 +2302,7 @@ function renderKrTableOnly(){
           </div>
         </div>
         ${hasTodayStats?`
-        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 <span style="font-weight:400;opacity:.7">(${todayDate})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)"><div class="stat-label" style="color:#ffb74d">전체 섹터평균</div><div class="stat-val ${parseFloat(tAvg)>=0?'up':'dn'}">${parseFloat(tAvg)>=0?'+':''}${tAvg}%</div></div>
@@ -2347,14 +2351,14 @@ function renderUsTableOnly(){
     const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
-        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:120px">
+      <div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
           </div>
         </div>
-        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <div style="font-size:9px;color:#ef9a9a;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
           <div style="display:flex;gap:8px;align-items:stretch">
             <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':(sp>=0?'+':'')+sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
