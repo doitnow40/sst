@@ -384,46 +384,13 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
       </div>
 
-      <!-- ① 섹터 추이 선 차트 (최대 1개월) -->
-      <div class="chart-section">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title" id="kr-chart-title">📈 섹터별 등락률 추이</div>
-            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <!-- 차트 숨기기/보이기 -->
-            <button class="chart-toggle-all" id="kr-chart-visibility-btn" onclick="toggleKrChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
-            <!-- 기간 선택 -->
-            <div class="chart-ctrl-group" id="kr-chart-controls">
-              <button class="chart-period-btn kr active" onclick="setKrChartPeriod(5,this)">1주</button>
-              <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
-              <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
-            </div>
-            <!-- 차트 타입 선택 -->
-            <div class="chart-ctrl-group" id="kr-chart-type-controls">
-              <button class="chart-type-btn active" onclick="setKrChartType('line',this)" title="추이 선 차트">📈 추이</button>
-              <button class="chart-type-btn" onclick="setKrChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
-              <button class="chart-type-btn" onclick="setKrChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
-            </div>
-            <!-- 시간순 반전 (히트맵 전용) -->
-            <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
-            <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()">전체 ON/OFF</button>
-          </div>
-        </div>
-        <div class="chart-body" id="kr-chart-body">
-          <div id="kr-chart-wrap" class="chart-canvas-wrap">
-            <canvas id="kr-chart-canvas"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- ② 컨트롤 + 통계 + 표 -->
-      <!-- 항상 보이는 오늘 실시간 안내 바 (KR History) -->
+      <!-- ① 오늘 실시간 안내 바 -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
         <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
         <button onclick="refreshKrToday(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
       </div>
+
+      <!-- ② 기간 선택 + 글자 크기 -->
       <div class="controls-bar">
         <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
         <button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
@@ -435,19 +402,53 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <span class="font-size-display" id="fontSizeLabel">7</span>
           <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
         </div>
-
       </div>
+
+      <!-- ③ 통계 카드 그룹 -->
       <div id="kr-stats" class="stats-row"></div>
+
+      <!-- ④ 표 -->
       <div class="table-container">
         <div class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 10분마다 자동 갱신</div>
         <div class="table-scroll" id="kr-table">
-        <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
-      </div></div>
+          <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
+        </div>
+      </div>
       <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
         🔵 -15% ←—— ⬜ 0% ——→ 🔴 +15% | 섹터 평균 등락률(%)
       </div>
 
-      <!-- ③ 광고 하단 -->
+      <!-- ⑤ 섹터 추이 선 차트 (표 아래) -->
+      <div class="chart-section" style="margin-top:16px">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title" id="kr-chart-title">📈 섹터별 등락률 추이</div>
+            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="chart-toggle-all" id="kr-chart-visibility-btn" onclick="toggleKrChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
+            <div class="chart-ctrl-group" id="kr-chart-controls">
+              <button class="chart-period-btn kr active" onclick="setKrChartPeriod(5,this)">1주</button>
+              <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
+              <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
+            </div>
+            <div class="chart-ctrl-group" id="kr-chart-type-controls">
+              <button class="chart-type-btn active" onclick="setKrChartType('line',this)" title="추이 선 차트">📈 추이</button>
+              <button class="chart-type-btn" onclick="setKrChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
+              <button class="chart-type-btn" onclick="setKrChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
+            </div>
+            <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
+            <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()">전체 ON/OFF</button>
+          </div>
+        </div>
+        <div class="chart-body" id="kr-chart-body">
+          <div id="kr-chart-wrap" class="chart-canvas-wrap">
+            <canvas id="kr-chart-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥ 광고 하단 -->
       <div class="ad-slot ad-slot-btm" id="adfit-kr-btm"><span>광고 영역 (카카오 Adfit)</span></div>
     </div>
 
@@ -483,8 +484,42 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         <div class="page-badge badge-us" id="us-status">로딩 중...</div>
       </div>
 
-      <!-- ① 섹터 추이 선 차트 -->
-      <div class="chart-section">
+      <!-- ① 오늘 실시간 안내 바 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
+        <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
+        <button onclick="refreshUsToday(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+      </div>
+
+      <!-- ② 기간 선택 + 글자 크기 -->
+      <div class="controls-bar">
+        <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
+        <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
+        <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
+        <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
+        <div class="font-ctrl">
+          <span class="font-ctrl-label">글자 크기</span>
+          <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
+          <span class="font-size-display" id="fontSizeLabelUs">7</span>
+          <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
+        </div>
+      </div>
+
+      <!-- ③ 통계 카드 그룹 -->
+      <div id="us-stats" class="stats-row"></div>
+
+      <!-- ④ 표 -->
+      <div class="table-container">
+        <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 10분마다 자동 갱신</div>
+        <div class="table-scroll" id="us-table">
+          <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
+        🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
+      </div>
+
+      <!-- ⑤ 섹터 추이 선 차트 (표 아래) -->
+      <div class="chart-section" style="margin-top:16px">
         <div class="chart-header">
           <div>
             <div class="chart-title" id="us-chart-title">📈 섹터별 등락률 추이</div>
@@ -513,36 +548,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         </div>
       </div>
 
-      <!-- ② 컨트롤 + 통계 + 표 -->
-      <div class="controls-bar">
-        <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
-        <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
-        <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
-      <!-- 항상 보이는 오늘 실시간 안내 바 (US History) -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
-        <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-        <button onclick="refreshUsToday(this)" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
-      </div>
-        <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
-        <div class="font-ctrl">
-          <span class="font-ctrl-label">글자 크기</span>
-          <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-          <span class="font-size-display" id="fontSizeLabelUs">7</span>
-          <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
-        </div>
-
-      </div>
-      <div id="us-stats" class="stats-row"></div>
-      <div class="table-container">
-        <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 10분마다 자동 갱신</div>
-        <div class="table-scroll" id="us-table">
-        <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
-      </div></div>
-      <div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
-        🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
-      </div>
-
-      <!-- ③ 광고 하단 -->
+      <!-- ⑥ 광고 하단 -->
       <div class="ad-slot ad-slot-btm" id="adfit-us-btm"><span>광고 영역 (카카오 Adfit)</span></div>
     </div>
 
@@ -1241,13 +1247,60 @@ function renderKr(){
     }
 
     document.getElementById('kr-stats').innerHTML=`
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
-        <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
-        <div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu">${pureSectors.length}</div><div class="stat-sub">트래킹 중</div></div>
-        <div class="stat-card"><div class="stat-label">섹터 평균</div><div class="stat-val ${parseFloat(avg)>=0?'up':'dn'}">${parseFloat(avg)>=0?'+':''}${avg}%</div><div class="stat-sub">최근 영업일 ${latestDate}</div></div>
-        <div class="stat-card"><div class="stat-label">최강 (최근 영업일)</div><div class="stat-val up">+${mx}%</div><div class="stat-sub">${mxName}</div></div>
-        <div class="stat-card"><div class="stat-label">최약 (최근 영업일)</div><div class="stat-val dn">${mn}%</div><div class="stat-sub">${mnName}</div></div>
-        ${todayStatHtml}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+
+        <!-- 그룹1: 등록 정보 -->
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:160px">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
+            <div class="stat-card" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">${pureSectors.length}</div><div class="stat-sub">트래킹 중</div></div>
+          </div>
+        </div>
+
+        <!-- 그룹2: 최근 영업일 -->
+        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${latestDate})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)">
+              <div class="stat-label">전체 섹터평균</div>
+              <div class="stat-val ${parseFloat(avg)>=0?'up':'dn'}">${parseFloat(avg)>=0?'+':''}${avg}%</div>
+            </div>
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)">
+              <div class="stat-label">최고 섹터</div>
+              <div class="stat-val up">+${mx}%</div>
+              <div class="stat-sub">${mxName}</div>
+            </div>
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)">
+              <div class="stat-label">최저 섹터</div>
+              <div class="stat-val dn">${mn}%</div>
+              <div class="stat-sub">${mnName}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 그룹3: 오늘 실시간 (있을 때만) -->
+        ${hasTodayStats?`
+        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 <span style="font-weight:400;opacity:.7">(${todayDate})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
+              <div class="stat-label" style="color:#ffb74d">전체 섹터평균</div>
+              <div class="stat-val ${parseFloat(tAvg)>=0?'up':'dn'}">${parseFloat(tAvg)>=0?'+':''}${tAvg}%</div>
+            </div>
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
+              <div class="stat-label" style="color:#ffb74d">최고 섹터</div>
+              <div class="stat-val up">+${tMx}%</div>
+              <div class="stat-sub">${tMxName}</div>
+            </div>
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)">
+              <div class="stat-label" style="color:#ffb74d">최저 섹터</div>
+              <div class="stat-val dn">${tMn}%</div>
+              <div class="stat-sub">${tMnName}</div>
+            </div>
+          </div>
+        </div>`:''}
+
       </div>`;
   } // if(f.length)
 
@@ -1957,11 +2010,23 @@ function renderUs(){
     const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
-        <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
-        <div class="stat-card"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
-        <div class="stat-card"><div class="stat-label">Nasdaq</div><div class="stat-val ${nq>=0?'up':'dn'}">${isNaN(nq)?'-':nq.toFixed(2)}%</div><div class="stat-sub">당일</div></div>
-        <div class="stat-card"><div class="stat-label">VIX</div><div class="stat-val ${vx>=20?'up':'dn'}">${isNaN(vx)?'-':vx.toFixed(2)}</div><div class="stat-sub">변동성</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+        <!-- 그룹1: 등록 정보 -->
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:120px">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
+          </div>
+        </div>
+        <!-- 그룹2: 최근 영업일 -->
+        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#ef9a9a;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':(sp>=0?'+':'')+sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">Nasdaq</div><div class="stat-val ${nq>=0?'up':'dn'}">${isNaN(nq)?'-':(nq>=0?'+':'')+nq.toFixed(2)}%</div><div class="stat-sub">당일</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">VIX</div><div class="stat-val ${vx>=20?'up':'dn'}">${isNaN(vx)?'-':vx.toFixed(2)}</div><div class="stat-sub">변동성</div></div>
+          </div>
+        </div>
       </div>`;
   }
 
@@ -2191,16 +2256,56 @@ function renderKrTableOnly(){
   // stats
   if(f.length){
     const lt=f[0];
-    const sVals=sectorHdrs.filter(h=>!KR_FIXED[h]).map(h=>parseFloat(lt[H.indexOf(h)])).filter(v=>!isNaN(v));
+    const pureSectors=sectorHdrs.filter(h=>!KR_FIXED[h]);
+    const sVals=pureSectors.map(h=>parseFloat(lt[H.indexOf(h)])).filter(v=>!isNaN(v));
     const avg=sVals.length?(sVals.reduce((a,b)=>a+b,0)/sVals.length).toFixed(2):'-';
-    const mx=sVals.length?Math.max(...sVals).toFixed(2):'-';
-    const mn=sVals.length?Math.min(...sVals).toFixed(2):'-';
+    const mxVal=sVals.length?Math.max(...sVals):null;
+    const mnVal=sVals.length?Math.min(...sVals):null;
+    const mx=mxVal!==null?mxVal.toFixed(2):'-';
+    const mn=mnVal!==null?mnVal.toFixed(2):'-';
+    const mxName=mxVal!==null?pureSectors[sVals.indexOf(mxVal)]:'';
+    const mnName=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
+    // 오늘 실시간
+    const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayDate=S.krToday?S.krToday.date:'';
+    const hasTodayStats=todayDate&&Object.keys(todayMap).length>0;
+    let tAvg='-',tMx='-',tMn='-',tMxName='',tMnName='';
+    if(hasTodayStats){
+      const tVals=pureSectors.map(n=>{const v=todayMap[n];return(v!==undefined&&!isNaN(v))?v:null;}).filter(v=>v!==null);
+      tAvg=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(2):'-';
+      const tMxVal=tVals.length?Math.max(...tVals):null;
+      const tMnVal=tVals.length?Math.min(...tVals):null;
+      tMx=tMxVal!==null?tMxVal.toFixed(2):'-';
+      tMn=tMnVal!==null?tMnVal.toFixed(2):'-';
+      tMxName=tMxVal!==null?pureSectors[tVals.indexOf(tMxVal)]:'';
+      tMnName=tMnVal!==null?pureSectors[tVals.indexOf(tMnVal)]:'';
+    }
     document.getElementById('kr-stats').innerHTML=`
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
-        <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
-        <div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu">${sectorHdrs.filter(h=>!KR_FIXED[h]).length}</div><div class="stat-sub">트래킹 중</div></div>
-        <div class="stat-card"><div class="stat-label">섹터 평균</div><div class="stat-val ${parseFloat(avg)>=0?'up':'dn'}">${avg}%</div><div class="stat-sub">${lt[0]}</div></div>
-        <div class="stat-card"><div class="stat-label">최강 / 최약</div><div class="stat-val up">+${mx}%</div><div class="stat-sub">최약: ${mn}%</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:160px">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.krR}일</div></div>
+            <div class="stat-card" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">${pureSectors.length}</div><div class="stat-sub">트래킹 중</div></div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)"><div class="stat-label">전체 섹터평균</div><div class="stat-val ${parseFloat(avg)>=0?'up':'dn'}">${parseFloat(avg)>=0?'+':''}${avg}%</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+${mx}%</div><div class="stat-sub">${mxName}</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">${mn}%</div><div class="stat-sub">${mnName}</div></div>
+          </div>
+        </div>
+        ${hasTodayStats?`
+        <div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 <span style="font-weight:400;opacity:.7">(${todayDate})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)"><div class="stat-label" style="color:#ffb74d">전체 섹터평균</div><div class="stat-val ${parseFloat(tAvg)>=0?'up':'dn'}">${parseFloat(tAvg)>=0?'+':''}${tAvg}%</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+${tMx}%</div><div class="stat-sub">${tMxName}</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">${tMn}%</div><div class="stat-sub">${tMnName}</div></div>
+          </div>
+        </div>`:''}
       </div>`;
   }
   // 표 생성 (차트 제외 — renderKr 로직 중 표 부분만)
@@ -2242,11 +2347,21 @@ function renderUsTableOnly(){
     const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
     const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
     document.getElementById('us-stats').innerHTML=`
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch">
-        <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
-        <div class="stat-card"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
-        <div class="stat-card"><div class="stat-label">Nasdaq</div><div class="stat-val ${nq>=0?'up':'dn'}">${isNaN(nq)?'-':nq.toFixed(2)}%</div><div class="stat-sub">당일</div></div>
-        <div class="stat-card"><div class="stat-label">VIX</div><div class="stat-val ${vx>=20?'up':'dn'}">${isNaN(vx)?'-':vx.toFixed(2)}</div><div class="stat-sub">변동성</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin-bottom:4px">
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;min-width:120px">
+          <div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">${f.length}일</div><div class="stat-sub">최근 ${S.usR}일</div></div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(239,83,80,.35);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;min-width:280px">
+          <div style="font-size:9px;color:#ef9a9a;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 <span style="font-weight:400;opacity:.7">(${lt[0]})</span></div>
+          <div style="display:flex;gap:8px;align-items:stretch">
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">S&P500</div><div class="stat-val ${sp>=0?'up':'dn'}">${isNaN(sp)?'-':(sp>=0?'+':'')+sp.toFixed(2)}%</div><div class="stat-sub">${lt[0]}</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">Nasdaq</div><div class="stat-val ${nq>=0?'up':'dn'}">${isNaN(nq)?'-':(nq>=0?'+':'')+nq.toFixed(2)}%</div><div class="stat-sub">당일</div></div>
+            <div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.25);background:rgba(239,83,80,.05)"><div class="stat-label">VIX</div><div class="stat-val ${vx>=20?'up':'dn'}">${isNaN(vx)?'-':vx.toFixed(2)}</div><div class="stat-sub">변동성</div></div>
+          </div>
+        </div>
       </div>`;
   }
   const spans=[];let pg=null,gs=0;
