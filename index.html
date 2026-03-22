@@ -2730,8 +2730,18 @@ function renderKrListFiltered(){
       : '';
 
     h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
-    h+=`<div class="sector-card-header" style="${isWatched?'':'background:'+c.bg+'22;border-bottom-color:'+c.bg+'55'}">`;
-    h+=`<div class="sector-card-title" style="background:${isWatched?'#ff6f00':c.bg};color:${isWatched?'#fff':c.fg}">${sec.sector}</div>`;
+    h+=`<div class="sector-card-header" style="${isWatched?'background:rgba(255,111,0,.15);border-bottom-color:rgba(255,111,0,.4)':secAvg===null?'':'background:'+(secAvg>0?'rgba(239,83,80,.12)':'rgba(66,165,245,.12)')+';border-bottom-color:'+(secAvg>0?'rgba(239,83,80,.35)':'rgba(66,165,245,.35)')}">`;
+
+    // 타이틀바 배경: 주목=앰버, 상승=빨강, 하락=파랑, 보합=다크
+    const titleBg = isWatched
+      ? 'linear-gradient(90deg,#b35d00,#e07800)'
+      : secAvg > 0
+        ? 'linear-gradient(90deg,#b71c1c,#c62828)'
+        : secAvg < 0
+          ? 'linear-gradient(90deg,#0d47a1,#1565c0)'
+          : 'var(--bg-card2)';
+    const titleFg = '#fff';
+    h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}">${sec.sector}</div>`;
     h+=`<div class="sector-card-meta">`;
     h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
     if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
