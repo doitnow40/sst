@@ -207,8 +207,9 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .chart-period-btn,.chart-type-btn{padding:3px 9px;font-size:9px;font-family:var(--font-mono);border:none;background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;border-right:1px solid var(--border)}
 .chart-period-btn:last-child,.chart-type-btn:last-child{border-right:none}
 .chart-period-btn:hover,.chart-type-btn:hover{color:var(--text-primary);background:var(--bg-card)}
-.chart-period-btn.kr.active{background:rgba(79,195,247,.2);color:var(--accent-kr)}
-.chart-period-btn.us.active{background:rgba(239,83,80,.2);color:var(--accent-us)}
+.chart-period-btn.kr.active{background:var(--accent-kr);color:#0a1628;font-weight:800;box-shadow:0 0 8px rgba(79,195,247,.5)}
+.chart-period-btn.us.active{background:var(--accent-us);color:#fff;font-weight:800;box-shadow:0 0 8px rgba(239,83,80,.5)}
+.chart-type-btn.active{background:rgba(79,195,247,.2);color:var(--accent-kr);font-weight:700}
 .chart-type-btn.active{background:rgba(255,255,255,.08);color:var(--text-primary)}
 
 /* 히트맵 차트 */
@@ -430,10 +431,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <button class="chart-toggle-all" id="kr-chart-visibility-btn" onclick="toggleKrChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
             <div class="chart-ctrl-group" id="kr-chart-controls">
+              <button class="chart-period-btn kr" id="kr-today-chart-btn" onclick="setKrChartPeriod(0,this)">📡 오늘</button>
               <button class="chart-period-btn kr active" onclick="setKrChartPeriod(5,this)">1주</button>
               <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
               <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
-              <button class="chart-period-btn kr" id="kr-today-chart-btn" onclick="setKrChartPeriod(0,this)" style="color:#ffb74d">📡 오늘</button>
             </div>
             <div class="chart-ctrl-group" id="kr-chart-type-controls">
               <button class="chart-type-btn active" onclick="setKrChartType('line',this)" title="추이 선 차트">📈 추이</button>
@@ -531,10 +532,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <button class="chart-toggle-all" id="us-chart-visibility-btn" onclick="toggleUsChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
             <div class="chart-ctrl-group" id="us-chart-controls">
+              <button class="chart-period-btn us" id="us-today-chart-btn" onclick="setUsChartPeriod(0,this)">📡 오늘</button>
               <button class="chart-period-btn us active" onclick="setUsChartPeriod(5,this)">1주</button>
               <button class="chart-period-btn us" onclick="setUsChartPeriod(10,this)">2주</button>
               <button class="chart-period-btn us" onclick="setUsChartPeriod(22,this)">1개월</button>
-              <button class="chart-period-btn us" id="us-today-chart-btn" onclick="setUsChartPeriod(0,this)" style="color:#ef9a9a">📡 오늘</button>
             </div>
             <div class="chart-ctrl-group">
               <button class="chart-type-btn active" onclick="setUsChartType('line',this)" title="추이 선 차트">📈 추이</button>
