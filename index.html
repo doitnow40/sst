@@ -1055,7 +1055,9 @@ function usCell(name,val){
 
 // ━━━ API CALL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function api(type,range){
-  const r=await fetch(`${GAS_WEBAPP_URL}?type=${type}&range=${range}`);
+  // ★ _t 파라미터로 브라우저/CDN 캐시 완전 우회
+  const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}&_t=${Date.now()}`;
+  const r=await fetch(url,{cache:'no-store'});
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
   const j=await r.json();
   if(!j.ok)throw new Error(j.error||'API 오류');
@@ -3117,9 +3119,10 @@ async function adminPost(action, payload){
     type:   'admin',
     action,
     token:  ADM.user.token,
+    _t:     Date.now(), // ★ 캐시 우회
     ...payload
   });
-  const r=await fetch(GAS_WEBAPP_URL+'?'+params.toString());
+  const r=await fetch(GAS_WEBAPP_URL+'?'+params.toString(),{cache:'no-store'});
   if(!r.ok) throw new Error('HTTP '+r.status);
   const j=await r.json();
   if(!j.ok) throw new Error(j.error||'API 오류');
