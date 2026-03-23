@@ -815,13 +815,48 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
               </div>
               <!-- 종목 추가 (섹터 선택 후 표시) -->
               <div id="add-stock-section" style="display:none;margin-top:10px">
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 종목 추가</div>
-                <div class="admin-input-row">
-                  <input class="admin-input" id="new-stock-name" placeholder="종목명 (예: 삼성전자)" style="flex:2">
-                  <input class="admin-input" id="new-stock-ticker" placeholder="티커 (예: KOSPI:005930)" style="flex:1.5">
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;font-weight:700">+ 종목 추가</div>
+
+                <!-- 종목명 자동완성 -->
+                <div style="position:relative;margin-bottom:6px">
+                  <input class="admin-input" id="new-stock-name"
+                    placeholder="종목명 입력 (예: 삼성전자) — 입력 시 자동완성"
+                    style="width:100%"
+                    oninput="onStockNameInput(this.value)"
+                    onblur="setTimeout(()=>hideStockSuggest(),200)"
+                    autocomplete="off">
+                  <div id="stock-suggest-box" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+                    background:var(--bg-card2);border:1px solid var(--accent-kr);border-radius:6px;
+                    max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.5)"></div>
                 </div>
-                <div class="admin-input-row" style="margin-top:5px">
-                  <input class="admin-input" id="new-stock-memo" placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
+
+                <!-- 시장구분 + 티커 (자동채움, 미등록 시 수동) -->
+                <div class="admin-input-row" style="margin-bottom:6px;align-items:center;gap:6px">
+                  <div id="stock-auto-info" style="display:none;flex:1;background:rgba(79,195,247,.08);
+                    border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:6px 10px;
+                    font-size:11px;color:var(--accent-kr);font-family:var(--font-mono)">
+                    ✅ 자동 매칭: <span id="stock-auto-ticker"></span>
+                  </div>
+                  <div id="stock-manual-inputs" style="display:flex;gap:6px;flex:1">
+                    <select class="admin-input" id="new-stock-market" style="flex:1;cursor:pointer">
+                      <option value="">시장 선택</option>
+                      <option value="KOSPI">KOSPI</option>
+                      <option value="KOSDAQ">KOSDAQ</option>
+                    </select>
+                    <input class="admin-input" id="new-stock-code" placeholder="종목코드 (예: 005930)" style="flex:1.5"
+                      oninput="onManualCodeInput()">
+                  </div>
+                </div>
+
+                <!-- 티커 미리보기 (수동 입력 시) -->
+                <div id="stock-ticker-preview" style="display:none;font-size:10px;color:var(--text-muted);
+                  margin-bottom:6px;padding:3px 8px;background:var(--bg-card2);border-radius:4px;font-family:var(--font-mono)">
+                  티커: <span id="stock-ticker-preview-val" style="color:var(--text-secondary)"></span>
+                </div>
+
+                <div class="admin-input-row" style="margin-top:2px">
+                  <input class="admin-input" id="new-stock-memo"
+                    placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
                   <button class="admin-add-btn" onclick="addStock()">추가</button>
                 </div>
                 <div class="admin-msg" id="stock-msg"></div>
@@ -2862,6 +2897,7 @@ function showAdminContent(){
   switchAdminTab('stats', document.querySelector('.admin-tab'));
   loadVisitorStats();
   loadAdminSectors();
+  loadStockCodes(); // 종목코드 미리 로드 (자동완성용)
 }
 
 // ━━━ 탭 전환 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3169,35 +3205,143 @@ function validateTicker(ticker){
   return {ok:true, warn:null};
 }
 
-async function addStock(){
-  const sector=ADM.selectedSector;
-  const name=document.getElementById('new-stock-name').value.trim();
-  const ticker=document.getElementById('new-stock-ticker').value.trim();
-  const memoEl=document.getElementById('new-stock-memo');
-  const memo=memoEl?memoEl.value.trim():'';
-  if(!sector){showMsg('stock-msg','섹터를 먼저 선택하세요.',true);return;}
-  if(!name){showMsg('stock-msg','종목명을 입력하세요.',true);return;}
+// ━━━ 종목명 자동완성 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let _stockCodeCache = null; // { stocks: [{name, market, ticker}] }
+let _selectedStockTicker = ''; // 자동매칭된 티커
 
-  if(ticker){
-    const v=validateTicker(ticker);
-    if(!v.ok){if(!confirm(v.warn)) return;showMsg('stock-msg','⚠️ 티커 형식을 다시 확인하세요. 추가는 진행됩니다.',true);}
-  } else {
-    showMsg('stock-msg','ℹ️ 티커를 입력하지 않으면 등락률 자동 계산이 안 될 수 있습니다.',true);
+async function loadStockCodes() {
+  if (_stockCodeCache) return _stockCodeCache;
+  try {
+    const d = await api('kr_stock_codes', 0);
+    _stockCodeCache = d;
+    return d;
+  } catch(e) {
+    console.warn('종목코드 로드 실패:', e);
+    return { stocks: [] };
+  }
+}
+
+function onStockNameInput(val) {
+  _selectedStockTicker = '';
+  showStockAutoInfo(null);
+  const box = document.getElementById('stock-suggest-box');
+  if (!val || val.length < 1) { box.style.display = 'none'; return; }
+
+  const data = _stockCodeCache;
+  if (!data) {
+    // 아직 로드 안됐으면 로드 후 재시도
+    loadStockCodes().then(() => onStockNameInput(document.getElementById('new-stock-name').value));
+    return;
   }
 
-  const btn=document.querySelector('#add-stock-section .admin-add-btn');
-  btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
-  try{
-    await adminPost('add_stock',{sector,stock_name:name,ticker,memo});
-    document.getElementById('new-stock-name').value='';
-    document.getElementById('new-stock-ticker').value='';
-    if(memoEl) memoEl.value='';
-    showMsg('stock-msg','✅ "'+name+'" 추가 완료!',false);
-    S.krListLoaded=false; S.krLoaded=false; S.krLOk=false;
+  const kw = val.toLowerCase();
+  const matches = data.stocks.filter(s => s.name.toLowerCase().includes(kw)).slice(0, 15);
+
+  if (!matches.length) { box.style.display = 'none'; return; }
+
+  box.innerHTML = matches.map(s =>
+    `<div style="padding:7px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid rgba(46,58,80,.4);
+      display:flex;align-items:center;justify-content:space-between;gap:8px"
+      onmousedown="selectStockSuggest('${s.name.replace(/'/g,"\\'")}','${s.ticker}','${s.market}')"
+      onmouseover="this.style.background='rgba(79,195,247,.1)'"
+      onmouseout="this.style.background=''">
+      <span style="color:var(--text-primary);font-weight:600">${s.name}</span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent-kr)">${s.ticker}</span>
+    </div>`
+  ).join('');
+  box.style.display = 'block';
+}
+
+function selectStockSuggest(name, ticker, market) {
+  document.getElementById('new-stock-name').value = name;
+  document.getElementById('stock-suggest-box').style.display = 'none';
+  _selectedStockTicker = ticker;
+  showStockAutoInfo({ name, ticker, market });
+}
+
+function hideStockSuggest() {
+  const box = document.getElementById('stock-suggest-box');
+  if (box) box.style.display = 'none';
+}
+
+function showStockAutoInfo(stock) {
+  const autoDiv  = document.getElementById('stock-auto-info');
+  const manualDiv = document.getElementById('stock-manual-inputs');
+  const preview  = document.getElementById('stock-ticker-preview');
+  if (!autoDiv || !manualDiv) return;
+  if (stock) {
+    // 자동매칭: 자동 정보 표시, 수동 입력 숨김
+    document.getElementById('stock-auto-ticker').textContent = stock.ticker + ' (' + stock.market + ')';
+    autoDiv.style.display = 'block';
+    manualDiv.style.display = 'none';
+    if (preview) preview.style.display = 'none';
+  } else {
+    // 미매칭: 수동 입력 표시
+    autoDiv.style.display = 'none';
+    manualDiv.style.display = 'flex';
+    onManualCodeInput(); // 티커 미리보기 갱신
+  }
+}
+
+function onManualCodeInput() {
+  const market = document.getElementById('new-stock-market')?.value || '';
+  const code   = document.getElementById('new-stock-code')?.value.trim() || '';
+  const preview = document.getElementById('stock-ticker-preview');
+  const previewVal = document.getElementById('stock-ticker-preview-val');
+  if (!preview || !previewVal) return;
+  if (market && code) {
+    const padded = code.replace(/\D/g, '').padStart(6, '0');
+    previewVal.textContent = market + ':' + padded;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function addStock(){
+  const sector = ADM.selectedSector;
+  const name   = document.getElementById('new-stock-name').value.trim();
+  const memoEl = document.getElementById('new-stock-memo');
+  const memo   = memoEl ? memoEl.value.trim() : '';
+  if (!sector) { showMsg('stock-msg', '섹터를 먼저 선택하세요.', true); return; }
+  if (!name)   { showMsg('stock-msg', '종목명을 입력하세요.', true); return; }
+
+  let ticker = '';
+  if (_selectedStockTicker) {
+    // 자동매칭
+    ticker = _selectedStockTicker;
+  } else {
+    // 수동 입력
+    const market = document.getElementById('new-stock-market')?.value || '';
+    const code   = document.getElementById('new-stock-code')?.value.trim() || '';
+    if (market && code) {
+      const padded = code.replace(/\D/g, '').padStart(6, '0');
+      ticker = market + ':' + padded;
+    } else if (code && !market) {
+      showMsg('stock-msg', '시장구분(KOSPI/KOSDAQ)을 선택하세요.', true); return;
+    }
+    // 둘 다 비어있으면 티커 없이 추가 (경고)
+    if (!ticker) showMsg('stock-msg', 'ℹ️ 티커 없이 추가합니다. 등락률 자동계산이 안 될 수 있습니다.', false);
+  }
+
+  const btn = document.querySelector('#add-stock-section .admin-add-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="admin-spinner"></span>';
+  try {
+    await adminPost('add_stock', { sector, stock_name: name, ticker, memo });
+    // 입력 초기화
+    document.getElementById('new-stock-name').value = '';
+    if (document.getElementById('new-stock-market')) document.getElementById('new-stock-market').value = '';
+    if (document.getElementById('new-stock-code'))   document.getElementById('new-stock-code').value = '';
+    if (memoEl) memoEl.value = '';
+    _selectedStockTicker = '';
+    showStockAutoInfo(null);
+    if (document.getElementById('stock-ticker-preview')) document.getElementById('stock-ticker-preview').style.display = 'none';
+    showMsg('stock-msg', '✅ "' + name + '" 추가 완료! (티커: ' + (ticker||'없음') + ')', false);
+    S.krListLoaded = false; S.krLoaded = false;
     await loadAdminSectors();
     selectSector(sector);
-  }catch(e){showMsg('stock-msg','❌ 오류: '+e.message,true);}
-  btn.disabled=false; btn.innerHTML='추가';
+  } catch(e) { showMsg('stock-msg', '❌ 오류: ' + e.message, true); }
+  btn.disabled = false; btn.innerHTML = '추가';
 }
 
 async function deleteStock(sectorName, stockName){
