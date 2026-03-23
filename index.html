@@ -3105,12 +3105,18 @@ async function addSector(){
   const btn=document.querySelector('#new-sector-name+button');
   btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
   try{
-    await adminPost('add_sector',{sector:name});
+    const res=await adminPost('add_sector',{sector:name});
     document.getElementById('new-sector-name').value='';
     showMsg('sector-msg','✅ 섹터 "'+name+'" 추가 완료!',false);
-    // 캐시 무효화 후 재로드
+    // 응답에 새 목록이 포함된 경우 바로 반영, 아니면 재조회
+    if(res&&res.sectors){
+      ADM.sectors=res.sectors;
+      renderAdminSectors();
+      document.getElementById('admin-sector-count').textContent=ADM.sectors.length+'개';
+    }else{
+      await loadAdminSectors();
+    }
     S.krListLoaded=false; S.krLoaded=false;
-    await loadAdminSectors();
   }catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);}
   btn.disabled=false; btn.innerHTML='추가';
 }
@@ -3118,7 +3124,7 @@ async function addSector(){
 async function deleteSector(sectorName){
   if(!confirm('"'+sectorName+'" 섹터와 모든 종목을 삭제하시겠습니까?')) return;
   try{
-    await adminPost('delete_sector',{sector:sectorName});
+    const res=await adminPost('delete_sector',{sector:sectorName});
     if(ADM.selectedSector===sectorName){
       ADM.selectedSector=null;
       document.getElementById('admin-stock-panel-title').textContent='← 섹터를 선택하세요';
@@ -3127,7 +3133,13 @@ async function deleteSector(sectorName){
     }
     showMsg('sector-msg','✅ 섹터 삭제 완료',false);
     S.krListLoaded=false; S.krLoaded=false;
-    await loadAdminSectors();
+    if(res&&res.sectors){
+      ADM.sectors=res.sectors;
+      renderAdminSectors();
+      document.getElementById('admin-sector-count').textContent=ADM.sectors.length+'개';
+    }else{
+      await loadAdminSectors();
+    }
   }catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);}
 }
 
