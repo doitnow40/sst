@@ -1325,8 +1325,15 @@ function renderKr(){
               <div class="stat-sub">${tMnName}</div>
             </div>
           </div>
+        </div>`
+        : todayDate ? `
+        <div style="border:1px solid rgba(255,183,77,.2);border-radius:10px;padding:10px 18px;background:rgba(255,183,77,.03);display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <span style="font-size:18px">🕐</span>
+          <div>
+            <div style="font-size:10px;color:#ffb74d;font-weight:700;margin-bottom:3px">오늘 (${todayDate}) — 장 시작 전</div>
+            <div style="font-size:10px;color:var(--text-muted)">장 시작(09:00) 후 데이터가 집계됩니다. 장중에 갱신 버튼을 눌러주세요.</div>
+          </div>
         </div>`:''}
-
       </div>`;
   } // if(f.length)
 
@@ -2364,7 +2371,9 @@ function setKrListMode(mode, btn){
     } else {
       btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer';
       btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700';
-      if(label) label.textContent='● 최근 영업일 등락률 표시 중';
+      // 최근 영업일 날짜 표시 (S.krD rows[0][0])
+      const lastBizDate = (S.krD && S.krD.rows && S.krD.rows[0]) ? S.krD.rows[0][0] : '';
+      if(label) label.textContent='● 최근 영업일 등락률 표시 중' + (lastBizDate ? ' (' + lastBizDate + ')' : '');
     }
   }
   renderKrListFiltered();
@@ -2383,7 +2392,8 @@ function setUsListMode(mode, btn){
     } else {
       btnToday.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer';
       btnLast.style.cssText='font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700';
-      if(label) label.textContent='● 최근 영업일 등락률 표시 중';
+      const lastBizDateUs = (S.usD && S.usD.rows && S.usD.rows[0]) ? S.usD.rows[0][0] : '';
+      if(label) label.textContent='● 최근 영업일 등락률 표시 중' + (lastBizDateUs ? ' (' + lastBizDateUs + ')' : '');
     }
   }
   renderUsList(listSorted);
