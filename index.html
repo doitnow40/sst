@@ -302,12 +302,43 @@ td[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(1
 .watch-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:4px}
 /* History 표 주목 섹터 헤더 강조 */
 th.watched-col{background:#7b3a00 !important;color:#ffd180 !important;outline:2px solid #ff6f00;outline-offset:-1px}
+/* SIDEBAR TOGGLE */
+.hb-line{display:block;width:18px;height:2px;background:var(--text-secondary);border-radius:2px;transition:all .2s}
+#sidebar-toggle-btn:hover .hb-line{background:var(--text-primary)}
+
+/* 사이드바 접힘 상태 */
+.layout{display:flex;flex:1;overflow:hidden;transition:none}
+.sidebar{width:var(--sidebar-w);background:var(--bg-dark);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0;transition:width .25s ease,opacity .25s ease;overflow-x:hidden}
+.sidebar.collapsed{width:0;opacity:0;padding:0;border-right:none}
+
+/* 오버레이 (비고정 상태에서 사이드바 열릴 때) */
+#sidebar-overlay{display:none;position:fixed;inset:0;top:var(--header-h);background:rgba(0,0,0,.45);z-index:90;cursor:pointer}
+#sidebar-overlay.active{display:block}
+
+/* 사이드바가 오버레이 위에 떠있는 상태 (비고정) */
+.sidebar.floating{position:fixed;left:0;top:var(--header-h);bottom:0;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+.sidebar.floating.collapsed{transform:translateX(-100%);width:var(--sidebar-w);opacity:0;pointer-events:none}
+
+/* 핀 버튼 활성 상태 */
+#sidebar-pin-btn.pinned{color:var(--accent-kr);border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.1)}
+
 td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 </style>
 </head>
 <body>
+<div id="sidebar-overlay" onclick="closeSidebarIfFloating()"></div>
 
 <header>
+  <!-- 햄버거 버튼 -->
+  <button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="메뉴 열기/닫기" style="
+    background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;
+    display:flex;flex-direction:column;justify-content:center;gap:4px;flex-shrink:0;
+    border-radius:6px;transition:background .15s;
+  " onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">
+    <span class="hb-line"></span>
+    <span class="hb-line"></span>
+    <span class="hb-line"></span>
+  </button>
   <div class="logo-icon" onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer" title="홈으로">📡</div>
   <div onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer">
     <div class="logo-text">STOCK SECTOR TRACKER</div>
@@ -343,8 +374,16 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
 </header>
 
 <div class="layout">
-  <nav class="sidebar">
-    <div class="nav-group-label">한국 시장 🇰🇷</div>
+  <nav class="sidebar" id="main-sidebar">
+    <!-- 핀 고정 버튼 -->
+    <div style="display:flex;justify-content:flex-end;padding:4px 10px 2px">
+      <button id="sidebar-pin-btn" onclick="toggleSidebarPin()" title="메뉴 항상 표시 (고정)" style="
+        background:none;border:1px solid var(--border);cursor:pointer;
+        border-radius:5px;padding:3px 7px;font-size:12px;color:var(--text-muted);
+        transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
+      ">📌 <span id="pin-label" style="font-size:9px;font-family:var(--font-mono)">고정</span>
+      </button>
+    </div>
     <div class="nav-item" id="nav-kr-history" onclick="go('kr-history',this)">
       <span class="nav-icon">📊</span><span>한국 섹터 History</span><span class="nav-chevron">›</span>
     </div>
@@ -3591,6 +3630,94 @@ if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 
 // 주목 섹터 미리 로드
 if(!IS_DEMO) loadWatchedSectors();
+
+// ━━━ 사이드바 토글 (햄버거 버튼 + 핀 고정) ━━━━━━━━━━━━━━━━━━━━━
+(function(){
+  const STORAGE_KEY = 'sidebarPinned';
+  const SIDEBAR_KEY = 'sidebarOpen';
+  const sidebar  = document.getElementById('main-sidebar');
+  const overlay  = document.getElementById('sidebar-overlay');
+  const pinBtn   = document.getElementById('sidebar-pin-btn');
+  const pinLabel = document.getElementById('pin-label');
+
+  // 저장된 설정 불러오기
+  let pinned = localStorage.getItem(STORAGE_KEY) !== 'false'; // 기본 고정
+  let open   = localStorage.getItem(SIDEBAR_KEY) !== 'false'; // 기본 열림
+
+  function applyState(animate) {
+    if (!animate) {
+      sidebar.style.transition = 'none';
+      setTimeout(()=>{ sidebar.style.transition=''; }, 50);
+    }
+    if (pinned) {
+      // 고정 모드: 레이아웃에 포함
+      sidebar.classList.remove('floating');
+      overlay.classList.remove('active');
+      if (open) {
+        sidebar.classList.remove('collapsed');
+        sidebar.style.width = '';
+      } else {
+        sidebar.classList.add('collapsed');
+      }
+    } else {
+      // 플로팅 모드: 레이아웃 위에 떠있음
+      sidebar.classList.add('floating');
+      sidebar.classList.remove('collapsed');
+      sidebar.style.width = 'var(--sidebar-w)';
+      if (open) {
+        sidebar.style.transform = '';
+        sidebar.style.opacity = '1';
+        sidebar.style.pointerEvents = '';
+        overlay.classList.add('active');
+      } else {
+        sidebar.style.transform = 'translateX(-100%)';
+        sidebar.style.opacity = '0';
+        sidebar.style.pointerEvents = 'none';
+        overlay.classList.remove('active');
+      }
+    }
+    // 핀 버튼 스타일
+    if (pinned && open) {
+      pinBtn.classList.add('pinned');
+      pinLabel.textContent = '고정됨';
+    } else {
+      pinBtn.classList.remove('pinned');
+      pinLabel.textContent = '고정';
+    }
+  }
+
+  window.toggleSidebar = function() {
+    open = !open;
+    localStorage.setItem(SIDEBAR_KEY, open);
+    applyState(true);
+  };
+
+  window.toggleSidebarPin = function() {
+    if (!pinned) {
+      // 고정 모드로 전환 → 자동으로 열림
+      pinned = true;
+      open   = true;
+    } else {
+      // 고정 해제 → 플로팅 모드로, 닫힘
+      pinned = false;
+      open   = false;
+    }
+    localStorage.setItem(STORAGE_KEY, pinned);
+    localStorage.setItem(SIDEBAR_KEY, open);
+    applyState(true);
+  };
+
+  window.closeSidebarIfFloating = function() {
+    if (!pinned) {
+      open = false;
+      localStorage.setItem(SIDEBAR_KEY, open);
+      applyState(true);
+    }
+  };
+
+  // 초기 상태 적용
+  applyState(false);
+})();
 </script>
 </body>
 </html>
