@@ -1192,13 +1192,23 @@ async function loadKr(){
       d=demoKr();
       document.getElementById('kr-status').textContent='⚠️ 데모 모드';
     }else{
-      d=await api('kr_history',365);
+      // ★ History와 Today를 병렬 동시 로드
+      const [histData, todayData] = await Promise.all([
+        api('kr_history', 365),
+        api('kr_today', 0).catch(()=>null)
+      ]);
+      d = histData;
       document.getElementById('kr-status').textContent=d.count+'일 데이터';
+      // Today 데이터 처리
+      if(todayData){
+        S.krToday = todayData;
+        const n=document.getElementById('kr-today-notice');
+        if(n&&todayData.date) n.style.display='';
+        updateRealtimeTime();
+      }
     }
     updateSheetReadTime(d.sheetReadAt);
     S.krD=d; S.krOk=true;
-    // 오늘 실시간 데이터 병렬 로드
-    if(!IS_DEMO) loadKrToday();
     renderKr();
   }catch(e){
     document.getElementById('kr-status').textContent='❌ 오류';
@@ -1220,7 +1230,26 @@ async function loadKrToday(){
 
 function renderKr(){
   if(!S.krD)return;
-  const{headers:H,rows}=S.krD;
+  const{headers:H,rows:baseRows}=S.krD;
+
+  // ★ 오늘 실시간 행을 표 최상단에 자동 삽입 (시트에 없을 때만)
+  let rows=baseRows;
+  if(S.krToday&&S.krToday.date){
+    const todayStr=S.krToday.date;
+    const hasToday=baseRows.length>0&&baseRows[0][0]===todayStr;
+    if(!hasToday){
+      const sectorMap=S.krToday.sectors||{};
+      const majorMap=S.krToday.majorIndex||{};
+      const todayRow=H.map((h,i)=>{
+        if(i===0) return todayStr;
+        const v=sectorMap[h]!==undefined?sectorMap[h]:majorMap[h]!==undefined?majorMap[h]:null;
+        return (v!==null&&v!==undefined&&!isNaN(v))?v:null;
+      });
+      const hasVals=todayRow.slice(1).some(v=>v!==null);
+      if(hasVals) rows=[todayRow,...baseRows];
+    }
+  }
+
   const f=rows.slice(0,S.krR);
   const sectorHdrs=H.slice(1); // 날짜 제외
 
@@ -2162,11 +2191,26 @@ async function loadUs(){
   if(S.usOk){renderUs();return;}
   try{
     let d;
-    if(IS_DEMO){d=demoUs();document.getElementById('us-status').textContent='⚠️ 데모 모드';}
-    else{d=await api('us_history',365);document.getElementById('us-status').textContent=d.count+'일 데이터';}
+    if(IS_DEMO){
+      d=demoUs();
+      document.getElementById('us-status').textContent='⚠️ 데모 모드';
+    }else{
+      // ★ History와 Today를 병렬 동시 로드
+      const [histData, todayData] = await Promise.all([
+        api('us_history', 365),
+        api('us_today', 0).catch(()=>null)
+      ]);
+      d = histData;
+      document.getElementById('us-status').textContent=d.count+'일 데이터';
+      if(todayData){
+        S.usToday = todayData;
+        const n=document.getElementById('us-today-notice');
+        if(n&&todayData.date) n.style.display='';
+        updateRealtimeTime();
+      }
+    }
     updateSheetReadTime(d.sheetReadAt);
     S.usD=d; S.usOk=true;
-    if(!IS_DEMO) loadUsToday();
     renderUs();
   }catch(e){
     document.getElementById('us-status').textContent='❌ 오류';
@@ -2188,7 +2232,25 @@ async function loadUsToday(){
 
 function renderUs(){
   if(!S.usD)return;
-  const{headers:H,rows}=S.usD;
+  const{headers:H,rows:baseRows}=S.usD;
+
+  // ★ 오늘 실시간 행을 표 최상단에 자동 삽입
+  let rows=baseRows;
+  if(S.usToday&&S.usToday.date){
+    const todayStr=S.usToday.date;
+    const hasToday=baseRows.length>0&&baseRows[0][0]===todayStr;
+    if(!hasToday){
+      const sectorMap=S.usToday.sectors||{};
+      const todayRow=H.map((h,i)=>{
+        if(i===0) return todayStr;
+        const v=sectorMap[h];
+        return (v!==null&&v!==undefined&&!isNaN(v))?v:null;
+      });
+      const hasVals=todayRow.slice(1).some(v=>v!==null);
+      if(hasVals) rows=[todayRow,...baseRows];
+    }
+  }
+
   const f=rows.slice(0,S.usR);
   const sh=H.slice(1);
 
