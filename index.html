@@ -460,34 +460,81 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         🔵 -15% ←—— ⬜ 0% ——→ 🔴 +15% | 섹터 평균 등락률(%)
       </div>
 
-      <!-- ⑤ 섹터 추이 선 차트 (표 아래) -->
-      <div class="chart-section" style="margin-top:16px">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title" id="kr-chart-title">📈 섹터별 등락률 추이</div>
-            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div>
+      <!-- ⑤ 통계 패널 영역 -->
+      <div id="kr-analytics-section" style="margin-top:16px">
+        <!-- 컨트롤 바 -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+          <button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()" title="통계 패널 숨기기/보이기">📊 통계 숨기기</button>
+          <div class="chart-ctrl-group" id="kr-analytics-period-controls">
+            <button class="chart-period-btn kr" id="kr-an-today-btn" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
+            <button class="chart-period-btn kr active" id="kr-an-1w-btn" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
+            <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
+            <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
+            <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
+            <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(66,this)">1개월+</button>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <button class="chart-toggle-all" id="kr-chart-visibility-btn" onclick="toggleKrChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
-            <div class="chart-ctrl-group" id="kr-chart-controls">
-              <button class="chart-period-btn kr" id="kr-today-chart-btn" onclick="setKrChartPeriod(0,this)">📡 오늘</button>
-              <button class="chart-period-btn kr active" onclick="setKrChartPeriod(5,this)">1주</button>
-              <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
-              <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
-            </div>
-            <div class="chart-ctrl-group" id="kr-chart-type-controls">
-              <button class="chart-type-btn active" onclick="setKrChartType('line',this)" title="추이 선 차트">📈 추이</button>
-              <button class="chart-type-btn" onclick="setKrChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
-              <button class="chart-type-btn" onclick="setKrChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
-            </div>
-            <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
-            <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()">전체 ON/OFF</button>
-          </div>
+          <button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
+          <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
         </div>
-        <div class="chart-body" id="kr-chart-body">
-          <div id="kr-chart-wrap" class="chart-canvas-wrap">
-            <canvas id="kr-chart-canvas"></canvas>
+
+        <!-- 4패널 그리드 -->
+        <div id="kr-analytics-panels" style="display:grid;grid-template-columns:1fr 1.6fr 1fr;grid-template-rows:auto auto;gap:10px">
+
+          <!-- 패널1: 상승 섹터 등락률 랭킹 -->
+          <div class="chart-section" style="margin:0;grid-row:1/3" id="kr-rise-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div class="chart-title" style="font-size:11px">📈 상승 섹터 등락률 랭킹</div>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div style="position:relative;height:340px">
+                <canvas id="kr-rise-chart"></canvas>
+              </div>
+            </div>
           </div>
+
+          <!-- 패널2: 섹터별 등락률 추이 (Top 5) -->
+          <div class="chart-section" style="margin:0" id="kr-trend-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div>
+                <div class="chart-title" style="font-size:11px" id="kr-chart-title">📈 섹터별 등락률 추이 (Top 5, N주)</div>
+                <div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div>
+              </div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
+              </div>
+            </div>
+            <div class="chart-body" id="kr-chart-body" style="padding:8px">
+              <div id="kr-chart-wrap" class="chart-canvas-wrap" style="height:220px">
+                <canvas id="kr-chart-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 패널3: 하락 섹터 등락률 랭킹 -->
+          <div class="chart-section" style="margin:0;grid-row:1/3" id="kr-fall-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div class="chart-title" style="font-size:11px">📉 하락 섹터 등락률 랭킹</div>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div style="position:relative;height:340px">
+                <canvas id="kr-fall-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 패널4: 섹터 히트맵 -->
+          <div class="chart-section" style="margin:0" id="kr-heatmap-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div>
+                <div class="chart-title" style="font-size:11px" id="kr-heatmap-title">🗓️ 섹터 히트맵 (N주)</div>
+              </div>
+              <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div id="kr-heatmap-wrap" style="overflow:auto;max-height:200px"></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -561,34 +608,81 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}
         🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
       </div>
 
-      <!-- ⑤ 섹터 추이 선 차트 (표 아래) -->
-      <div class="chart-section" style="margin-top:16px">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title" id="us-chart-title">📈 섹터별 등락률 추이</div>
-            <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 전체 섹터 포함</div>
+      <!-- ⑤ 통계 패널 영역 -->
+      <div id="us-analytics-section" style="margin-top:16px">
+        <!-- 컨트롤 바 -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+          <button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()" title="통계 패널 숨기기/보이기">📊 통계 숨기기</button>
+          <div class="chart-ctrl-group" id="us-analytics-period-controls">
+            <button class="chart-period-btn us" id="us-an-today-btn" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
+            <button class="chart-period-btn us active" id="us-an-1w-btn" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
+            <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
+            <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
+            <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
+            <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(66,this)">1개월+</button>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <button class="chart-toggle-all" id="us-chart-visibility-btn" onclick="toggleUsChartVisibility()" title="차트 숨기기/보이기">🙈 차트숨기기</button>
-            <div class="chart-ctrl-group" id="us-chart-controls">
-              <button class="chart-period-btn us" id="us-today-chart-btn" onclick="setUsChartPeriod(0,this)">📡 오늘</button>
-              <button class="chart-period-btn us active" onclick="setUsChartPeriod(5,this)">1주</button>
-              <button class="chart-period-btn us" onclick="setUsChartPeriod(10,this)">2주</button>
-              <button class="chart-period-btn us" onclick="setUsChartPeriod(22,this)">1개월</button>
-            </div>
-            <div class="chart-ctrl-group">
-              <button class="chart-type-btn active" onclick="setUsChartType('line',this)" title="추이 선 차트">📈 추이</button>
-              <button class="chart-type-btn" onclick="setUsChartType('ranking',this)" title="기간 평균 랭킹">🏆 랭킹</button>
-              <button class="chart-type-btn" onclick="setUsChartType('heatmap',this)" title="히트맵">🗓️ 히트맵</button>
-            </div>
-            <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" title="히트맵 날짜 순서 반전" style="display:none">⇄ 날짜반전</button>
-            <button class="chart-toggle-all" onclick="usChartToggleAll()">전체 ON/OFF</button>
-          </div>
+          <button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
+          <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
         </div>
-        <div class="chart-body" id="us-chart-body">
-          <div id="us-chart-wrap" class="chart-canvas-wrap" style="height:320px">
-            <canvas id="us-chart-canvas"></canvas>
+
+        <!-- 4패널 그리드 -->
+        <div id="us-analytics-panels" style="display:grid;grid-template-columns:1fr 1.6fr 1fr;grid-template-rows:auto auto;gap:10px">
+
+          <!-- 패널1: 상승 섹터 등락률 랭킹 -->
+          <div class="chart-section" style="margin:0;grid-row:1/3" id="us-rise-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div class="chart-title" style="font-size:11px">📈 상승 섹터 등락률 랭킹</div>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div style="position:relative;height:340px">
+                <canvas id="us-rise-chart"></canvas>
+              </div>
+            </div>
           </div>
+
+          <!-- 패널2: 섹터별 등락률 추이 (Top 5) -->
+          <div class="chart-section" style="margin:0" id="us-trend-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div>
+                <div class="chart-title" style="font-size:11px" id="us-chart-title">📈 섹터별 등락률 추이 (Top 5, N주)</div>
+                <div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 전체 섹터 포함</div>
+              </div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
+              </div>
+            </div>
+            <div class="chart-body" id="us-chart-body" style="padding:8px">
+              <div id="us-chart-wrap" class="chart-canvas-wrap" style="height:220px">
+                <canvas id="us-chart-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 패널3: 하락 섹터 등락률 랭킹 -->
+          <div class="chart-section" style="margin:0;grid-row:1/3" id="us-fall-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div class="chart-title" style="font-size:11px">📉 하락 섹터 등락률 랭킹</div>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div style="position:relative;height:340px">
+                <canvas id="us-fall-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 패널4: 섹터 히트맵 -->
+          <div class="chart-section" style="margin:0" id="us-heatmap-panel">
+            <div class="chart-header" style="padding:8px 12px">
+              <div>
+                <div class="chart-title" style="font-size:11px" id="us-heatmap-title">🗓️ 섹터 히트맵 (N주)</div>
+              </div>
+              <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
+            </div>
+            <div class="chart-body" style="padding:8px">
+              <div id="us-heatmap-wrap" style="overflow:auto;max-height:200px"></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1461,6 +1555,7 @@ function renderKr(){
 
   // ★ 차트 렌더
   renderKrChart();
+  renderKrAnalytics();
 }
 
 // ━━━ KR 대분류 헤더 행 생성 공통 함수 ━━━━━━━━━━━━━━━━━━━━━━
@@ -1882,6 +1977,14 @@ function toggleKrReverse(btn){
   btn.style.background=krHeatmapReverse?'rgba(79,195,247,0.2)':'';
   btn.style.borderColor=krHeatmapReverse?'var(--accent-kr)':'';
   btn.style.color=krHeatmapReverse?'var(--accent-kr)':'';
+  // 새 히트맵 패널 재렌더
+  if(S.krD){
+    const{headers:H,rows}=S.krD;
+    const excludeSet=new Set(['날짜','ADR피','ADR닥','코스피','코스닥']);
+    const sectorNames=H.slice(1).filter(h=>!excludeSet.has(h));
+    const chartRows=krAnalyticsPeriod>0?[...rows.slice(0,krAnalyticsPeriod)].reverse():[];
+    _renderKrHeatmap(chartRows,H,sectorNames,krAnalyticsPeriod===0);
+  }
   renderKrChart();
 }
 
@@ -2222,7 +2325,405 @@ function toggleUsReverse(btn){
   btn.style.background=usHeatmapReverse?'rgba(239,83,80,0.2)':'';
   btn.style.borderColor=usHeatmapReverse?'var(--accent-us)':'';
   btn.style.color=usHeatmapReverse?'var(--accent-us)':'';
+  // 새 히트맵 패널 재렌더
+  if(S.usD){
+    const{headers:H,rows}=S.usD;
+    const allHdrs=H.slice(1);
+    const chartRows=usAnalyticsPeriod>0?[...rows.slice(0,usAnalyticsPeriod)].reverse():[];
+    _renderUsHeatmap(chartRows,H,allHdrs,usAnalyticsPeriod===0);
+  }
   renderUsChart();
+}
+
+// ━━━ 새 분석 패널 (KR/US 공통) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// 기간 표시 레이블
+function periodText(days){
+  if(days===0) return '오늘 실시간';
+  if(days===5) return '최근 1주 (5일)';
+  if(days===10) return '최근 2주 (10일)';
+  if(days===15) return '최근 3주 (15일)';
+  if(days===22) return '최근 1개월 (22일)';
+  if(days===66) return '최근 1개월+ (66일)';
+  return `최근 ${days}일`;
+}
+
+// ── KR 분석 패널 상태 ──
+let krAnalyticsPeriod=5;
+let krAnalyticsVisible=true;
+let krAllChartsVisible=true;
+let krRiseChart=null, krFallChart=null;
+
+function toggleKrAnalytics(){
+  krAnalyticsVisible=!krAnalyticsVisible;
+  const panels=document.getElementById('kr-analytics-panels');
+  const btn=document.getElementById('kr-analytics-hide-btn');
+  if(panels) panels.style.display=krAnalyticsVisible?'grid':'none';
+  if(btn) btn.textContent=krAnalyticsVisible?'📊 통계 숨기기':'📊 통계 보이기';
+}
+function toggleKrAllCharts(){
+  krAllChartsVisible=!krAllChartsVisible;
+  const panels=document.getElementById('kr-analytics-panels');
+  if(panels) panels.style.display=krAllChartsVisible?'grid':'none';
+  const btn=document.getElementById('kr-chart-all-toggle-btn');
+  if(btn) btn.textContent=krAllChartsVisible?'📉 차트 전체 on/off':'📈 차트 전체 on/off';
+}
+function setKrAnalyticsPeriod(days,btn){
+  krAnalyticsPeriod=days;
+  document.querySelectorAll('#kr-analytics-period-controls .chart-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const lbl=document.getElementById('kr-analytics-period-label');
+  if(lbl) lbl.textContent='기간: '+periodText(days);
+  renderKrAnalytics();
+}
+
+function renderKrAnalytics(){
+  if(!S.krD) return;
+  const{headers:H,rows}=S.krD;
+  const excludeSet=new Set(['날짜','ADR피','ADR닥','코스피','코스닥']);
+  const sectorNames=H.slice(1).filter(h=>!excludeSet.has(h));
+  const pLabel=periodText(krAnalyticsPeriod);
+
+  // 타이틀 업데이트
+  const hmTitle=document.getElementById('kr-heatmap-title');
+  if(hmTitle) hmTitle.textContent=`🗓️ 섹터 히트맵 (${pLabel})`;
+  const trendTitle=document.getElementById('kr-chart-title');
+  if(trendTitle) trendTitle.textContent=`📈 섹터별 등락률 추이 (Top 5, ${pLabel})`;
+
+  // ── 오늘 모드 ──
+  if(krAnalyticsPeriod===0){
+    const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
+    const allAvg=sectorNames.map(name=>{
+      const v=todayMap[name]??todayMajor[name];
+      return{name,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};
+    }).filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg);
+    _renderKrRiseFall(allAvg);
+    _renderKrTrendChart([], H, sectorNames, true);
+    _renderKrHeatmap([], H, sectorNames, true);
+    return;
+  }
+
+  // ── 기간 모드 ──
+  const chartRows=[...rows.slice(0,krAnalyticsPeriod)].reverse();
+  const allAvg=sectorNames.map(name=>{
+    const ci=H.indexOf(name);
+    const vals=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));
+    return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
+  }).sort((a,b)=>b.avg-a.avg);
+
+  _renderKrRiseFall(allAvg);
+  _renderKrTrendChart(chartRows, H, sectorNames, false);
+  _renderKrHeatmap(chartRows, H, sectorNames, false);
+}
+
+function _renderKrRiseFall(allAvg){
+  const upData=allAvg.filter(d=>d.avg>=0);
+  const dnData=[...allAvg.filter(d=>d.avg<0)].reverse();
+
+  // destroy old
+  if(krRiseChart){krRiseChart.destroy();krRiseChart=null;}
+  if(krFallChart){krFallChart.destroy();krFallChart=null;}
+
+  function makePanel(canvasId, avgArr, isUp){
+    const el=document.getElementById(canvasId);
+    if(!el||!avgArr.length) return null;
+    const origData=avgArr.map(d=>+d.avg.toFixed(2));
+    const data=isUp?origData:origData.map(v=>Math.abs(v));
+    const maxAbs=Math.max(...data,0.01);
+    const xMax=maxAbs*1.45;
+    const ds={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',
+      borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};
+    ds._origData=origData;
+    return new Chart(el,{type:'bar',data:{labels:avgArr.map(d=>d.name),datasets:[ds]},options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,
+      layout:{padding:{top:0,bottom:0,left:4,right:60}},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+          callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},
+        datalabels:{display:true,anchor:'end',align:'end',
+          color:isUp?'#ff6b6b':'#4fc3f7',backgroundColor:null,borderWidth:0,
+          font:{size:9,weight:'bold',family:"'JetBrains Mono',monospace"},
+          formatter:(v,ctx)=>{const orig=ctx.dataset._origData?.[ctx.dataIndex];return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';},
+          padding:{left:2,right:2},clip:false}},
+      scales:{x:{position:'top',min:0,max:xMax,
+        ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},
+        grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
+        y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});
+  }
+
+  requestAnimationFrame(()=>{
+    krRiseChart=makePanel('kr-rise-chart',upData,true);
+    krFallChart=makePanel('kr-fall-chart',dnData,false);
+  });
+}
+
+function _renderKrTrendChart(chartRows, H, sectorNames, isTodayMode){
+  const wrap=document.getElementById('kr-chart-wrap');
+  if(!wrap) return;
+  if(krChart){krChart.destroy();krChart=null;}
+
+  if(isTodayMode){
+    const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayDate=S.krToday?S.krToday.date:'오늘';
+    const vals=sectorNames.map(n=>{const v=todayMap[n];return{name:n,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
+    if(!wrap.querySelector('#kr-chart-canvas')) wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
+    const canvas=document.getElementById('kr-chart-canvas');
+    if(!canvas) return;
+    krChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(d=>d.name),datasets:[{label:'오늘',data:vals.map(d=>d.val),backgroundColor:vals.map(d=>d.val>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)'),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`;}}},},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},grid:{color:'rgba(46,58,80,0.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}});
+    return;
+  }
+
+  // 라인 추이
+  if(!wrap.querySelector('#kr-chart-canvas')) wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
+  const canvas=document.getElementById('kr-chart-canvas');
+  if(!canvas) return;
+
+  const allSec=[...sectorNames,'코스피','코스닥'];
+  const avgForTop=sectorNames.map(name=>{const ci=H.indexOf(name);const vs=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};}).sort((a,b)=>b.avg-a.avg);
+  const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
+  top5.add('코스피');top5.add('코스닥');
+
+  const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+  const todayDate=S.krToday?S.krToday.date:'';
+  const latestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
+  const addToday=todayDate&&todayDate!==latestDate&&Object.keys(todayMap).length>0;
+  const labels=[...chartRows.map(r=>r[0]),...(addToday?[todayDate+'★']:[])];
+
+  const fullNames=H.slice(1).filter(h=>!new Set(['날짜']).has(h));
+  const datasets=fullNames.map((name,si)=>{
+    const ci=H.indexOf(name);
+    const data=chartRows.map(r=>{const v=parseFloat(r[ci]);return isNaN(v)?null:v;});
+    if(addToday){const tv=todayMap[name];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+    const isIdx=name==='코스피'||name==='코스닥';
+    const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
+    return{label:name,data,borderColor:color,backgroundColor:color+'22',borderWidth:isIdx?2.5:1.5,pointRadius:isIdx?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isIdx?0:1,hidden:!top5.has(name)};
+  });
+  krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:CHART_OPTS_BASE});
+  krChartAllOn=true;
+}
+
+function _renderKrHeatmap(chartRows, H, sectorNames, isTodayMode){
+  const wrap=document.getElementById('kr-heatmap-wrap');
+  if(!wrap) return;
+
+  if(isTodayMode){
+    const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+    const todayDate=S.krToday?S.krToday.date:'오늘';
+    let html=`<table class="heatmap-table"><thead><tr><th>섹터</th><th style="color:var(--accent-kr);font-weight:700">${todayDate}★</th></tr></thead><tbody>`;
+    sectorNames.forEach(name=>{const v=todayMap[name];const c=v!==undefined&&!isNaN(v)?pctCell(v,15):{bg:'',fg:'var(--text-muted)',b:false,t:'-'};html+=`<tr><td>${name}</td><td style="background:${c.bg};color:${c.fg}">${c.t||'-'}</td></tr>`;});
+    html+='</tbody></table>';wrap.innerHTML=html;return;
+  }
+
+  const dispRows=krHeatmapReverse?[...chartRows].reverse():chartRows;
+  const todayHmMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+  const todayHmDate=S.krToday?S.krToday.date:'';
+  const hasToday=todayHmDate&&Object.keys(todayHmMap).length>0;
+  const alreadyHasToday=chartRows.some(r=>r[0]===todayHmDate);
+
+  let html=`<table class="heatmap-table"><thead><tr><th>섹터</th>`;
+  const todayTh=hasToday&&!alreadyHasToday?`<th style="color:var(--accent-kr);font-weight:700">${todayHmDate.slice(5)}★</th>`:'';
+  if(krHeatmapReverse) html+=todayTh;
+  dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
+  if(!krHeatmapReverse) html+=todayTh;
+  html+='</tr></thead><tbody>';
+  sectorNames.forEach(name=>{
+    const ci=H.indexOf(name);
+    html+=`<tr><td>${name}</td>`;
+    const todayTd=()=>{if(!hasToday||alreadyHasToday)return'';const tv=todayHmMap[name];const c=tv!==undefined&&!isNaN(tv)?pctCell(tv,15):{bg:'',fg:'var(--text-muted)',b:false,t:''};return`<td style="background:${c.bg};color:${c.fg};border-left:2px solid rgba(79,195,247,.5)">${c.t||''}</td>`;};
+    if(krHeatmapReverse) html+=todayTd();
+    dispRows.forEach(r=>{const v=r[ci];const c=pctCell(v,15);html+=`<td style="background:${c.bg};color:${c.fg}">${c.t||''}</td>`;});
+    if(!krHeatmapReverse) html+=todayTd();
+    html+='</tr>';
+  });
+  html+='</tbody></table>';wrap.innerHTML=html;
+}
+
+// ── US 분석 패널 상태 ──
+let usAnalyticsPeriod=5;
+let usAnalyticsVisible=true;
+let usAllChartsVisible=true;
+let usRiseChart=null, usFallChart=null;
+
+function toggleUsAnalytics(){
+  usAnalyticsVisible=!usAnalyticsVisible;
+  const panels=document.getElementById('us-analytics-panels');
+  const btn=document.getElementById('us-analytics-hide-btn');
+  if(panels) panels.style.display=usAnalyticsVisible?'grid':'none';
+  if(btn) btn.textContent=usAnalyticsVisible?'📊 통계 숨기기':'📊 통계 보이기';
+}
+function toggleUsAllCharts(){
+  usAllChartsVisible=!usAllChartsVisible;
+  const panels=document.getElementById('us-analytics-panels');
+  if(panels) panels.style.display=usAllChartsVisible?'grid':'none';
+  const btn=document.getElementById('us-chart-all-toggle-btn');
+  if(btn) btn.textContent=usAllChartsVisible?'📉 차트 전체 on/off':'📈 차트 전체 on/off';
+}
+function setUsAnalyticsPeriod(days,btn){
+  usAnalyticsPeriod=days;
+  document.querySelectorAll('#us-analytics-period-controls .chart-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const lbl=document.getElementById('us-analytics-period-label');
+  if(lbl) lbl.textContent='기간: '+periodText(days);
+  renderUsAnalytics();
+}
+
+function renderUsAnalytics(){
+  if(!S.usD) return;
+  const{headers:H,rows}=S.usD;
+  const sectorNames=H.slice(1).filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+  const pLabel=periodText(usAnalyticsPeriod);
+
+  // 타이틀 업데이트
+  const hmTitle=document.getElementById('us-heatmap-title');
+  if(hmTitle) hmTitle.textContent=`🗓️ 섹터 히트맵 (${pLabel})`;
+  const trendTitle=document.getElementById('us-chart-title');
+  if(trendTitle) trendTitle.textContent=`📈 섹터별 등락률 추이 (Top 5, ${pLabel})`;
+
+  if(usAnalyticsPeriod===0){
+    const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+    const allAvg=sectorNames.map(name=>{const v=usTodayMap[name];return{name,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg);
+    _renderUsRiseFall(allAvg);
+    _renderUsTrendChart([],H,sectorNames,true);
+    _renderUsHeatmap([],H,H.slice(1),true);
+    return;
+  }
+
+  const chartRows=[...rows.slice(0,usAnalyticsPeriod)].reverse();
+  const allAvg=sectorNames.map(name=>{
+    const ci=H.indexOf(name);
+    const vals=chartRows.map(r=>{if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(v=>!isNaN(v));
+    return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
+  }).sort((a,b)=>b.avg-a.avg);
+
+  _renderUsRiseFall(allAvg);
+  _renderUsTrendChart(chartRows,H,sectorNames,false);
+  _renderUsHeatmap(chartRows,H,H.slice(1),false);
+}
+
+function _renderUsRiseFall(allAvg){
+  const upData=allAvg.filter(d=>d.avg>=0);
+  const dnData=[...allAvg.filter(d=>d.avg<0)].reverse();
+
+  if(usRiseChart){usRiseChart.destroy();usRiseChart=null;}
+  if(usFallChart){usFallChart.destroy();usFallChart=null;}
+
+  function makePanel(canvasId,avgArr,isUp){
+    const el=document.getElementById(canvasId);
+    if(!el||!avgArr.length)return null;
+    const origData=avgArr.map(d=>+d.avg.toFixed(2));
+    const data=isUp?origData:origData.map(v=>Math.abs(v));
+    const maxAbs=Math.max(...data,0.01);
+    const xMax=maxAbs*1.45;
+    const ds={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',
+      borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};
+    ds._origData=origData;
+    return new Chart(el,{type:'bar',data:{labels:avgArr.map(d=>d.name),datasets:[ds]},options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,
+      layout:{padding:{top:0,bottom:0,left:4,right:60}},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+          callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},
+        datalabels:{display:true,anchor:'end',align:'end',
+          color:isUp?'#ff6b6b':'#4fc3f7',backgroundColor:null,borderWidth:0,
+          font:{size:9,weight:'bold',family:"'JetBrains Mono',monospace"},
+          formatter:(v,ctx)=>{const orig=ctx.dataset._origData?.[ctx.dataIndex];return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';},
+          padding:{left:2,right:2},clip:false}},
+      scales:{x:{position:'top',min:0,max:xMax,
+        ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},
+        grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},
+        y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});
+  }
+
+  requestAnimationFrame(()=>{
+    usRiseChart=makePanel('us-rise-chart',upData,true);
+    usFallChart=makePanel('us-fall-chart',dnData,false);
+  });
+}
+
+function _renderUsTrendChart(chartRows,H,sectorNames,isTodayMode){
+  const wrap=document.getElementById('us-chart-wrap');
+  if(!wrap) return;
+  if(usChart){usChart.destroy();usChart=null;}
+
+  if(isTodayMode){
+    const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+    const vals=sectorNames.map(n=>{const v=usTodayMap[n];return{name:n,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
+    if(!wrap.querySelector('#us-chart-canvas')) wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
+    const canvas=document.getElementById('us-chart-canvas');
+    if(!canvas) return;
+    usChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(d=>d.name),datasets:[{label:'오늘',data:vals.map(d=>d.val),backgroundColor:vals.map(d=>d.val>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)'),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label(ctx){return ` ${ctx.parsed.x.toFixed(2)}%`;}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:v=>v+'%'},grid:{color:'rgba(46,58,80,0.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}});
+    return;
+  }
+
+  if(!wrap.querySelector('#us-chart-canvas')) wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
+  const canvas=document.getElementById('us-chart-canvas');
+  if(!canvas) return;
+
+  const avgForTop=sectorNames.map(name=>{const ci=H.indexOf(name);const vs=chartRows.map(r=>{if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(v=>!isNaN(v));return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};}).sort((a,b)=>b.avg-a.avg);
+  const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
+  ['SP500','Nasdaq'].forEach(n=>top5.add(n));
+
+  const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+  const usTodayDate=S.usToday?S.usToday.date:'';
+  const usLatestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
+  const addUsToday=usTodayDate&&usTodayDate!==usLatestDate&&Object.keys(usTodayMap).length>0;
+  const labels=[...chartRows.map(r=>r[0]),...(addUsToday?[usTodayDate+'★']:[])];
+
+  const allHdrs=H.slice(1);
+  const datasets=allHdrs.map((name,si)=>{
+    const ci=H.indexOf(name);
+    const data=chartRows.map(r=>{if(String(r[ci])==='휴장')return null;const v=parseFloat(r[ci]);return isNaN(v)?null:v;});
+    if(addUsToday){const tv=usTodayMap[name];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+    const m=US_META[name]||{};
+    const isMainIdx=['SP500','Nasdaq','DowJones','Russell2K'].includes(name);
+    let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
+    if(name==='SP500')color='#FFD700';
+    else if(name==='Nasdaq')color='#4fc3f7';
+    else if(name==='DowJones')color='#ff9800';
+    else if(name==='Russell2K')color='#ab47bc';
+    return{label:name,data,borderColor:color,backgroundColor:color+'22',borderWidth:isMainIdx?2.5:1.5,pointRadius:isMainIdx?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isMainIdx?0:1,hidden:!top5.has(name)};
+  });
+  const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
+  usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+  usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
+  usChartAllOn=true;
+}
+
+function _renderUsHeatmap(chartRows,H,allHdrs,isTodayMode){
+  const wrap=document.getElementById('us-heatmap-wrap');
+  if(!wrap) return;
+
+  if(isTodayMode){
+    const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+    const usTodayDate=S.usToday?S.usToday.date:'오늘';
+    let html=`<table class="heatmap-table"><thead><tr><th>섹터</th><th style="color:var(--accent-us);font-weight:700">${usTodayDate}★</th></tr></thead><tbody>`;
+    allHdrs.forEach(name=>{const m=US_META[name]||{};const v=usTodayMap[name];let c;if(v!==undefined&&!isNaN(v)){if(m.type==='YIELD')c=yldCell(v);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:'-'};}html+=`<tr><td>${name}</td><td style="background:${c.bg};color:${c.fg}">${c.t||'-'}</td></tr>`;});
+    html+='</tbody></table>';wrap.innerHTML=html;return;
+  }
+
+  const dispRows=usHeatmapReverse?[...chartRows].reverse():chartRows;
+  const usTodayHmMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+  const usTodayHmDate=S.usToday?S.usToday.date:'';
+  const usHasToday=usTodayHmDate&&Object.keys(usTodayHmMap).length>0;
+  const usAlreadyHasToday=chartRows.some(r=>r[0]===usTodayHmDate);
+
+  let html=`<table class="heatmap-table"><thead><tr><th>섹터</th>`;
+  const todayTh=usHasToday&&!usAlreadyHasToday?`<th style="color:var(--accent-us);font-weight:700">${usTodayHmDate.slice(5)}★</th>`:'';
+  if(usHeatmapReverse) html+=todayTh;
+  dispRows.forEach(r=>html+=`<th>${r[0].slice(5)}</th>`);
+  if(!usHeatmapReverse) html+=todayTh;
+  html+='</tr></thead><tbody>';
+  allHdrs.forEach(name=>{
+    const ci=H.indexOf(name);const m=US_META[name]||{};
+    html+=`<tr><td>${name}</td>`;
+    const todayTd=()=>{if(!usHasToday||usAlreadyHasToday)return'';const tv=usTodayHmMap[name];let c;if(tv!==undefined&&!isNaN(tv)){if(m.type==='YIELD')c=yldCell(tv);else if(m.type==='VIX')c=vixCell(tv);else c=pctCell(tv,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:''};}return`<td style="background:${c.bg};color:${c.fg};border-left:2px solid rgba(239,83,80,.5)">${c.t||''}</td>`;};
+    if(usHeatmapReverse) html+=todayTd();
+    dispRows.forEach(r=>{const v=r[ci];if(String(v)==='휴장'){html+=`<td style="color:var(--text-muted);font-size:8px">휴장</td>`;return;}let c;if(m.type==='YIELD')c=yldCell(v);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);html+=`<td style="background:${c.bg};color:${c.fg}">${c.t||''}</td>`;});
+    if(!usHeatmapReverse) html+=todayTd();
+    html+='</tr>';
+  });
+  html+='</tbody></table>';wrap.innerHTML=html;
 }
 
 // ━━━ US HISTORY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2363,6 +2864,7 @@ function renderUs(){
 
   // ★ 차트 렌더
   renderUsChart();
+  renderUsAnalytics();
 }
 
 // ━━━ KR LIST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
