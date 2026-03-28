@@ -1324,7 +1324,9 @@ function renderKr(){
     const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
     const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
     const todayDate=S.krToday?S.krToday.date:'';
-    const hasTodayStats=todayDate&&Object.keys(todayMap).length>0;
+    // 오늘 날짜가 이미 확정 데이터로 최신 행에 있으면 오늘 박스 숨김 (중복 방지)
+    const todayAlreadyConfirmed=baseRows.length>0&&baseRows[0][0]===todayDate;
+    const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!todayAlreadyConfirmed;
     let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
     if(hasTodayStats){
       const tVals=pureSectors.map(name=>{
@@ -1425,23 +1427,25 @@ function renderKr(){
    +separatorRow(sectorHdrs.length)
    +'</thead><tbody>';
 
-  // ★ 오늘 실시간 행 (최상단, GOOGLEFINANCE 20분 지연)
+  // ★ 오늘 실시간 행 (최상단) — baseRows에 없을 때만 추가 (중복 방지)
   if(S.krToday&&S.krToday.sectors){
-    const todayMap=S.krToday.sectors;
-    const majorMap=S.krToday.majorIndex||{};
-    const todayDate=S.krToday.date||'오늘';
-    // 오늘 날짜 주석 (표 우상단에 한번만 표시 — 아래 table-container에서 처리)
-    t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
-    t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
-    sectorHdrs.forEach(name=>{
-      // majorIndex 우선, 없으면 sectors에서 찾기
-      const val=(majorMap[name]!==undefined)?majorMap[name]:todayMap[name];
-      if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
-      const c=KR_FIXED[name]?.type==='ADR'?adrCell(val):pctCell(val,15);
-      const isW=WATCHED_SECTORS.has(name);
-      t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
-    });
-    t+=`</tr>`;
+    const todayDateCheck=S.krToday.date||'';
+    const alreadyInBase=baseRows.some(r=>r[0]===todayDateCheck);
+    if(!alreadyInBase){
+      const todayMap=S.krToday.sectors;
+      const majorMap=S.krToday.majorIndex||{};
+      const todayDate=todayDateCheck||'오늘';
+      t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
+      t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+      sectorHdrs.forEach(name=>{
+        const val=(majorMap[name]!==undefined)?majorMap[name]:todayMap[name];
+        if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
+        const c=KR_FIXED[name]?.type==='ADR'?adrCell(val):pctCell(val,15);
+        const isW=WATCHED_SECTORS.has(name);
+        t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+      });
+      t+=`</tr>`;
+    }
   }
 
   f.forEach(row=>{
