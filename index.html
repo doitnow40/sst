@@ -929,11 +929,14 @@ if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData){
 t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
 t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
 sectorHdrs.forEach(name=>{
-const val=(majorMap[name]!==undefined)?majorMap[name]:todayMap[name];
-if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
-const c=KR_FIXED[name]?.type==='ADR'?adrCell(val):pctCell(val,15);
+// majorMap 우선, 없으면 todayMap(sectors) 에서 찾기 — 코스피/코스닥이 어느 쪽에 있든 처리
+const val=(majorMap[name]!==undefined&&majorMap[name]!==null)?majorMap[name]:
+          (todayMap[name]!==undefined&&todayMap[name]!==null)?todayMap[name]:undefined;
+if(val===undefined||val===null||isNaN(parseFloat(val))){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
+const numVal=parseFloat(val);
+const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):pctCell(numVal,15);
 const isW=WATCHED_SECTORS.has(name);
-t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
 });
 t+=`</tr>`;
 }
