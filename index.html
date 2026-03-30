@@ -2933,6 +2933,9 @@ watchedLoaded = true;
 WATCHED_SECTORS = new Set();
 watchedLoaded = true;
 }
+// ★ 주목 섹터 로드 후 현재 페이지 재렌더 (헤더 별표 표시)
+if(S.krOk) renderKr();
+if(S.usOk) renderUs();
 }
 function renderWatchSectorList(){
 const wrap=document.getElementById('watch-sector-list');
