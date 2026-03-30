@@ -845,22 +845,8 @@ renderKr();
 function renderKr(){
 if(!S.krD)return;
 const{headers:H,rows:baseRows}=S.krD;
-let rows=baseRows;
-if(S.krToday&&S.krToday.date){
-const todayStr=S.krToday.date;
-const hasToday=baseRows.length>0&&baseRows[0][0]===todayStr;
-if(!hasToday){
-const sectorMap=S.krToday.sectors||{};
-const majorMap=S.krToday.majorIndex||{};
-const todayRow=H.map((h,i)=>{
-if(i===0) return todayStr;
-const v=sectorMap[h]!==undefined?sectorMap[h]:majorMap[h]!==undefined?majorMap[h]:null;
-return (v!==null&&v!==undefined&&!isNaN(v))?v:null;
-});
-const hasVals=todayRow.slice(1).some(v=>v!==null);
-if(hasVals) rows=[todayRow,...baseRows];
-}
-}
+// rows는 항상 baseRows만 사용 (오늘 행은 테이블에서만 직접 삽입)
+const rows=baseRows;
 const f=rows.slice(0,S.krR);
 const sectorHdrs=H.slice(1);
 const secColorMap={};
@@ -890,7 +876,11 @@ const latestDate=lt[0];
 const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=S.krToday?S.krToday.date:'';
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0;
+// 주말/휴장, 이미 확정 저장된 날짜, 데이터 없음이면 오늘 박스 숨김
+const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
+const _isWeekend=(_todayDow===0||_todayDow===6);
+const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!_alreadyConfirmed;
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
 const tVals=pureSectors.map(name=>{
@@ -927,7 +917,15 @@ t+='</tr>'
 if(S.krToday&&S.krToday.sectors){
 const todayMap=S.krToday.sectors;
 const majorMap=S.krToday.majorIndex||{};
-const todayDate=S.krToday.date||'오늘';
+const todayDate=S.krToday.date||'';
+// ① 중복 방지: baseRows에 오늘 날짜가 이미 있으면 삽입 안 함
+const alreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
+// ② 주말/휴장 방지: 토(6), 일(0)이면 삽입 안 함
+const todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
+const isWeekend=(todayDow===0||todayDow===6);
+// ③ 실제 데이터 존재 여부
+const hasRealData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
+if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData){
 t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
 t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
 sectorHdrs.forEach(name=>{
@@ -938,6 +936,7 @@ const isW=WATCHED_SECTORS.has(name);
 t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
 t+=`</tr>`;
+}
 }
 f.forEach(row=>{
 t+=`<tr><td>${row[0]||''}</td>`;
@@ -1939,21 +1938,7 @@ renderUs();
 function renderUs(){
 if(!S.usD)return;
 const{headers:H,rows:baseRows}=S.usD;
-let rows=baseRows;
-if(S.usToday&&S.usToday.date){
-const todayStr=S.usToday.date;
-const hasToday=baseRows.length>0&&baseRows[0][0]===todayStr;
-if(!hasToday){
-const sectorMap=S.usToday.sectors||{};
-const todayRow=H.map((h,i)=>{
-if(i===0) return todayStr;
-const v=sectorMap[h];
-return (v!==null&&v!==undefined&&!isNaN(v))?v:null;
-});
-const hasVals=todayRow.slice(1).some(v=>v!==null);
-if(hasVals) rows=[todayRow,...baseRows];
-}
-}
+const rows=baseRows; // rows는 항상 baseRows만 사용
 const f=rows.slice(0,S.usR);
 const sh=H.slice(1);
 if(f.length){
@@ -1979,7 +1964,13 @@ t+='</tr>'
 +'</thead><tbody>';
 if(S.usToday&&S.usToday.sectors){
 const todayMap=S.usToday.sectors;
-const todayDate=S.usToday.date||'오늘';
+const todayDate=S.usToday.date||'';
+// ① 중복 방지, ② 주말(토/일) 방지, ③ 실데이터 확인
+const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
+const _usDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
+const _usWeekend=(_usDow===0||_usDow===6);
+const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
+if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData){
 t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
 t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
 sh.forEach(name=>{
@@ -1989,6 +1980,7 @@ const c=usCell(name,val);
 t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
 t+=`</tr>`;
+}
 }
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
