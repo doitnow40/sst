@@ -1784,7 +1784,8 @@ if(today){
 var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 오늘 섹터 등락률 랭킹 (실시간)';
 if(toggleBtn)toggleBtn.style.display='none';
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
-var allVals=sn.map(function(n){var v=tm[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+var tmj=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
+var allVals=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
 if(!allVals.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
 var upData=allVals.filter(function(d){return d.avg>=0;});
 var dnData=allVals.filter(function(d){return d.avg<0;}).reverse();
