@@ -1779,13 +1779,46 @@ _renderHtmlBars('kr-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].
 function _renderKrTrendChart(cr,H,sn,today){
 var wrap=document.getElementById('kr-chart-wrap'); if(!wrap)return;
 if(krChart){krChart.destroy();krChart=null;}
+if(today){
+// 오늘 모드: 상승/하락 분리 네온 랭킹 차트
+var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 오늘 섹터 등락률 랭킹 (실시간)';
+var toggleBtn=document.getElementById('kr-toggleall-btn'); if(toggleBtn)toggleBtn.style.display='none';
+var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
+var allVals=sn.map(function(n){var v=tm[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+if(!allVals.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
+var upData=allVals.filter(function(d){return d.avg>=0;});
+var dnData=allVals.filter(function(d){return d.avg<0;}).reverse();
+var ROW_H=22;
+var chartH=Math.max(100,Math.max(upData.length,dnData.length)*ROW_H+50);
+wrap.style.height=Math.min(560,chartH+40)+'px';
+wrap.style.overflowY=chartH+40>560?'auto':'visible';
+wrap.innerHTML='<div style="display:flex;gap:8px;width:100%;height:100%">'
++'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #ff0000;margin-bottom:4px">📈 상승 ('+upData.length+'개)</div><div style="height:'+chartH+'px;position:relative"><canvas id="kr-today-up-canvas"></canvas></div></div>'
++'<div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px"><div style="font-size:11px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #0088ff;margin-bottom:4px">📉 하락 ('+dnData.length+'개)</div><div style="height:'+chartH+'px;position:relative"><canvas id="kr-today-dn-canvas"></canvas></div></div>'
++'</div>';
+function makeNeonBar(canvasEl,avgArr,isUp){
+if(!canvasEl||!avgArr.length)return;
+var labels=avgArr.map(function(d){return d.name;});
+var origData=avgArr.map(function(d){return d.avg;});
+var data=isUp?origData:origData.map(function(v){return Math.abs(v);});
+var maxAbs=Math.max.apply(null,data)||1;
+var xMax=maxAbs*1.5;
+var col=isUp?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)';
+var brd=isUp?'#ff6b6b':'#4fc3f7';
+var ds={data:data,backgroundColor:col,borderColor:brd,borderWidth:1,borderRadius:3};
+ds._origData=origData;
+new Chart(canvasEl,{type:'bar',data:{labels:labels,datasets:[ds]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,layout:{padding:{top:0,bottom:0,left:4,right:60}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,callbacks:{label:function(ctx){var orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return' '+(orig>0?'+':'')+orig.toFixed(2)+'%';}}},datalabels:{display:true,anchor:'end',align:'end',color:brd,backgroundColor:null,borderWidth:0,font:{size:10,weight:'bold',family:"'JetBrains Mono','Courier New',monospace"},formatter:function(v,ctx){var orig=ctx.dataset._origData?.[ctx.dataIndex];return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';},padding:{left:2,right:2},textShadowColor:isUp?'#ff0000':'#0088ff',textShadowBlur:6,clip:false}},scales:{x:{position:'top',min:0,max:xMax,ticks:{color:'#8fa8c8',font:{size:8},callback:function(v){return isUp?v+'%':'-'+v+'%';}},grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});
+}
+requestAnimationFrame(function(){
+makeNeonBar(document.getElementById('kr-today-up-canvas'),upData,true);
+makeNeonBar(document.getElementById('kr-today-dn-canvas'),dnData,false);
+});
+return;
+}
+// 기간 모드: 전체 ON/OFF 버튼 복원
+var toggleBtn2=document.getElementById('kr-toggleall-btn'); if(toggleBtn2)toggleBtn2.style.display='';
 if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
-if(today){
-var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
-var vals=sn.map(function(n){var v=tm[n];return{name:n,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.val!==null;}).sort(function(a,b){return b.val-a.val;});
-krChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(function(d){return d.name;}),datasets:[{data:vals.map(function(d){return d.val;}),backgroundColor:vals.map(function(d){return d.val>=0?'rgba(239,83,80,.75)':'rgba(66,165,245,.75)';}),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label:function(c){return ' '+c.parsed.x.toFixed(2)+'%';}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:function(v){return v+'%';}},grid:{color:'rgba(46,58,80,.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}}); return;
-}
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
 var aFT=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); top5.add('코스피'); top5.add('코스닥');
@@ -1794,7 +1827,6 @@ var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
 var ds=fn.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!top5.has(n)};});
 krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:CHART_OPTS_BASE}); krChartAllOn=true;
-}
 function _renderKrHeatmap(cr,H,sn,today){
 var wrap=document.getElementById('kr-heatmap-wrap'); if(!wrap)return;
 if(today){
