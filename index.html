@@ -918,18 +918,26 @@ if(S.krToday&&S.krToday.sectors){
 const todayMap=S.krToday.sectors;
 const majorMap=S.krToday.majorIndex||{};
 const todayDate=S.krToday.date||'';
-// ① 중복 방지: baseRows에 오늘 날짜가 이미 있으면 삽입 안 함
 const alreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
-// ② 주말/휴장 방지: 토(6), 일(0)이면 삽입 안 함
-const todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
-const isWeekend=(todayDow===0||todayDow===6);
-// ③ 실제 데이터 존재 여부
+// KST 기준 요일/시간 판단
+const nowKST=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const kstDow=nowKST.getDay();
+const kstMinTotal=nowKST.getHours()*60+nowKST.getMinutes();
+const isWeekend=(kstDow===0||kstDow===6);
+// 한국 정규장: KST 09:00~15:30 (540~930분)
+const _krMarketOpen=kstMinTotal>=540&&kstMinTotal<930;
+// 장 전: KST 00:00~08:59
+const _krPreMarket=!isWeekend&&kstMinTotal<540;
+// 장 마감 후: KST 15:30 이후
+const _krAfterClose=!isWeekend&&kstMinTotal>=930;
 const hasRealData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
-if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData){
+const kstTimeStr=(nowKST.getHours()<10?'0':'')+nowKST.getHours()+':'+(nowKST.getMinutes()<10?'0':'')+nowKST.getMinutes()+' KST';
+const latestDate=baseRows.length?baseRows[0][0]:'';
+if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData&&(_krMarketOpen||_krAfterClose)){
+// 장 중 또는 장 마감 후: 실시간 행 표시
 t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
 t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
 sectorHdrs.forEach(name=>{
-// majorMap 우선, 없으면 todayMap(sectors) 에서 찾기 — 코스피/코스닥이 어느 쪽에 있든 처리
 const val=(majorMap[name]!==undefined&&majorMap[name]!==null)?majorMap[name]:
           (todayMap[name]!==undefined&&todayMap[name]!==null)?todayMap[name]:undefined;
 if(val===undefined||val===null||isNaN(parseFloat(val))){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
@@ -938,6 +946,22 @@ const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):pctCell(numVal,15);
 const isW=WATCHED_SECTORS.has(name);
 t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
 });
+t+=`</tr>`;
+}else if(todayDate&&!alreadyExists&&!isWeekend&&_krPreMarket){
+// 장 전: 안내 행 표시
+t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`⏰ 현재 ${kstTimeStr} — 한국 정규장 개장 전입니다 (개장: 09:00 KST). `;
+t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
+t+=`</tr>`;
+}else if(isWeekend){
+// 주말: 안내 행 표시
+const dayNames=['일','월','화','수','목','금','토'];
+t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`🏖️ 오늘은 주말(${dayNames[kstDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
 }
 }
