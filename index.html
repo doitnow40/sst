@@ -2067,12 +2067,23 @@ t+='</tr>'
 if(S.usToday&&S.usToday.sectors){
 const todayMap=S.usToday.sectors;
 const todayDate=S.usToday.date||'';
-// ① 중복 방지, ② 주말(토/일) 방지, ③ 실데이터 확인
 const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
-const _usDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
-const _usWeekend=(_usDow===0||_usDow===6);
+// ET 기준 요일/시간 판단
+const nowET=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+const etDow=nowET.getDay(); // 0=일,6=토
+const etHour=nowET.getHours();
+const etMin=nowET.getMinutes();
+const etMinTotal=etHour*60+etMin;
+const _usWeekend=(etDow===0||etDow===6);
+// 미국 정규장: ET 09:30~16:00 (570~960분)
+const _usMarketOpen=etMinTotal>=570&&etMinTotal<960;
+// 장 전 시간대: ET 00:00~09:30
+const _usPreMarket=!_usWeekend&&etMinTotal<570;
+// 장 마감 후: ET 16:00 이후
+const _usAfterHours=!_usWeekend&&etMinTotal>=960;
 const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
-if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData){
+// 오늘 행 추가 조건: 미리 존재하지 않고, 주말 아니고, 실데이터 있고, 장 중 또는 장 마감 후
+if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData&&!_usPreMarket){
 t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
 t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
 sh.forEach(name=>{
@@ -2081,6 +2092,24 @@ if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;
 const c=usCell(name,val);
 t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
+t+=`</tr>`;
+} else if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usPreMarket){
+// 장 전 시간대: 오늘 행 대신 이유 안내 행 표시
+const latestDate=baseRows.length?baseRows[0][0]:'';
+const etTimeStr=(etHour<10?'0':'')+etHour+':'+(etMin<10?'0':'')+etMin+' ET';
+t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
+t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
+t+=`</tr>`;
+} else if(_usWeekend){
+const latestDate=baseRows.length?baseRows[0][0]:'';
+const dayNames=['일','월','화','수','목','금','토'];
+t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
 }
 }
