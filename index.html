@@ -3331,80 +3331,86 @@ if(getTarget(e))tip.style.display='none';
 });
 })();
 
-// ── memo-icon 전역 tooltip: 종목명을 가리지 않는 위치에 표시 ──
+// ── memo-icon 전역 tooltip: 해당 종목 행을 절대 가리지 않는 위치에 표시 ──
 (function(){
 var mTip=document.getElementById('memo-tooltip');
-var GAP=8; // 아이콘과 툴팁 사이 간격(px)
-var MARGIN=6; // 뷰포트 경계 여백(px)
-var HEADER_H=56; // 헤더 높이
+var GAP=6;       // 툴팁과 행 사이 간격(px)
+var MARGIN=8;    // 뷰포트 경계 여백(px)
+var HEADER_H=56; // 상단 헤더 높이(px)
 
 function showMemoTip(icon){
   var txt=icon.getAttribute('data-memo');
   if(!txt)return;
   mTip.textContent=txt;
   mTip.style.display='block';
+  // 크기 측정을 위해 화면 밖으로 숨겨둠
   mTip.style.left='-9999px';
   mTip.style.top='-9999px';
 
-  // 아이콘 rect
+  // 아이콘 rect (fixed 기준)
   var ir=icon.getBoundingClientRect();
-  // 종목명(.stock-name) rect — 같은 .stock-item 안
-  var stockItem=icon.closest('.stock-item');
-  var nameEl=stockItem?stockItem.querySelector('.stock-name'):null;
-  var nr=nameEl?nameEl.getBoundingClientRect():ir;
+  // ★ 회피 대상: 종목명이 아니라 종목 행 전체(stock-item) rect
+  var rowEl=icon.closest('.stock-item');
+  var rr=rowEl?rowEl.getBoundingClientRect():ir;
 
   var tw=mTip.offsetWidth;
   var th=mTip.offsetHeight;
   var vw=window.innerWidth;
   var vh=window.innerHeight;
 
-  // 후보 위치 4가지: 아이콘 기준 오른쪽/왼쪽/위/아래
-  // 각 후보가 ① 뷰포트 안에 들어오고 ② 종목명(nr)을 가리지 않는지 체크
-  function overlaps(ax,ay,aw,ah,bx,by,bw,bh){
-    return ax<bx+bw&&ax+aw>bx&&ay<by+bh&&ay+ah>by;
-  }
-  function inViewport(x,y,w,h){
-    return x>=MARGIN&&y>=HEADER_H+MARGIN&&x+w<=vw-MARGIN&&y+h<=vh-MARGIN;
+  // X축: 아이콘 오른쪽 끝 기준으로 정렬, 뷰포트 오른쪽 넘으면 왼쪽으로 당김
+  function calcX(){
+    // 아이콘 오른쪽에 붙이되, 오른쪽이 넘치면 왼쪽으로
+    var x=ir.right+GAP;
+    if(x+tw>vw-MARGIN) x=ir.left-tw-GAP;
+    // 그래도 왼쪽이 잘리면 뷰포트 내로 클램프
+    x=Math.max(MARGIN, Math.min(x, vw-tw-MARGIN));
+    return x;
   }
 
+  // ── 우선순위: 행 위 → 행 아래 → 행 오른쪽 바깥 → 행 왼쪽 바깥 ──
+  // 각 후보의 X는 아이콘 기준, Y는 행을 기준으로 결정
   var candidates=[
-    // 1순위: 아이콘 오른쪽 + 종목행 세로 중앙
-    {x:ir.right+GAP, y:ir.top+ir.height/2-th/2},
-    // 2순위: 아이콘 왼쪽
-    {x:ir.left-GAP-tw, y:ir.top+ir.height/2-th/2},
-    // 3순위: 아이콘 위
-    {x:ir.left+ir.width/2-tw/2, y:ir.top-GAP-th},
-    // 4순위: 아이콘 아래
-    {x:ir.left+ir.width/2-tw/2, y:ir.bottom+GAP},
+    // 1순위: 행 바로 위 (가장 자연스럽고 행을 절대 안 가림)
+    {x:calcX(), y:rr.top-th-GAP},
+    // 2순위: 행 바로 아래
+    {x:calcX(), y:rr.bottom+GAP},
+    // 3순위: 행 오른쪽 완전 바깥 (카드 밖)
+    {x:rr.right+GAP, y:ir.top+ir.height/2-th/2},
+    // 4순위: 행 왼쪽 완전 바깥 (카드 밖)
+    {x:rr.left-tw-GAP, y:ir.top+ir.height/2-th/2},
   ];
+
+  function overlapsRow(x,y,w,h){
+    // 툴팁이 종목 행과 겹치는지 체크
+    return x<rr.right&&x+w>rr.left&&y<rr.bottom&&y+h>rr.top;
+  }
+  function fitsViewport(x,y,w,h){
+    return x>=MARGIN&&y>=HEADER_H+MARGIN&&x+w<=vw-MARGIN&&y+h<=vh-MARGIN;
+  }
 
   var chosen=null;
   for(var i=0;i<candidates.length;i++){
     var c=candidates[i];
-    if(inViewport(c.x,c.y,tw,th)&&!overlaps(c.x,c.y,tw,th,nr.left,nr.top,nr.width,nr.height)){
-      chosen=c; break;
+    // 뷰포트 클램프 적용 후 재검사
+    var cx=Math.max(MARGIN, Math.min(c.x, vw-tw-MARGIN));
+    var cy=Math.max(HEADER_H+MARGIN, Math.min(c.y, vh-th-MARGIN));
+    if(!overlapsRow(cx,cy,tw,th)){
+      chosen={x:cx,y:cy}; break;
     }
   }
 
-  // 모든 후보가 겹치면: 가장 덜 겹치는 위치 선택 (1순위 기준 뷰포트 클램프만)
+  // 모든 후보가 행과 겹칠 경우 (극히 드묾):
+  // 행 위를 강제 선택하되 뷰포트 클램프만 적용
   if(!chosen){
-    // 오른쪽 우선, 뷰포트 클램프
-    var fx=ir.right+GAP;
-    var fy=ir.top+ir.height/2-th/2;
-    // 뷰포트 클램프
-    if(fx+tw>vw-MARGIN) fx=ir.left-GAP-tw;
-    if(fx<MARGIN) fx=MARGIN;
-    if(fy<HEADER_H+MARGIN) fy=HEADER_H+MARGIN;
-    if(fy+th>vh-MARGIN) fy=vh-MARGIN-th;
+    var fx=Math.max(MARGIN, Math.min(calcX(), vw-tw-MARGIN));
+    var fy=rr.top-th-GAP;
+    fy=Math.max(HEADER_H+MARGIN, Math.min(fy, vh-th-MARGIN));
     chosen={x:fx,y:fy};
   }
 
-  // 최종 뷰포트 클램프
-  var fx=Math.min(Math.max(chosen.x, MARGIN), vw-tw-MARGIN);
-  var fy=Math.min(Math.max(chosen.y, HEADER_H+MARGIN), vh-th-MARGIN);
-
-  mTip.style.left=fx+'px';
-  mTip.style.top=fy+'px';
+  mTip.style.left=chosen.x+'px';
+  mTip.style.top=chosen.y+'px';
 }
 
 function hideMemoTip(){
@@ -3420,10 +3426,10 @@ document.addEventListener('mouseout',function(e){
   var icon=e.target.closest('.memo-icon');
   if(icon){hideMemoTip();}
 });
-// 스크롤 또는 리사이즈 시 숨기기
+// 스크롤·리사이즈 시 숨기기
 window.addEventListener('scroll',hideMemoTip,true);
 window.addEventListener('resize',hideMemoTip);
-// 포커스(키보드) 지원
+// 포커스(키보드 Tab) 지원
 document.addEventListener('focusin',function(e){
   var icon=e.target.closest('.memo-icon');
   if(icon){showMemoTip(icon);}
