@@ -3095,6 +3095,25 @@ try{
 await adminPost('update_memo',{sector:sectorName,stock_name:stockName,memo});
 showMsg('stock-msg','✅ "'+stockName+'" 메모 저장 완료',false);
 S.krLOk=false;
+// 메모 저장 후 즉시 해당 페이지 새로고침 (성능 최적화: 필요한 페이지만)
+const krListPage=document.getElementById('page-kr-list')?.style.display!=='none';
+const usListPage=document.getElementById('page-us-list')?.style.display!=='none';
+if(krListPage){
+try{
+const d=await api('kr_today',0);
+S.krToday=d;
+S.krLOk=false;
+S.krSectors=null;
+await loadKrList();
+}catch(e){console.error('메모 반영 오류:',e);}
+}
+else if(usListPage){
+try{
+const d=await api('us_today',0);
+S.usToday=d;
+renderUsList(listSorted);
+}catch(e){console.error('메모 반영 오류:',e);}
+}
 }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
 }
