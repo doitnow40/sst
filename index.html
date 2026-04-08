@@ -35,6 +35,15 @@ border-radius:6px;transition:background .15s;
 <div class="logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
 </div>
 <div class="header-right">
+<button id="refresh-all-btn" onclick="refreshAllData()" title="스프레드시트 데이터 즉시 새로고침" style="
+background:none;border:1px solid var(--border-light);cursor:pointer;
+border-radius:5px;padding:4px 10px;font-size:12px;color:var(--text-secondary);
+transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;
+margin-right:12px;
+">
+<span id="refresh-icon" style="font-size:14px;display:inline-block;transition:transform .3s">🔄</span>
+<span>새로고침</span>
+</button>
 <div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
 data-tooltip="마지막으로 스프레드시트 확정 데이터를 읽은 시각&#10;&#10;🇰🇷 섹터 확정값: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 섹터 확정값: 매일 06:00 KST 자동 업데이트">
 <div class="sheet-read-dot"></div>
@@ -847,6 +856,44 @@ if(n&&d.date) n.style.display='';
 updateRealtimeTime();
 renderKr();
 }catch(e){ S.krToday=null; }
+}
+
+async function refreshAllData(){
+const btn=document.getElementById('refresh-all-btn');
+const icon=document.getElementById('refresh-icon');
+if(btn)btn.disabled=true;
+if(icon)icon.style.transform='rotate(360deg)';
+try{
+// 모든 데이터 캐시 초기화
+S.krOk=false;
+S.krLOk=false;
+S.usOk=false;
+S.usLOk=false;
+S.krSectors=null;
+S.usSectors=null;
+S.krD=null;
+S.usD=null;
+S.krToday=null;
+S.usToday=null;
+const currentPage=document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
+// 현재 보이는 페이지만 새로고침
+if(currentPage==='kr-history'){
+await loadKr();
+}else if(currentPage==='us-history'){
+await loadUs();
+}else if(currentPage==='kr-list'){
+await loadKrList();
+}else if(currentPage==='us-list'){
+const d=await api('us_today',0);
+S.usToday=d;
+renderUsList(listSorted);
+}
+}catch(e){
+console.error('새로고침 오류:',e);
+}finally{
+if(btn)btn.disabled=false;
+if(icon)icon.style.transform='rotate(0deg)';
+}
 }
 function renderKr(){
 if(!S.krD)return;
