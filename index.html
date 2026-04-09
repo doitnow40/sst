@@ -865,45 +865,35 @@ if(btn)btn.disabled=true;
 if(icon)icon.style.transform='rotate(360deg)';
 try{
 const currentPage=document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
+console.log('현재 페이지:',currentPage);
 if(currentPage==='kr-list'){
-// kr-list: 스프레드시트에서 직접 로드 (캐시 무시)
-try{
-const d=await api('kr_list',0,true); // force=true
+// kr-list: 스프레드시트에서 직접 로드
+const d=await api('kr_list',0);
 S.krLOk=true;
 S.krSectors=d.sectors;
 if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);
 renderKrListFiltered();
-showMsg('stock-msg','✅ 데이터 새로고침 완료',false);
-}catch(e){
-console.error('kr-list 새로고침 실패:',e);
-showMsg('stock-msg','❌ 새로고침 실패: '+e.message,true);
-}
+console.log('kr-list 새로고침 완료');
 }else if(currentPage==='kr-history'){
-// kr-history 새로고침
 S.krOk=false;
 S.krD=null;
 await loadKr();
-showMsg('kr-status-msg','✅ 한국 섹터 데이터 새로고침',false);
+console.log('kr-history 새로고침 완료');
 }else if(currentPage==='us-history'){
-// us-history 새로고침
 S.usOk=false;
 S.usD=null;
 await loadUs();
-showMsg('us-status-msg','✅ 미국 섹터 데이터 새로고침',false);
+console.log('us-history 새로고침 완료');
 }else if(currentPage==='us-list'){
-// us-list 새로고침
-try{
-const d=await api('us_today',0,true); // force=true
+const d=await api('us_today',0);
 S.usToday=d;
 renderUsList(listSorted);
-showMsg('us-list-msg','✅ 미국 종목 데이터 새로고침',false);
-}catch(e){
-console.error('us-list 새로고침 실패:',e);
-showMsg('us-list-msg','❌ 새로고침 실패',true);
-}
+console.log('us-list 새로고침 완료');
+}else{
+console.log('알 수 없는 페이지');
 }
 }catch(e){
-console.error('새로고침 오류:',e);
+console.error('새로고침 실패:',e);
 }finally{
 if(btn)btn.disabled=false;
 if(icon)icon.style.transform='rotate(0deg)';
@@ -3409,28 +3399,54 @@ if(getTarget(e))tip.style.display='none';
 });
 })();
 
-// 메모 tooltip 위치 조정 (간단하고 안전한 버전)
+// 메모 tooltip 위치 조정 (강화된 버전)
 (function(){
-document.addEventListener('mouseover',function(e){
-// 안전한 closest 호출
-if(!e.target || !e.target.closest) return;
-var wrapper=e.target.closest('.memo-icon-wrapper');
-if(!wrapper) return;
+var updateTooltips=function(){
+try{
+var wrappers=document.querySelectorAll('.memo-icon-wrapper');
+if(!wrappers || wrappers.length===0) return;
+wrappers.forEach(function(wrapper){
 var tooltip=wrapper.querySelector('.memo-tooltip');
 if(!tooltip) return;
-// 위치 계산
 var rect=wrapper.getBoundingClientRect();
 var x=rect.left;
 var y=rect.bottom+8;
-var w=280, h=100;
-// 우측 체크
-if(x+w>window.innerWidth-10) x=Math.max(10, window.innerWidth-w-10);
-// 하단 체크
-if(y+h>window.innerHeight-10) y=Math.max(60, rect.top-h-8);
+var tooltipWidth=280;
+var tooltipHeight=100;
+// 우측 범위 체크
+if(x+tooltipWidth>window.innerWidth-10){
+x=Math.max(10, window.innerWidth-tooltipWidth-10);
+}
+// 하단 범위 체크
+if(y+tooltipHeight>window.innerHeight-10){
+y=Math.max(60, rect.top-tooltipHeight-8);
+}
+tooltip.style.position='fixed';
 tooltip.style.left=x+'px';
 tooltip.style.top=y+'px';
-},false);
+});
+}catch(err){
+console.error('메모 위치 업데이트 에러:',err);
+}
+};
+// 초기 실행
+setTimeout(updateTooltips, 100);
+setTimeout(updateTooltips, 500);
+setTimeout(updateTooltips, 1000);
+// 이벤트 리스너
+document.addEventListener('DOMContentLoaded', updateTooltips);
+document.addEventListener('scroll', updateTooltips, {passive:true});
+window.addEventListener('resize', updateTooltips);
+// 페이지 변경 후 재계산
+var originalLoadKrList=window.loadKrList;
+window.loadKrList=async function(){
+var result=await originalLoadKrList.apply(this,arguments);
+setTimeout(updateTooltips,200);
+return result;
+};
 })();
+
+
 
 
 
