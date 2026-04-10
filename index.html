@@ -1894,9 +1894,17 @@ var dnList=dataWithCap.filter(function(d){return d.avg<0;}).sort(function(a,b){r
 // 시가총액 있는 종목 수 확인 → 면적 기준 결정
 var hasCap=upList.concat(dnList).filter(function(d){return d.marketCap&&d.marketCap>0;}).length>0;
 function tmColor(v){
+// 한국식: 상승=빨강, 하락=파랑
 var t=Math.min(1,Math.abs(v)/10);
-if(v>=0){var r=Math.round(30+20*(1-t)),g=Math.round(140+80*t),b2=Math.round(30+20*(1-t));return'rgb('+r+','+g+','+b2+')';}
-else{var r2=Math.round(140+90*t),g2=Math.round(30+20*(1-t)),b3=Math.round(30+20*(1-t));return'rgb('+r2+','+g2+','+b3+')';}
+if(v>=0){
+// 0%: rgb(80,20,20) → +10%: rgb(200,30,30) → 진빨강
+var r=Math.round(160+95*t),g=Math.round(20+10*(1-t)),b2=Math.round(20+10*(1-t));
+return'rgb('+r+','+g+','+b2+')';
+}else{
+// 0%: rgb(20,20,80) → -10%: rgb(20,50,210) → 진파랑
+var r2=Math.round(20+10*(1-t)),g2=Math.round(30+30*(1-t)),b3=Math.round(160+95*t);
+return'rgb('+r2+','+g2+','+b3+')';
+}
 }
 function squarify2(items,x0,y0,W0,H0){
 var result=[];
@@ -1940,21 +1948,39 @@ else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 sq(scaled,x0,y0,W0,H0);
 return result;
 }
+// 시가총액 기준: 전체를 하나의 treemap으로 통합 (이미지3처럼), 등락률로 색상
+// 시가총액 없으면 기존 방식(상승/하락 좌우 분리)
+var allBoxes=[];
+var PAD=1.5;
+var html='<div style="position:relative;width:100%;height:'+H2+'px;overflow:hidden;background:#0f1117;">';
+if(hasCap){
+// 시가총액 기준: 전체 섹터를 시가총액 크기로 하나의 treemap
+// 등락률 내림차순 정렬 (상승 큰 것부터)
+var allList=dataWithCap.filter(function(d){return d.marketCap&&d.marketCap>0;});
+// 시가총액 없는 섹터도 fallback으로 포함
+var noCapList=dataWithCap.filter(function(d){return!d.marketCap||d.marketCap<=0;});
+// 시가총액 없는 섹터는 평균 시가총액의 10%로 대체
+var avgCap=allList.length?allList.reduce(function(s,d){return s+d.marketCap;},0)/allList.length:1000;
+var fullList=allList.concat(noCapList.map(function(d){return{name:d.name,avg:d.avg,marketCap:avgCap*0.1};}));
+// 등락률 내림차순 정렬
+fullList.sort(function(a,b){return b.avg-a.avg;});
+var allItems=fullList.map(function(d){return{name:d.name,abs:d.marketCap,orig:d.avg,marketCap:d.marketCap};});
+allBoxes=squarify2(allItems,0,0,W,H2);
+}else{
+// 시가총액 없음: 기존 방식 (상승/하락 좌우 분리, 등락률 절대값으로 면적)
 var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
 var dnSum=dnList.reduce(function(s,d){return s+Math.abs(d.avg);},0);
 var tot=upSum+dnSum||1;
 var gap=upList.length>0&&dnList.length>0?2:0;
 var upW=upList.length===0?0:dnList.length===0?W:Math.max(60,Math.round((W-gap)*upSum/tot));
 var dnW=W-upW-gap;
-// 면적 기준: 시가총액 있으면 시가총액, 없으면 등락률 절대값
-var upItems=upList.map(function(d){return{name:d.name,abs:hasCap?(d.marketCap||Math.abs(d.avg)*100):d.avg,orig:d.avg};});
-var dnItems=dnList.map(function(d){return{name:d.name,abs:hasCap?(d.marketCap||Math.abs(d.avg)*100):Math.abs(d.avg),orig:d.avg};});
+var upItems=upList.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg,marketCap:null};});
+var dnItems=dnList.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg,marketCap:null};});
 var upBoxes=upItems.length?squarify2(upItems,0,0,upW,H2):[];
 var dnBoxes=dnItems.length?squarify2(dnItems,upW+gap,0,dnW,H2):[];
-var allBoxes=upBoxes.concat(dnBoxes);
-var PAD=1.5;
-var html='<div style="position:relative;width:100%;height:'+H2+'px;overflow:hidden;background:#0f1117;">';
 if(gap>0)html+='<div style="position:absolute;left:'+upW+'px;top:0;width:'+gap+'px;height:100%;background:#0f1117;z-index:2"></div>';
+allBoxes=upBoxes.concat(dnBoxes);
+}
 allBoxes.forEach(function(b){
 var col=tmColor(b.orig);
 var bw=Math.max(0,b.w-PAD*2),bh=Math.max(0,b.h-PAD*2);
@@ -1978,6 +2004,7 @@ html+='</div>';
 wrap.innerHTML=html;
 return;
 }
+
 if(toggleBtn)toggleBtn.style.display='';
 if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
