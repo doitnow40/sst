@@ -1938,10 +1938,24 @@ if(horiz){result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:pos
 else{result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}
 });
 }
+// 최소 글자 표시 가능 크기
+var MIN_READABLE=22; // px: 이 이상이어야 섹터명 한 줄이라도 표시
 function sq(items2,x2,y2,w2,h2){
 if(!items2.length)return;
+if(w2<2||h2<2)return; // 너무 작은 영역은 skip
 if(items2.length===1){result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});return;}
-var horiz=w2>=h2,len=horiz?h2:w2;
+// ★ 방향 결정: 기본은 긴 변 기준이지만,
+//    가로가 훨씬 길고 남은 높이가 MIN_READABLE*2 이하면 세로 분할(horiz=false) 강제
+//    → 가로로 납작해지는 것을 막고 세로로 쌓아 높이를 확보
+var horiz;
+if(w2>h2*2.5&&h2<MIN_READABLE*2){
+horiz=false; // 너무 납작 → 세로로 분할
+}else if(h2>w2*2.5&&w2<MIN_READABLE*2){
+horiz=true;  // 너무 좁음 → 가로로 분할
+}else{
+horiz=w2>=h2; // 기본: 긴 변 기준
+}
+var len=horiz?h2:w2;
 var row=[items2[0]],rowArea=items2[0].a;
 for(var i=1;i<items2.length;i++){
 var newArea=rowArea+items2[i].a;
@@ -1994,6 +2008,9 @@ allBoxes=squarify2(upItems2,0,0,upW,H2).concat(squarify2(dnItems2,upW+gap,0,dnW,
 allBoxes.forEach(function(b){
 var col=tmColor(b.orig);
 var bw=Math.max(0,b.w-PAD*2),bh=Math.max(0,b.h-PAD*2);
+// ★ 너무 작아 글자 표시 불가한 박스: 색상 블록만 표시 (텍스트 없음)
+// 완전히 보이지 않을 정도로 작으면(양쪽 다 8px 미만) 렌더 skip
+if(bw<8||bh<8)return;
 var area=bw*bh,minSide=Math.min(bw,bh);
 var fs=0;
 if(minSide>=40&&area>=2000)fs=13;
