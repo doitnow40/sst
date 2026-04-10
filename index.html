@@ -1971,10 +1971,11 @@ if(capItems.length>0){
 // 시가총액 내림차순 정렬 후 상위 20개만 추출
 capItems.sort(function(a,b){return b.marketCap-a.marketCap;});
 var top20=capItems.slice(0,20);
-// squarify 배치: 시총 내림차순 유지 → 좌상단=시총최대, 우하단=시총최소
-// (등락률 정렬 제거 - 시총 크기 순서가 finviz 방식)
+// ★ pow(cap, 0.45) 스케일: 시총 비례 유지 + 소형섹터 가독성 확보
+// 선형(1.0) ↔ 로그(0.0) 중간값 → 반도체 등 대형이 독식하는 현상 완화
 var tmItems=top20.map(function(d){
-return{name:d.name,abs:d.marketCap,orig:d.avg,marketCap:d.marketCap};
+var scaledCap=Math.pow(d.marketCap,0.45);
+return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
 allBoxes=squarify2(tmItems,0,0,W,H2);
 }else{
