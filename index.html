@@ -1954,25 +1954,19 @@ else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 sq(scaled,x0,y0,W0,H0);
 return result;
 }
-// ── 시가총액 기준 통합 Treemap ──────────────────────────────────
+// ── 시가총액 기준 통합 Treemap (시총 상위 20개만 표시) ─────────
 // 면적 = 시가총액, 색상강도 = 등락률
-// S.krSectors에서 섹터별 시가총액 합산 (이미 mcapMap으로 준비됨)
 var PAD=1.5;
 var html='<div style="position:relative;width:100%;height:'+H2+'px;overflow:hidden;background:#0f1117;">';
-// 시가총액 있는 섹터 + 없는 섹터 모두 포함
 var capItems=dataWithCap.filter(function(d){return d.marketCap&&d.marketCap>0;});
-var noCapItems=dataWithCap.filter(function(d){return!d.marketCap||d.marketCap<=0;});
 var allBoxes=[];
 if(capItems.length>0){
-// 시가총액 없는 섹터: 전체 평균의 5%로 fallback 처리 (맵에 작게 표시)
-var avgCap=capItems.reduce(function(s,d){return s+d.marketCap;},0)/capItems.length;
-var fallbackCap=avgCap*0.05;
-var allItemsForCap=capItems.concat(noCapItems.map(function(d){
-return{name:d.name,avg:d.avg,marketCap:fallbackCap};
-}));
-// 등락률 내림차순 정렬 (상승 큰 것→하락 큰 것 순서로 배치)
-allItemsForCap.sort(function(a,b){return b.avg-a.avg;});
-var tmItems=allItemsForCap.map(function(d){
+// 시가총액 내림차순 정렬 후 상위 20개만 추출
+capItems.sort(function(a,b){return b.marketCap-a.marketCap;});
+var top20=capItems.slice(0,20);
+// squarify 배치는 등락률 내림차순 정렬 (상승→하락)
+top20.sort(function(a,b){return b.avg-a.avg;});
+var tmItems=top20.map(function(d){
 return{name:d.name,abs:d.marketCap,orig:d.avg,marketCap:d.marketCap};
 });
 allBoxes=squarify2(tmItems,0,0,W,H2);
