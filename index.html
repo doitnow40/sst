@@ -1925,6 +1925,8 @@ var total=items.reduce(function(s,d){return s+d.abs;},0);
 if(total<=0)return result;
 var area=W0*H0;
 var scaled=items.map(function(d){return{name:d.name,orig:d.orig,marketCap:d.marketCap||null,a:d.abs/total*area};});
+var MIN_H=28; // 글자 표시를 위한 최소 높이(px)
+var MIN_W=36; // 글자 표시를 위한 최소 너비(px)
 function worstAR(row,rowArea,len){
 var mx=row.reduce(function(m,d){return Math.max(m,d.a);},0);
 var mn=row.reduce(function(m,d){return Math.min(m,d.a);},9e99);
@@ -1938,24 +1940,51 @@ if(horiz){result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:pos
 else{result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}
 });
 }
-// 최소 글자 표시 가능 크기
-var MIN_READABLE=22; // px: 이 이상이어야 섹터명 한 줄이라도 표시
+// ★ 납작한 공간에 여러 아이템이 남았을 때: 최적 그리드로 균등 배치
+// 조건: 가로가 세로의 3배 이상 AND 아이템 2개 이상
+// 방법: sqrt(n * W/H)에 가까운 열 수로 균등 분할 → 각 셀이 정사각형에 가까워짐
+function layoutGrid(items3,gx,gy,gw,gh){
+var n=items3.length;
+if(n===0)return;
+if(n===1){result.push({name:items3[0].name,orig:items3[0].orig,marketCap:items3[0].marketCap||null,x:gx,y:gy,w:gw,h:gh});return;}
+// 최적 열 수: 가로/세로 비율을 고려해 각 셀이 최대한 정사각형이 되도록
+var idealCols=Math.sqrt(n*gw/gh);
+var cols=Math.max(1,Math.round(idealCols));
+// 열 수를 조정: 각 행 높이가 MIN_H 이상이 되는 최소 열 수 찾기
+while(cols<n){
+var rows=Math.ceil(n/cols);
+if(gh/rows>=MIN_H)break;
+cols++;
+}
+cols=Math.min(cols,n);
+var rows=Math.ceil(n/cols);
+var cellW=gw/cols, cellH=gh/rows;
+// 시총 기준으로 정렬된 순서 유지하며 배치
+items3.forEach(function(d,idx){
+var col=idx%cols, row=Math.floor(idx/cols);
+result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
+x:gx+col*cellW,y:gy+row*cellH,w:cellW,h:cellH});
+});
+}
 function sq(items2,x2,y2,w2,h2){
 if(!items2.length)return;
-if(w2<2||h2<2)return; // 너무 작은 영역은 skip
-if(items2.length===1){result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});return;}
-// ★ 방향 결정: 기본은 긴 변 기준이지만,
-//    가로가 훨씬 길고 남은 높이가 MIN_READABLE*2 이하면 세로 분할(horiz=false) 강제
-//    → 가로로 납작해지는 것을 막고 세로로 쌓아 높이를 확보
-var horiz;
-if(w2>h2*2.5&&h2<MIN_READABLE*2){
-horiz=false; // 너무 납작 → 세로로 분할
-}else if(h2>w2*2.5&&w2<MIN_READABLE*2){
-horiz=true;  // 너무 좁음 → 가로로 분할
-}else{
-horiz=w2>=h2; // 기본: 긴 변 기준
+if(w2<2||h2<2)return;
+if(items2.length===1){
+result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});
+return;
 }
-var len=horiz?h2:w2;
+// ★ 납작한 공간 감지: 가로/세로 비율이 3 이상 → 그리드 배치
+var aspectRatio=w2/h2;
+if(aspectRatio>=3&&h2<MIN_H*2.5){
+layoutGrid(items2,x2,y2,w2,h2);
+return;
+}
+// 세로로 너무 좁은 경우: 가로 그리드
+if(h2/w2>=3&&w2<MIN_W*2.5){
+layoutGrid(items2,x2,y2,w2,h2);
+return;
+}
+var horiz=w2>=h2,len=horiz?h2:w2;
 var row=[items2[0]],rowArea=items2[0].a;
 for(var i=1;i<items2.length;i++){
 var newArea=rowArea+items2[i].a;
@@ -1975,6 +2004,7 @@ else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 sq(scaled,x0,y0,W0,H0);
 return result;
 }
+
 // ── 시가총액 기준 통합 Treemap (시총 상위 20개만 표시) ─────────
 // 면적 = 시가총액, 색상강도 = 등락률
 var PAD=1.5;
