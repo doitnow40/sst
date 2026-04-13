@@ -644,6 +644,27 @@ THEMATIC:{label:'▶ Thematic ETF',          bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'▶ Bond / USD',            bg:'#37474F',fg:'#fff'},
 };
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null};
+// 날짜문자열(yyyy-MM-dd) → 요일 한글 약자
+function dateToDow(dateStr, isKr) {
+  if (!dateStr || dateStr.length < 10) return '';
+  const DAY_KR = ['일','월','화','수','목','금','토'];
+  const DAY_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // yyyy-MM-dd → 로컬 파싱 오류 방지 위해 UTC 기준으로 파싱
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const dow = dt.getUTCDay();
+  return isKr ? DAY_KR[dow] : DAY_EN[dow];
+}
+// 날짜 + 요일 셀 내용 생성
+function dateCell(dateStr, isKr, extraStyle) {
+  const dow = dateToDow(dateStr, isKr);
+  const dowColor = (dow === '토' || dow === 'Sat') ? '#64b5f6'
+                 : (dow === '일' || dow === 'Sun') ? '#ef9a9a'
+                 : 'var(--text-muted)';
+  return '<span style="' + (extraStyle || '') + '">' + dateStr
+    + '</span><span style="font-size:8px;margin-left:3px;color:' + dowColor + '">(' + dow + ')</span>';
+}
+
 function changeFontSize(delta){
 S.fontSize=Math.max(7,Math.min(16,S.fontSize+delta));
 document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
@@ -971,7 +992,7 @@ _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
-let t=`<table><thead>${t_header}<tr><th>날짜</th>`;
+let t=`<table><thead>${t_header}<tr><th>날짜 <span style="font-size:8px;color:var(--accent-kr);font-weight:400">KST</span></th>`;
 sectorHdrs.forEach(name=>{
 const fixed=KR_FIXED[name];
 let bg,fg;
@@ -1008,7 +1029,7 @@ const latestDate=baseRows.length?baseRows[0][0]:'';
 if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData&&(_krMarketOpen||_krAfterClose)){
 // 장 중 또는 장 마감 후: 실시간 행 표시
 t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
-t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 sectorHdrs.forEach(name=>{
 const val=(majorMap[name]!==undefined&&majorMap[name]!==null)?majorMap[name]:
           (todayMap[name]!==undefined&&todayMap[name]!==null)?todayMap[name]:undefined;
@@ -1022,7 +1043,7 @@ t+=`</tr>`;
 }else if(todayDate&&!alreadyExists&&!isWeekend&&_krPreMarket){
 // 장 전: 안내 행 표시
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`⏰ 현재 ${kstTimeStr} — 한국 정규장 개장 전입니다 (개장: 09:00 KST). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
@@ -1031,14 +1052,14 @@ t+=`</tr>`;
 // 주말: 안내 행 표시
 const dayNames=['일','월','화','수','목','금','토'];
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`🏖️ 오늘은 주말(${dayNames[kstDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
 }
 }
 f.forEach(row=>{
-t+=`<tr><td>${row[0]||''}</td>`;
+t+=`<tr><td>${dateCell(row[0]||'',true)}</td>`;
 sectorHdrs.forEach((name,ci)=>{
 const val=row[ci+1];
 let c;
@@ -2243,7 +2264,7 @@ if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
-t+='</tr><tr><th>Date</th>';
+t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px">${h}</th>`;});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
@@ -2272,7 +2293,7 @@ const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN
 // 오늘 행 추가 조건: 미리 존재하지 않고, 주말 아니고, 실데이터 있고, 장 중 또는 장 마감 후
 if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData&&!_usPreMarket){
 t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
-t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 sh.forEach(name=>{
 const val=todayMap[name];
 if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
@@ -2285,7 +2306,7 @@ t+=`</tr>`;
 const latestDate=baseRows.length?baseRows[0][0]:'';
 const etTimeStr=(etHour<10?'0':'')+etHour+':'+(etMin<10?'0':'')+etMin+' ET';
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
@@ -2294,15 +2315,15 @@ t+=`</tr>`;
 const latestDate=baseRows.length?baseRows[0][0]:'';
 const dayNames=['일','월','화','수','목','금','토'];
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${todayDate}</td>`;
+t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
 }
 }
 f.forEach(row=>{
-if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
-t+=`<tr><td>${row[0]||''}</td>`;
+if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
+t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{const v=row[ci+1],c=usCell(name,v);t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;});
 t+='</tr>';
 });
@@ -2549,7 +2570,7 @@ t+='</tr>'
 +'</thead><tbody>';
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
-t+=`<tr><td>${row[0]||''}</td>`;
+t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{const v=row[ci+1],c=usCell(name,v);t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;});
 t+='</tr>';
 });
