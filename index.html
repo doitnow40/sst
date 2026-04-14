@@ -434,7 +434,13 @@ data-logo_alignment="left">
 <div class="admin-user-name" id="admin-name">-</div>
 <div class="admin-user-email" id="admin-email">-</div>
 </div>
+<div style="display:flex;gap:6px;margin-left:auto;align-items:center">
+<button id="admin-reload-btn" onclick="adminReloadData()" title="구글 스프레드시트에서 최신 데이터 강제 불러오기"
+style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;border-radius:5px;border:1px solid rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:var(--accent-kr);cursor:pointer;transition:all .15s;white-space:nowrap">
+<span id="admin-reload-icon" style="font-size:13px;display:inline-block;transition:transform .4s">🔄</span>다시 불러오기
+</button>
 <button class="admin-logout-btn" onclick="adminLogout()">로그아웃</button>
+</div>
 </div>
 <div class="admin-tabs">
 <div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
@@ -663,6 +669,15 @@ function dateCell(dateStr, isKr, extraStyle) {
                  : 'var(--text-muted)';
   return '<span style="' + (extraStyle || '') + '">' + dateStr
     + '</span><span style="font-size:8px;margin-left:3px;color:' + dowColor + '">(' + dow + ')</span>';
+}
+
+// ★ 순서이동 전 DOM의 메모 input값을 ADM.sectors에 동기화
+function syncMemoFromDOM(sec) {
+  if (!sec || !sec.stocks) return;
+  sec.stocks.forEach(function(st) {
+    const el = document.getElementById('memo_' + st.name);
+    if (el) st.memo = el.value;
+  });
 }
 
 function changeFontSize(delta){
@@ -2888,6 +2903,42 @@ document.getElementById('admin-sector-items').innerHTML=
 `<div style="padding:14px;font-size:11px;color:#ef9a9a">로드 실패: ${e.message}</div>`;
 }
 }
+
+async function adminReloadData() {
+  const btn = document.getElementById('admin-reload-btn');
+  const icon = document.getElementById('admin-reload-icon');
+  if (btn) btn.disabled = true;
+  if (icon) { icon.style.transform = 'rotate(360deg)'; icon.style.transition = 'transform .6s'; }
+  showMsg('stock-msg', '🔄 스프레드시트에서 최신 데이터를 불러오는 중...', false);
+  try {
+    // 캐시 무시하고 kr_list 강제 재로드
+    S.krLOk = false;
+    S.krSectors = null;
+    const d = await api('kr_list', 0, true);  // forceRefresh=true
+    S.krLOk = true;
+    S.krSectors = d.sectors;
+    // ADM.sectors 업데이트
+    ADM.sectors = d.sectors || [];
+    const prevSector = ADM.selectedSector;
+    renderAdminSectors();
+    // 이전에 선택된 섹터가 있으면 다시 선택
+    if (prevSector) {
+      const sec = ADM.sectors.find(s => s.sector === prevSector);
+      if (sec) {
+        ADM.selectedSector = prevSector;
+        document.getElementById('admin-stock-panel-title').textContent =
+          '📋 ' + prevSector + ' 종목 (' + sec.stocks.length + '개)';
+        document.getElementById('add-stock-section').style.display = '';
+        renderStockList(sec, prevSector);
+      }
+    }
+    showMsg('stock-msg', '✅ 최신 데이터 불러오기 완료 (' + ADM.sectors.length + '개 섹터)', false);
+  } catch(e) {
+    showMsg('stock-msg', '❌ 불러오기 실패: ' + e.message, true);
+  }
+  if (btn) btn.disabled = false;
+  if (icon) { setTimeout(() => { icon.style.transform = ''; icon.style.transition = 'transform .4s'; }, 100); }
+}
 function renderAdminSectors(filterKw){
 const kw=(filterKw||'').trim().toLowerCase();
 let list=ADM.sectors;
@@ -3011,6 +3062,7 @@ newTags.splice(blockStart,0,false);
 }else{i--;}
 }
 }
+syncMemoFromDOM(sec);
 sec.stocks=newStocks;
 const orderedNames=newStocks.map(s=>s.name).join(',');
 showMsg('stock-msg','저장 중...',false);
@@ -3036,6 +3088,7 @@ else if(dir==='bottom') newIdx=n-1;
 if(newIdx===idx) return;
 const [item]=stocks.splice(idx,1);
 stocks.splice(newIdx,0,item);
+syncMemoFromDOM(sec);
 const orderedNames=stocks.map(s=>s.name).join(',');
 showMsg('stock-msg','저장 중...',false);
 try{
@@ -3267,6 +3320,9 @@ if(btn){btn.disabled=true;btn.innerHTML='<span class="admin-spinner"></span>';}
 try{
 await adminPost('update_memo',{sector:sectorName,stock_name:stockName,memo});
 showMsg('stock-msg','✅ "'+stockName+'" 메모 저장 완료',false);
+// ★ ADM.sectors 메모리에 즉시 반영 (순서이동 시 메모 사라짐 방지)
+const _memoSec=ADM.sectors.find(s=>s.sector===sectorName);
+if(_memoSec){const _memoSt=_memoSec.stocks.find(s=>s.name===stockName);if(_memoSt)_memoSt.memo=memo;}
 S.krLOk=false;
 // 메모 저장 후 즉시 해당 페이지 새로고침 (성능 최적화: 필요한 페이지만)
 const krListPage=document.getElementById('page-kr-list')?.style.display!=='none';
