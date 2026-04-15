@@ -768,20 +768,15 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       let trend5 = '';
       if (S.usD && S.usD.rows) {
         const rows5 = S.usD.rows.slice(0, 5);
-        // 오래된 날짜 순(과거→최신)으로 표시: rows5는 최신순이므로 reverse
-        const rows5Asc = [...rows5].reverse();
-        const pairs5 = rows5Asc
-          .map(r => ({ date: r[0], val: prevIdx > 0 ? parseFloat(r[prevIdx]) : NaN }))
-          .filter(p => !isNaN(p.val));
-        if (pairs5.length) {
-          trend5 = '<div style="margin-top:10px"><div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">최근 5일 등락률 (과거→최신)</div>';
-          pairs5.forEach(p => {
-            const c = p.val > 0 ? '#ef5350' : p.val < 0 ? '#42a5f5' : 'var(--text-muted)';
-            const dow = dateToDow(p.date, false);
-            const dowColor = (dow==='Sat')?'#64b5f6':(dow==='Sun')?'#ef9a9a':'var(--text-muted)';
-            trend5 += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 6px;font-size:10px;border-bottom:1px solid rgba(46,58,80,.2)">
-              <span style="color:var(--text-secondary)">${p.date} <span style="font-size:8px;color:${dowColor}">(${dow})</span></span>
-              <span style="color:${c};font-weight:700">${p.val>=0?'+':''}${p.val.toFixed(2)}%</span>
+        const vals = rows5.map(r => prevIdx > 0 ? parseFloat(r[prevIdx]) : NaN).filter(v => !isNaN(v));
+        if (vals.length) {
+          trend5 = '<div style="margin-top:10px"><div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">최근 5일 등락률</div>';
+          [...vals].reverse().forEach((v, i) => {
+            const date = rows5[vals.length - 1 - i] ? rows5[vals.length - 1 - i][0] : '';
+            const c = v > 0 ? '#ef5350' : v < 0 ? '#42a5f5' : 'var(--text-muted)';
+            trend5 += `<div style="display:flex;justify-content:space-between;padding:3px 6px;font-size:10px;border-bottom:1px solid rgba(46,58,80,.2)">
+              <span style="color:var(--text-muted)">${date}</span>
+              <span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(2)}%</span>
             </div>`;
           });
           trend5 += '</div>';
@@ -1420,13 +1415,13 @@ document.getElementById('kr-stats').innerHTML=
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">전체 섹터평균</div><div class="stat-val '+(pUp?'up':'dn')+'">'+(pUp?'+':'')+avg+'%</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="stat-sub" onclick="openSectorPopup(''+mxN+'',true)" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="stat-sub" onclick="openSectorPopup(''+mnN+'',true)" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mnN+'</div></div></div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="stat-sub">'+mxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="stat-sub">'+mnN+'</div></div></div></div>'
 +(hasTodayStats?'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 ('+todayDate+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">전체 섹터평균</div><div class="stat-val '+(tUp?'up':'dn')+'">'+(tUp?'+':'')+tAvg+'%</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub" onclick="openSectorPopup(''+tMxN+'',true)" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub" onclick="openSectorPopup(''+tMnN+'',true)" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
++'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub">'+tMxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub">'+tMnN+'</div></div></div></div>':'')
 +'</div>';
 }
 
