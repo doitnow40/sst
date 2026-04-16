@@ -1187,20 +1187,22 @@ const todayDate=S.krToday?S.krToday.date:'';
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
 const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!_alreadyConfirmed;
+// ★ 오늘 데이터가 이미 시트에 저장돼 있어도, 실시간 데이터가 있으면 "오늘" 박스 표시
+// (장 마감 후 확정 저장 전에 실시간값으로 보여주는 게 목적)
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend;
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
-const tVals=pureSectors.map(name=>{
-const v=todayMap[name];
-return (v!==undefined&&!isNaN(v))?v:null;
-}).filter(v=>v!==null);
-tAvg=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(2):'-';
-const tMxVal=tVals.length?Math.max(...tVals):null;
-const tMnVal=tVals.length?Math.min(...tVals):null;
-tMx=tMxVal!==null?tMxVal.toFixed(2):'-';
-tMn=tMnVal!==null?tMnVal.toFixed(2):'-';
-tMxName=tMxVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMxVal)]:'';
-tMnName=tMnVal!==null?pureSectors[pureSectors.map(n=>todayMap[n]).indexOf(tMnVal)]:'';
+// ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
+const tPairs=pureSectors.map(name=>{const v=todayMap[name];return{name,v:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null};});
+const tValid=tPairs.filter(p=>p.v!==null);
+const tSum=tValid.reduce((a,p)=>a+p.v,0);
+tAvg=tValid.length?(tSum/tValid.length).toFixed(2):'-';
+const tMxPair=tValid.length?tValid.reduce((a,b)=>b.v>a.v?b:a):null;
+const tMnPair=tValid.length?tValid.reduce((a,b)=>b.v<a.v?b:a):null;
+tMx=tMxPair?tMxPair.v.toFixed(2):'-';
+tMn=tMnPair?tMnPair.v.toFixed(2):'-';
+tMxName=tMxPair?tMxPair.name:'';
+tMnName=tMnPair?tMnPair.name:'';
 }
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
 }
@@ -1393,11 +1395,15 @@ var mx=mxVal!==null?mxVal.toFixed(2):'-', mn=mnVal!==null?mnVal.toFixed(2):'-';
 var mxN=mxVal!==null?pureSectors[sVals.indexOf(mxVal)]:'', mnN=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
 var tAvg='-',tMx='-',tMn='-',tMxN='',tMnN='';
 if(hasTodayStats){
-var tVals=pureSectors.map(function(n){var v=todayMap[n];return(v!==undefined&&!isNaN(v))?v:null;}).filter(function(v){return v!==null;});
-tAvg=tVals.length?(tVals.reduce(function(a,b){return a+b;},0)/tVals.length).toFixed(2):'-';
-var tMxV=tVals.length?Math.max.apply(null,tVals):null, tMnV=tVals.length?Math.min.apply(null,tVals):null;
-tMx=tMxV!==null?tMxV.toFixed(2):'-'; tMn=tMnV!==null?tMnV.toFixed(2):'-';
-tMxN=tMxV!==null?pureSectors[tVals.indexOf(tMxV)]:''; tMnN=tMnV!==null?pureSectors[tVals.indexOf(tMnV)]:'';
+// ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
+var tPairs=pureSectors.map(function(n){var v=todayMap[n];return{name:n,v:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null};});
+var tValid=tPairs.filter(function(p){return p.v!==null;});
+var tSum=tValid.reduce(function(a,p){return a+p.v;},0);
+tAvg=tValid.length?(tSum/tValid.length).toFixed(2):'-';
+var tMxPair=tValid.length?tValid.reduce(function(a,b){return b.v>a.v?b:a;}):null;
+var tMnPair=tValid.length?tValid.reduce(function(a,b){return b.v<a.v?b:a;}):null;
+tMx=tMxPair?tMxPair.v.toFixed(2):'-'; tMn=tMnPair?tMnPair.v.toFixed(2):'-';
+tMxN=tMxPair?tMxPair.name:''; tMnN=tMnPair?tMnPair.name:'';
 }
 var pUp=parseFloat(avg)>=0, tUp=parseFloat(tAvg)>=0;
 var sc='stat-card',b1='border-color:rgba(100,181,246,.25);background:rgba(100,181,246,.05)',b2='border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.06)';
