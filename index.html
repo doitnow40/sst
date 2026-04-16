@@ -1510,9 +1510,9 @@ return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
 const upData=allAvg.filter(d=>d.avg>=0);
 const dnData=allAvg.filter(d=>d.avg<0).reverse();
 function neonLabel(isUp){const col=isUp?'#ff6b6b':'#4fc3f7';const shadow=isUp?'#ff0000':'#0088ff';return{display:true,anchor:'end',align:isUp?'end':'start',color:col,backgroundColor:null,borderWidth:0,font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},formatter:v=>(v>0?'+':'')+v.toFixed(2)+'%',padding:{left:2,right:2},textShadowColor:shadow,textShadowBlur:6,clip:false};}
-function makeRankChart(canvasEl,avgArr,isUp){const labels=avgArr.map(d=>d.name);const origData=avgArr.map(d=>d.avg);const data=isUp?origData:origData.map(v=>Math.abs(v));const maxAbs=Math.max(...data);const xMax=maxAbs*1.45;const dataset={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};dataset._origData=origData;return new Chart(canvasEl,{type:'bar',data:{labels,datasets:[dataset]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,layout:{padding:{top:0,bottom:0,left:4,right:56}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},datalabels:neonLabel(isUp)},scales:{x:{position:'top',min:0,max:xMax,ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},y:{position:'left',ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});}
+function makeRankChart(canvasEl,avgArr,isUp){const labels=avgArr.map(d=>d.name);const origData=avgArr.map(d=>d.avg);const data=isUp?origData:origData.map(v=>Math.abs(v));const maxAbs=Math.max(...data);const xMax=maxAbs*1.45;const dataset={data,backgroundColor:isUp?'rgba(239,83,80,0.7)':'rgba(66,165,245,0.7)',borderColor:isUp?'#ff6b6b':'#4fc3f7',borderWidth:1,borderRadius:3};dataset._origData=origData;return new Chart(canvasEl,{type:'bar',data:{labels,datasets:[dataset]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,clip:false,layout:{padding:{top:0,bottom:0,left:4,right:56}},onClick:(e,els)=>{if(els&&els.length){const idx=els[0].index;const sectorName=labels[idx];if(sectorName)openSectorPopup(sectorName,true);}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,titleColor:'#e8edf5',bodyColor:'#8a9ab5',callbacks:{label(ctx){const orig=ctx.dataset._origData?.[ctx.dataIndex]??ctx.parsed.x;return ` ${orig.toFixed(2)}%`;}}},datalabels:neonLabel(isUp)},scales:{x:{position:'top',min:0,max:xMax,ticks:{color:'#8fa8c8',font:{size:8},callback:v=>isUp?v+'%':'-'+v+'%'},grid:{color:'rgba(46,58,80,0.4)'},border:{color:'#2e3a50'}},y:{position:'left',ticks:{color:'#e8edf5',font:{size:9},cursor:'pointer'},grid:{color:'#1e2535'},border:{color:'#2e3a50'}}}}});}
 const ROW_H=24;const chartH=Math.max(120,Math.max(upData.length,dnData.length)*ROW_H+55);
-wrap.innerHTML=`<div style="display:flex;gap:8px;width:100%"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">📈 상승 섹터 (${upData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-up-canvas"></canvas></div></div><div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px"><div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">📉 하락 섹터 (${dnData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-dn-canvas"></canvas></div></div></div>`;
+wrap.innerHTML=`<div style="display:flex;gap:8px;width:100%"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#ff6b6b;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">📈 상승 섹터 (${upData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-up-canvas" style="cursor:pointer"></canvas></div></div><div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px"><div style="font-size:13px;font-weight:700;color:#4fc3f7;font-family:monospace;padding:2px 6px;text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">📉 하락 섹터 (${dnData.length}개)</div><div style="height:${chartH}px;position:relative"><canvas id="kr-rank-dn-canvas" style="cursor:pointer"></canvas></div></div></div>`;
 const totalH=chartH+40;wrap.style.height=Math.min(600,totalH)+'px';wrap.style.overflowY=totalH>600?'auto':'visible';
 requestAnimationFrame(()=>{const upCanvas=document.getElementById('kr-rank-up-canvas');const dnCanvas=document.getElementById('kr-rank-dn-canvas');if(upCanvas&&upData.length)makeRankChart(upCanvas,upData,true);if(dnCanvas&&dnData.length)makeRankChart(dnCanvas,dnData,false);});
 return;
@@ -1636,6 +1636,9 @@ options:{
 indexAxis:'y', responsive:true, maintainAspectRatio:false,
 clip: false,
 layout:{padding:{top:0, bottom:0, left:4, right:56}},
+onClick:(e,els)=>{
+  if(els&&els.length){const idx=els[0].index;const sectorName=labels[idx];if(sectorName)openSectorPopup(sectorName,true);}
+},
 plugins:{
 legend:{display:false},
 tooltip:{backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
@@ -1667,7 +1670,7 @@ text-shadow:0 0 8px #ff0000;letter-spacing:1px;margin-bottom:4px">
 📈 상승 섹터 (${upData.length}개)
 </div>
 <div style="height:${chartH}px;position:relative">
-<canvas id="kr-rank-up-canvas"></canvas>
+<canvas id="kr-rank-up-canvas" style="cursor:pointer"></canvas>
 </div>
 </div>
 <div style="flex:1;min-width:0;border-left:1px solid rgba(66,165,245,0.25);padding-left:4px">
@@ -1676,7 +1679,7 @@ text-shadow:0 0 8px #0088ff;letter-spacing:1px;margin-bottom:4px">
 📉 하락 섹터 (${dnData.length}개)
 </div>
 <div style="height:${chartH}px;position:relative">
-<canvas id="kr-rank-dn-canvas"></canvas>
+<canvas id="kr-rank-dn-canvas" style="cursor:pointer"></canvas>
 </div>
 </div>
 </div>`;
