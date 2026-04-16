@@ -2752,17 +2752,24 @@ const mxName=mxVal!==null?pureSectors[sVals.indexOf(mxVal)]:'';
 const mnName=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
 const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayDate=S.krToday?S.krToday.date:'';
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0;
+// ★ 오늘 날짜가 이미 시트에 확정 저장된 경우 → "오늘" 박스 숨김 (renderKr와 동일 로직)
+const _alreadyConfirmedT=todayDate&&rows.some(r=>r[0]===todayDate);
+const _todayDowT=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
+const _isWeekendT=(_todayDowT===0||_todayDowT===6);
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekendT&&!_alreadyConfirmedT;
 let tAvg='-',tMx='-',tMn='-',tMxName='',tMnName='';
 if(hasTodayStats){
-const tVals=pureSectors.map(n=>{const v=todayMap[n];return(v!==undefined&&!isNaN(v))?v:null;}).filter(v=>v!==null);
-tAvg=tVals.length?(tVals.reduce((a,b)=>a+b,0)/tVals.length).toFixed(2):'-';
-const tMxVal=tVals.length?Math.max(...tVals):null;
-const tMnVal=tVals.length?Math.min(...tVals):null;
-tMx=tMxVal!==null?tMxVal.toFixed(2):'-';
-tMn=tMnVal!==null?tMnVal.toFixed(2):'-';
-tMxName=tMxVal!==null?pureSectors[tVals.indexOf(tMxVal)]:'';
-tMnName=tMnVal!==null?pureSectors[tVals.indexOf(tMnVal)]:'';
+// ★ pair 방식으로 인덱스 불일치 버그 수정
+const tPairs=pureSectors.map(n=>{const v=todayMap[n];return{name:n,v:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null};});
+const tValid=tPairs.filter(p=>p.v!==null);
+const tSum=tValid.reduce((a,p)=>a+p.v,0);
+tAvg=tValid.length?(tSum/tValid.length).toFixed(2):'-';
+const tMxPair=tValid.length?tValid.reduce((a,b)=>b.v>a.v?b:a):null;
+const tMnPair=tValid.length?tValid.reduce((a,b)=>b.v<a.v?b:a):null;
+tMx=tMxPair?tMxPair.v.toFixed(2):'-';
+tMn=tMnPair?tMnPair.v.toFixed(2):'-';
+tMxName=tMxPair?tMxPair.name:'';
+tMnName=tMnPair?tMnPair.name:'';
 }
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
 }
