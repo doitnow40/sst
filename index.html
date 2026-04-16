@@ -1187,9 +1187,9 @@ const todayDate=S.krToday?S.krToday.date:'';
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
 const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
-// ★ 오늘 데이터가 이미 시트에 저장돼 있어도, 실시간 데이터가 있으면 "오늘" 박스 표시
-// (장 마감 후 확정 저장 전에 실시간값으로 보여주는 게 목적)
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend;
+// ★ 오늘 날짜가 이미 시트에 확정 저장된 경우 → "오늘" 박스 숨김
+// (최근 영업일 박스가 곧 오늘이므로 중복 표시 불필요, 소스 다름으로 인한 수치 차이 방지)
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!_alreadyConfirmed;
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
 // ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
