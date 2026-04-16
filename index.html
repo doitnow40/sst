@@ -2068,7 +2068,7 @@ var pct=+d.avg.toFixed(2);
 var wp=Math.min(100,Math.abs(pct)/maxAbs*100).toFixed(1);
 var lbl=(pct>=0?'+':'')+pct.toFixed(2)+'%';
 var cls=isUp?'up':'dn';
-html+='<div class="rank-bar-row" onclick="openSectorPopup(\''+d.name.replace(/\'/g,"\\\\'")+"\',true)" style="cursor:pointer" title="'+d.name+' 종목 보기">'
+html+='<div class="rank-bar-row" data-sector="'+d.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'" style="cursor:pointer" title="'+d.name+' 종목 보기">'
 +'<div class="rank-bar-label" style="color:var(--text-primary)">'+d.name+'</div>'
 +'<div class="rank-bar-track"><div class="rank-bar-fill '+cls+'" style="width:'+wp+'%"></div></div>'
 +'<div class="rank-bar-pct '+cls+'">'+lbl+'</div></div>';
@@ -3914,6 +3914,13 @@ tooltip.style.top=Math.round(y-h)+'px';
 // 최고/최저 섹터 stat 클릭 이벤트 위임
 document.addEventListener('click', function(e) {
   const el = e.target.closest('.sp-stat-click');
+  if (!el) return;
+  const sector = el.getAttribute('data-sector');
+  if (sector) openSectorPopup(sector, true);
+});
+// 랭킹 바 차트 클릭 이벤트 위임
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('.rank-bar-row[data-sector]');
   if (!el) return;
   const sector = el.getAttribute('data-sector');
   if (sector) openSectorPopup(sector, true);
