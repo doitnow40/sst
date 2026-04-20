@@ -3849,7 +3849,7 @@ var _activeEl=null;
 function getTarget(e){return e.target.closest(SELECTOR);}
 
 function getTipText(el){
-  return el.getAttribute('data-tooltip') || el.getAttribute('title') || '';
+  return el.getAttribute('data-tooltip') || el.getAttribute('data-tip-stored') || el.getAttribute('title') || '';
 }
 
 // 툴팁 위치 보정: 커서 기준으로 4방향 클램핑
@@ -3880,13 +3880,14 @@ function positionTip(cx, cy){
 document.addEventListener('mouseover',function(e){
   var el=getTarget(e);
   if(!el){tip.style.display='none';_activeEl=null;return;}
-  var txt=getTipText(el);
-  if(!txt){tip.style.display='none';_activeEl=null;return;}
-  // 브라우저 기본 흰색 툴팁 억제: title 값을 data-tip-stored에 보관 후 title 제거
+  // title을 먼저 data-tip-stored로 옮겨 브라우저 기본 툴팁 차단
   if(el.hasAttribute('title')&&!el.hasAttribute('data-tip-stored')){
     el.setAttribute('data-tip-stored',el.getAttribute('title'));
     el.removeAttribute('title');
   }
+  // 텍스트 추출 (data-tooltip > data-tip-stored 순서)
+  var txt=getTipText(el);
+  if(!txt){tip.style.display='none';_activeEl=null;return;}
   _activeEl=el;
   tip.textContent=txt;
   tip.style.display='block';
