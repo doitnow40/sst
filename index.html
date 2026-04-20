@@ -2951,6 +2951,16 @@ else renderUsList();
 }
 else if(page==='admin')initAdminPage();
 document.querySelector('.main').scrollTo({top:0});
+// 카카오 애드핏 재초기화 (display:none → block 전환 후 광고가 로드되지 않는 문제 해결)
+(function(){
+  var old=document.querySelector('script[src*="ba.min.js"]');
+  if(old)old.parentNode.removeChild(old);
+  var s=document.createElement('script');
+  s.type='text/javascript';
+  s.src='//t1.daumcdn.net/kas/static/ba.min.js';
+  s.async=true;
+  document.body.appendChild(s);
+})();
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
