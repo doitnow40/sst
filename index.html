@@ -3832,47 +3832,38 @@ applyState(false);
 })();
 
 // ── 통합 floating tooltip ──
-// 대상: .page-info-icon, .hdr-badge[data-tooltip], .sheet-read-badge[data-tooltip], button[title]
+// 대상: .page-info-icon, .hdr-badge[data-tooltip], .sheet-read-badge[data-tooltip], button[title], button[data-tip-stored]
 // 화면 4방향 경계 자동보정
 (function(){
 var tip=document.getElementById('info-tooltip');
 if(!tip){tip=document.createElement('div');tip.id='info-tooltip';document.body.appendChild(tip);}
 
-// tip 스타일 강제 적용 (button 툴팁도 동일 디자인)
 tip.style.whiteSpace='pre-wrap';
 tip.style.maxWidth='360px';
 tip.style.wordBreak='break-word';
 
-var SELECTOR='.page-info-icon,.hdr-badge[data-tooltip],.sheet-read-badge[data-tooltip],button[title]';
+// title 제거 후에도 data-tip-stored 로 매칭되도록 두 셀렉터 모두 포함
+var SELECTOR='.page-info-icon,.hdr-badge[data-tooltip],.sheet-read-badge[data-tooltip],button[title],button[data-tip-stored]';
 var _activeEl=null;
 
 function getTarget(e){return e.target.closest(SELECTOR);}
 
 function getTipText(el){
-  return el.getAttribute('data-tooltip') || el.getAttribute('data-tip-stored') || el.getAttribute('title') || '';
+  return el.getAttribute('data-tooltip')||el.getAttribute('data-tip-stored')||el.getAttribute('title')||'';
 }
 
-// 툴팁 위치 보정: 커서 기준으로 4방향 클램핑
-function positionTip(cx, cy){
+function positionTip(cx,cy){
   var pad=10;
   var W=tip.offsetWidth||340;
   var H=tip.offsetHeight||40;
   var vw=window.innerWidth;
   var vh=window.innerHeight;
-  var headerH=60; // 헤더 아래
-
-  var x=cx+14;
-  var y=cy+18;
-
-  // 오른쪽 넘침 → 커서 왼쪽에 표시
+  var headerH=60;
+  var x=cx+14, y=cy+18;
   if(x+W>vw-pad) x=cx-W-14;
-  // 왼쪽 넘침
   if(x<pad) x=pad;
-  // 아래 넘침 → 커서 위에 표시
   if(y+H>vh-pad) y=cy-H-10;
-  // 위 넘침 (헤더 아래 보장)
   if(y<headerH) y=headerH;
-
   tip.style.left=x+'px';
   tip.style.top=y+'px';
 }
@@ -3880,12 +3871,11 @@ function positionTip(cx, cy){
 document.addEventListener('mouseover',function(e){
   var el=getTarget(e);
   if(!el){tip.style.display='none';_activeEl=null;return;}
-  // title을 먼저 data-tip-stored로 옮겨 브라우저 기본 툴팁 차단
+  // title → data-tip-stored 로 이동 (브라우저 기본 흰색 툴팁 차단)
   if(el.hasAttribute('title')&&!el.hasAttribute('data-tip-stored')){
     el.setAttribute('data-tip-stored',el.getAttribute('title'));
     el.removeAttribute('title');
   }
-  // 텍스트 추출 (data-tooltip > data-tip-stored 순서)
   var txt=getTipText(el);
   if(!txt){tip.style.display='none';_activeEl=null;return;}
   _activeEl=el;
@@ -3895,21 +3885,17 @@ document.addEventListener('mouseover',function(e){
 
 document.addEventListener('mousemove',function(e){
   if(!_activeEl||tip.style.display==='none')return;
-  if(!getTarget(e)){tip.style.display='none';_activeEl=null;return;}
+  // _activeEl 포함 여부로 판단 (title 제거 후 셀렉터 미매칭 문제 회피)
+  if(!_activeEl.contains(e.target)){tip.style.display='none';_activeEl=null;return;}
   positionTip(e.clientX,e.clientY);
 });
 
 document.addEventListener('mouseout',function(e){
-  var el=getTarget(e);
-  if(!el||!el.contains(e.relatedTarget)){
-    // title 복원 (접근성 및 다음 hover 대비)
-    if(el&&el.hasAttribute('data-tip-stored')){
-      el.setAttribute('title',el.getAttribute('data-tip-stored'));
-      el.removeAttribute('data-tip-stored');
-    }
-    tip.style.display='none';
-    _activeEl=null;
-  }
+  if(!_activeEl)return;
+  // relatedTarget이 _activeEl 밖으로 나갔을 때만 숨김
+  if(_activeEl.contains(e.relatedTarget))return;
+  tip.style.display='none';
+  _activeEl=null;
 });
 })();
 
