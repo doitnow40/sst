@@ -265,7 +265,10 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </div>
 </div>
-<div class="ad-slot ad-slot-btm" id="adfit-kr-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins></div>
+<div id="adfit-kr-btm" style="margin-bottom:14px;margin-top:14px;text-align:center">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins>
+<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+</div>
 </div>
 <div id="page-kr-list" style="display:none">
 <div class="page-header">
@@ -288,7 +291,12 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-<div class="ad-slot ad-slot-btm" id="adfit-kr-list-btm" style="display:block;text-align:center;"></div>
+<div style="margin-bottom:14px;margin-top:14px;text-align:center">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-1c2FIgCcmjN3PLlk" data-ad-width="728" data-ad-height="90"></ins>
+<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+</div>
+</div>
+<div id="page-us-history" style="display:none">
 <div class="page-header">
 <div class="page-flag">🇺🇸</div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -367,7 +375,10 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 </div>
-<div class="ad-slot ad-slot-btm" id="adfit-us-btm" style="display:block;text-align:center;"></div>
+<div id="adfit-us-btm" style="margin-bottom:14px;margin-top:14px;text-align:center">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-6XDvdRkp0aT4I8BH" data-ad-width="728" data-ad-height="90"></ins>
+<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+</div>
 </div>
 <div id="page-us-list" style="display:none">
 <div class="page-header">
@@ -390,7 +401,10 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
-<div class="ad-slot ad-slot-btm" id="adfit-us-list-btm" style="display:block;text-align:center;"></div>
+<div style="margin-bottom:14px;margin-top:14px;text-align:center">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-VqRpN1P5eQcLkXwz" data-ad-width="728" data-ad-height="90"></ins>
+<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+</div>
 </div>
 <div id="page-about" style="display:none">
 <div class="page-header">
@@ -2949,37 +2963,6 @@ else renderUsList();
 }
 else if(page==='admin')initAdminPage();
 document.querySelector('.main').scrollTo({top:0});
-// 카카오 애드핏: 페이지 전환 시 해당 페이지의 ins 태그를 새것으로 교체 후 스크립트 재실행
-// (ba.min.js는 한 번 처리한 ins는 재실행해도 건너뛰므로 반드시 새 태그로 교체 필요)
-(function(){
-  var adMap = {
-    'kr-history':  { id:'adfit-kr-btm',       dan:'DAN-URl434E25F4mNMKM' },
-    'kr-list':     { id:'adfit-kr-list-btm',   dan:'DAN-1c2FIgCcmjN3PLlk' },
-    'us-history':  { id:'adfit-us-btm',        dan:'DAN-6XDvdRkp0aT4I8BH' },
-    'us-list':     { id:'adfit-us-list-btm',   dan:'DAN-VqRpN1P5eQcLkXwz' }
-  };
-  var cfg = adMap[page];
-  if(!cfg) return;
-  var container = document.getElementById(cfg.id);
-  if(!container) return;
-  // 기존 ins 제거 후 새 ins 삽입
-  container.innerHTML = '';
-  var ins = document.createElement('ins');
-  ins.className = 'kakao_ad_area';
-  ins.style.display = 'none';
-  ins.setAttribute('data-ad-unit',   cfg.dan);
-  ins.setAttribute('data-ad-width',  '728');
-  ins.setAttribute('data-ad-height', '90');
-  container.appendChild(ins);
-  // ba.min.js 재로드 (기존 스크립트 제거 후 새로 삽입)
-  var old = document.querySelector('script[src*="ba.min.js"]');
-  if(old) old.parentNode.removeChild(old);
-  var s = document.createElement('script');
-  s.type = 'text/javascript';
-  s.src = '//t1.daumcdn.net/kas/static/ba.min.js';
-  s.async = true;
-  document.body.appendChild(s);
-})();
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
@@ -3983,6 +3966,5 @@ document.addEventListener('click', function(e) {
   if (sector) openSectorPopup(sector, true);
 });
 </script>
-<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
 </body>
 </html>
