@@ -2951,13 +2951,26 @@ else renderUsList();
 }
 else if(page==='admin')initAdminPage();
 document.querySelector('.main').scrollTo({top:0});
-// 카카오 애드핏 재초기화 (display:none → block 전환 후 광고가 로드되지 않는 문제 해결)
+// 카카오 애드핏 재초기화
+// 이미 처리된 <ins> 태그는 재실행해도 건너뛰므로, 현재 페이지의 ins를 새것으로 교체 후 스크립트 재로드
 (function(){
+  var pe2=document.getElementById('page-'+page);
+  if(pe2){
+    pe2.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
+      var clone=document.createElement('ins');
+      clone.className=ins.className;
+      clone.style.cssText='display:none;';
+      ['data-ad-unit','data-ad-width','data-ad-height'].forEach(function(attr){
+        if(ins.getAttribute(attr)) clone.setAttribute(attr, ins.getAttribute(attr));
+      });
+      ins.parentNode.replaceChild(clone, ins);
+    });
+  }
   var old=document.querySelector('script[src*="ba.min.js"]');
   if(old)old.parentNode.removeChild(old);
   var s=document.createElement('script');
   s.type='text/javascript';
-  s.src='//t1.daumcdn.net/kas/static/ba.min.js';
+  s.src='//t1.daumcdn.net/kas/static/ba.min.js?_='+Date.now();
   s.async=true;
   document.body.appendChild(s);
 })();
