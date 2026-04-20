@@ -93,7 +93,7 @@ border-radius:6px;transition:background .15s;
 <div class="logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
 </div>
 <div class="header-right">
-<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 현재 페이지 데이터 즉시 갱신&#10;&#10;【영향 범위】웹페이지만 (구글 스프레드시트 무영향)&#10;——————————————————&#10;· 현재 보고 있는 페이지의 캐시를 버리고&#10;  GAS 웹앱에서 최신 데이터를 다시 불러와&#10;  화면을 즉시 다시 그립니다.&#10;· 10분 자동갱신 외에 지금 당장 최신값이&#10;  필요할 때 수동으로 누르는 버튼입니다.&#10;&#10;⚠ 구글 스프레드시트 원본의 값을 변경하거나&#10;   저장·기록하는 기능은 없습니다." style="
+<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 화면 전체 즉시 새로고침&#10;&#10;지금 보이는 화면의 모든 데이터를&#10;즉시 최신 상태로 업데이트합니다.&#10;&#10;· 화면은 10분마다 자동으로 갱신되지만&#10;  지금 당장 최신값을 보고 싶을 때 누르세요.&#10;· 어느 페이지에서나 사용 가능한 전체 새로고침입니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="
 background:none;border:1px solid var(--border-light);cursor:pointer;
 border-radius:5px;padding:4px 10px;font-size:12px;color:var(--text-secondary);
 transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;
@@ -178,7 +178,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshKrToday(this)" title="📡 오늘(당일) 실시간 행만 즉시 갱신&#10;&#10;【영향 범위】웹페이지 테이블의 오늘 행만&#10;  (구글 스프레드시트 무영향)&#10;——————————————————&#10;· GAS 웹앱에서 오늘 날짜 행의 섹터 평균&#10;  등락률(약 20분 지연)을 새로 불러와&#10;  테이블 맨 위 오늘 행만 덮어씁니다.&#10;· 과거 확정 데이터 행은 변경되지 않습니다.&#10;&#10;⚠ 구글 스프레드시트 원본에는 영향 없음" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+<button onclick="refreshKrToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 10분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
 </div>
 <div class="controls-bar">
 <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
@@ -260,13 +260,13 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <span id="kr-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
 <div style="display:flex;gap:5px;margin-left:auto">
 <button id="kr-list-btn-today" onclick="setKrListMode('today',this)"
-title="📡 표시 모드 전환: 오늘 실시간&#10;&#10;【영향 범위】화면 표시 모드만 변경&#10;  (데이터 재요청·스프레드시트 무영향)&#10;——————————————————&#10;· 각 종목 등락률을 오늘 장중 실시간값&#10;  (약 20분 지연)으로 보여주는 모드입니다.&#10;· 10분마다 자동으로 백그라운드 갱신됩니다.&#10;&#10;⚠ 이 버튼은 모드 전환만 합니다.&#10;   즉시 데이터를 새로 받으려면 🔄갱신 버튼 사용"
+title="📡 오늘 장중 등락률로 보기&#10;&#10;각 종목의 등락률을 오늘 현재 시각 기준으로&#10;표시합니다. (약 20분 지연)&#10;&#10;· 화면은 10분마다 자동으로 갱신됩니다.&#10;· 지금 즉시 최신값으로 바꾸려면 옆의 🔄갱신 버튼을 누르세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
 style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
 <button id="kr-list-btn-lastbiz" onclick="setKrListMode('lastbiz',this)"
-title="📅 표시 모드 전환: 최근 영업일 확정값&#10;&#10;【영향 범위】화면 표시 모드만 변경&#10;  (데이터 재요청·스프레드시트 무영향)&#10;——————————————————&#10;· 가장 최근 장 마감 후 확정·저장된&#10;  종가 기준 등락률로 표시합니다.&#10;· 오늘 실시간값이 아닌 전일(또는 금일 종가)&#10;  확정 데이터를 비교할 때 사용합니다."
+title="📅 가장 최근 마감 확정값으로 보기&#10;&#10;오늘 실시간이 아닌, 가장 최근 장 마감 후&#10;확정된 종가 기준 등락률을 표시합니다.&#10;&#10;· 오늘 장중 변동이 아닌 전날 최종 결과를&#10;  확인하고 싶을 때 사용하세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
 style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer">📅 최근 영업일</button>
 <button onclick="refreshKrList(this)"
-title="🔄 종목 List 데이터 즉시 재요청&#10;&#10;【영향 범위】웹페이지 종목 카드 전체&#10;  (구글 스프레드시트 무영향)&#10;——————————————————&#10;· 섹터 구성 종목 목록과 현재 선택된 모드의&#10;  등락률을 GAS 웹앱에서 즉시 다시 불러와&#10;  모든 종목 카드를 갱신합니다.&#10;· 캐시(10분 TTL)를 무시하고 강제로&#10;  최신 데이터를 받아옵니다.&#10;&#10;⚠ 구글 스프레드시트 원본에는 영향 없음"
+title="🔄 종목 카드 전체 즉시 새로고침&#10;&#10;현재 선택된 보기 방식(오늘 실시간 또는 최근 마감)&#10;기준으로 모든 종목 카드를 지금 즉시&#10;최신 데이터로 업데이트합니다.&#10;&#10;· 헤더의 새로고침(전체)과 달리&#10;  이 페이지 종목 카드만 빠르게 다시 불러옵니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다."
 style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 갱신</button>
 </div>
 </div>
@@ -286,7 +286,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshUsToday(this)" title="📡 오늘(당일) 실시간 행만 즉시 갱신&#10;&#10;【영향 범위】웹페이지 테이블의 오늘 행만&#10;  (구글 스프레드시트 무영향)&#10;——————————————————&#10;· GAS 웹앱에서 오늘 날짜 행의 미국 섹터&#10;  ETF 등락률(약 20분 지연)을 새로 받아와&#10;  테이블 맨 위 오늘 행만 덮어씁니다.&#10;· 과거 확정 데이터 행은 변경되지 않습니다.&#10;&#10;⚠ 구글 스프레드시트 원본에는 영향 없음" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+<button onclick="refreshUsToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 10분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
 </div>
 <div class="controls-bar">
 <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -368,13 +368,13 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <span id="us-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
 <div style="display:flex;gap:5px;margin-left:auto">
 <button id="us-list-btn-today" onclick="setUsListMode('today',this)"
-title="📡 표시 모드 전환: 오늘 실시간&#10;&#10;【영향 범위】화면 표시 모드만 변경&#10;  (데이터 재요청·스프레드시트 무영향)&#10;——————————————————&#10;· 각 섹터 ETF 등락률을 오늘 장중 실시간값&#10;  (약 20분 지연)으로 보여주는 모드입니다.&#10;· 10분마다 자동으로 백그라운드 갱신됩니다.&#10;&#10;⚠ 이 버튼은 모드 전환만 합니다.&#10;   즉시 데이터를 새로 받으려면 🔄갱신 버튼 사용"
+title="📡 오늘 장중 등락률로 보기&#10;&#10;각 섹터의 등락률을 오늘 현재 시각 기준으로&#10;표시합니다. (약 20분 지연)&#10;&#10;· 화면은 10분마다 자동으로 갱신됩니다.&#10;· 지금 즉시 최신값으로 바꾸려면 옆의 🔄갱신 버튼을 누르세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
 style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
 <button id="us-list-btn-lastbiz" onclick="setUsListMode('lastbiz',this)"
-title="📅 표시 모드 전환: 최근 영업일 확정값&#10;&#10;【영향 범위】화면 표시 모드만 변경&#10;  (데이터 재요청·스프레드시트 무영향)&#10;——————————————————&#10;· 가장 최근 미국 장 마감 후 확정·저장된&#10;  종가 기준 등락률로 표시합니다.&#10;· 오늘 실시간값이 아닌 전일(또는 금일 종가)&#10;  확정 데이터를 비교할 때 사용합니다."
+title="📅 가장 최근 마감 확정값으로 보기&#10;&#10;오늘 실시간이 아닌, 가장 최근 장 마감 후&#10;확정된 종가 기준 등락률을 표시합니다.&#10;&#10;· 오늘 장중 변동이 아닌 전날 최종 결과를&#10;  확인하고 싶을 때 사용하세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
 style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer">📅 최근 영업일</button>
 <button onclick="refreshUsListData(this)"
-title="🔄 미국 섹터 List 데이터 즉시 재요청&#10;&#10;【영향 범위】웹페이지 섹터 카드 전체&#10;  (구글 스프레드시트 무영향)&#10;——————————————————&#10;· 미국 섹터 ETF 목록과 현재 선택된 모드의&#10;  등락률을 GAS 웹앱에서 즉시 다시 불러와&#10;  모든 섹터 카드를 갱신합니다.&#10;· 캐시를 무시하고 강제로 최신 데이터를&#10;  받아옵니다.&#10;&#10;⚠ 구글 스프레드시트 원본에는 영향 없음"
+title="🔄 섹터 카드 전체 즉시 새로고침&#10;&#10;현재 선택된 보기 방식(오늘 실시간 또는 최근 마감)&#10;기준으로 모든 섹터 카드를 지금 즉시&#10;최신 데이터로 업데이트합니다.&#10;&#10;· 헤더의 새로고침(전체)과 달리&#10;  이 페이지 섹터 카드만 빠르게 다시 불러옵니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다."
 style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 갱신</button>
 </div>
 </div>
@@ -515,6 +515,7 @@ style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;b
 <div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
 <div class="admin-tab" onclick="switchAdminTab('mgmt',this)">🗂️ 섹터/종목 관리</div>
 <div class="admin-tab" onclick="switchAdminTab('watch',this)">⭐ 주목 섹터</div>
+<div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
 </div>
 <div id="admin-tab-stats">
 <div class="stats-embed-wrap">
@@ -642,6 +643,98 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 <button class="range-btn" onclick="checkAllWatch(false)">전체 해제</button>
 <span id="watch-save-msg" style="font-size:11px;color:#a5d6a7;display:none"></span>
 </div>
+</div>
+</div>
+
+<div id="admin-tab-techref" style="display:none">
+<div class="stats-embed-wrap" style="max-width:820px">
+
+<div style="font-size:13px;font-weight:700;color:var(--accent-kr);margin-bottom:4px">🔧 버튼별 기술 동작 상세 주석</div>
+<div style="font-size:11px;color:var(--text-muted);margin-bottom:20px">
+  일반 사용자 툴팁에서 제거된 기술 상세 내용을 정리합니다.<br>
+  GAS 웹앱 URL, 캐시 TTL, 영향 범위 등 개발·운영 참고용입니다.
+</div>
+
+<!-- 새로고침 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🔄 헤더 새로고침 버튼 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshAllData()</code></div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>영향 범위:</strong> 웹페이지만 (구글 스프레드시트 무영향)<br>
+    · 현재 보고 있는 페이지의 캐시(in-memory)를 폐기하고 GAS 웹앱에서 최신 데이터를 fetch하여 화면을 즉시 리렌더링<br>
+    · 10분 자동갱신 타이머와 별개로 수동 즉시 갱신<br>
+    · 구글 스프레드시트 원본의 값을 변경하거나 저장·기록하는 기능 없음<br>
+    · <strong>GAS 웹앱 URL:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">GAS_WEBAPP_URL</code> (스크립트 상단 상수 참조)
+  </div>
+</div>
+
+<!-- KR History 오늘 데이터 갱신 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡 한국 섹터 History — 오늘 데이터 갱신 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshKrToday()</code></div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>영향 범위:</strong> 웹페이지 테이블의 오늘(당일) 행만 (구글 스프레드시트 무영향)<br>
+    · GAS 웹앱에서 오늘 날짜 행의 섹터 평균 등락률(약 20분 지연)을 새로 불러와 테이블 맨 위 오늘 행만 덮어씁니다.<br>
+    · 과거 확정 데이터 행은 변경되지 않습니다.<br>
+    · 구글 스프레드시트 원본에는 영향 없음
+  </div>
+</div>
+
+<!-- US History 오늘 데이터 갱신 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡 미국 섹터 History — 오늘 데이터 갱신 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshUsToday()</code></div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>영향 범위:</strong> 웹페이지 테이블의 오늘(당일) 행만 (구글 스프레드시트 무영향)<br>
+    · GAS 웹앱에서 오늘 날짜 행의 미국 섹터 ETF 등락률(약 20분 지연)을 새로 받아와 테이블 맨 위 오늘 행만 덮어씁니다.<br>
+    · 과거 확정 데이터 행은 변경되지 않습니다.<br>
+    · 구글 스프레드시트 원본에는 영향 없음
+  </div>
+</div>
+
+<!-- KR List 모드/갱신 버튼 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡📅🔄 한국 섹터 종목 List — 모드 전환 / 갱신 버튼</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>오늘 실시간 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setKrListMode('today')</code>: 영향 범위 — 화면 표시 모드만 변경 (데이터 재요청·스프레드시트 무영향). 각 종목 등락률을 오늘 장중 실시간값(약 20분 지연)으로 표시. 10분마다 백그라운드 자동 갱신.<br>
+    · <strong>최근 영업일 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setKrListMode('lastbiz')</code>: 가장 최근 장 마감 후 확정·저장된 종가 기준 등락률 표시. 모드 전환만 수행.<br>
+    · <strong>갱신 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshKrList()</code>: 영향 범위 — 웹페이지 종목 카드 전체 (구글 스프레드시트 무영향). 섹터 구성 종목 목록과 현재 선택 모드의 등락률을 GAS 웹앱에서 즉시 다시 불러와 모든 종목 카드 갱신. 캐시(10분 TTL) 무시하고 강제 최신 데이터 수신.
+  </div>
+</div>
+
+<!-- US List 모드/갱신 버튼 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡📅🔄 미국 섹터 종목 List — 모드 전환 / 갱신 버튼</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>오늘 실시간 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setUsListMode('today')</code>: 영향 범위 — 화면 표시 모드만 변경 (데이터 재요청·스프레드시트 무영향). 각 섹터 ETF 등락률을 오늘 장중 실시간값(약 20분 지연)으로 표시. 10분마다 백그라운드 자동 갱신.<br>
+    · <strong>최근 영업일 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setUsListMode('lastbiz')</code>: 가장 최근 미국 장 마감 후 확정·저장된 종가 기준 등락률 표시. 모드 전환만 수행.<br>
+    · <strong>갱신 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshUsListData()</code>: 영향 범위 — 웹페이지 섹터 카드 전체 (구글 스프레드시트 무영향). 미국 섹터 ETF 목록과 현재 선택 모드의 등락률을 GAS 웹앱에서 즉시 다시 불러와 모든 섹터 카드 갱신. 캐시 무시하고 강제 최신 데이터 수신.
+  </div>
+</div>
+
+<!-- 자동 갱신 구조 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">⏱️ 자동 갱신 타이머 구조</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>캐시 TTL:</strong> 10분 (600,000ms) — 동일 데이터 요청 시 캐시 반환, TTL 초과 시 GAS 웹앱 재요청<br>
+    · <strong>한국 데이터 확정:</strong> 매일 20:00 KST (GAS 트리거 자동 실행 → 구글 스프레드시트 기록)<br>
+    · <strong>미국 데이터 확정:</strong> 매일 06:00 KST (한국시간 기준, 미국 장 마감 후 GAS 트리거 자동 실행)<br>
+    · <strong>원 소스 (구글 스프레드시트):</strong> 모든 확정 데이터의 근거. 웹 화면에서는 읽기만 수행하며 쓰기(변경/저장)는 GAS 트리거만 수행.
+  </div>
+</div>
+
+<!-- GAS 웹앱 연결 정보 -->
+<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🔗 GAS 웹앱 연결 정보</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
+    · <strong>상수명:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">GAS_WEBAPP_URL</code> (index.html 스크립트 상단)<br>
+    · <strong>엔드포인트 형식:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">https://script.google.com/macros/s/[DEPLOY_ID]/exec</code><br>
+    · <strong>통신 방식:</strong> GET 파라미터 — <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">?action=kr_history</code> 등 action 파라미터로 구분<br>
+    · <strong>응답 형식:</strong> JSON (CORS 허용 설정 필요 — GAS doGet에서 ContentService 설정)
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">
+    현재 배포 URL:
+    <code id="techref-gas-url" style="font-size:10px;color:#4fc3f7;background:rgba(0,0,0,.3);padding:2px 8px;border-radius:3px;word-break:break-all"></code>
+  </div>
+</div>
+
 </div>
 </div>
 </div>
@@ -3159,9 +3252,14 @@ if(btn) btn.classList.add('active');
 document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
 document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
 document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
+document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
 if(tab==='watch'){
 if(!ADM.sectors.length) loadAdminSectors().then(renderWatchSectorList);
 else renderWatchSectorList();
+}
+if(tab==='techref'){
+const el=document.getElementById('techref-gas-url');
+if(el) el.textContent=typeof GAS_WEBAPP_URL!=='undefined'?GAS_WEBAPP_URL:'(설정 없음)';
 }
 }
 async function loadVisitorStats(){
