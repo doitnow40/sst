@@ -162,7 +162,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div style="flex:1;min-height:20px"></div>
 <div class="sidebar-divider" style="margin-top:auto"></div>
-<!-- 관리자 메뉴: Ctrl+Shift+A 단축키로만 접근 가능 (사이드바에서 숨김) -->
+<!-- 관리자 메뉴: Ctrl+Shift+L 단축키로만 접근 가능 (사이드바에서 숨김) -->
 <div class="nav-item" id="nav-admin" onclick="go('admin',this)" style="display:none">
 <span class="nav-icon">⚙️</span><span>관리자 페이지</span>
 </div>
@@ -3200,9 +3200,9 @@ sectors: [],
 selectedSector: null,
 };
 
-// ── Ctrl+Shift+A 단축키로 관리자 페이지 진입 ──
+// ── Ctrl+Shift+L 단축키로 관리자 페이지 진입 ──
 document.addEventListener('keydown', function(e){
-  if(e.ctrlKey && e.shiftKey && e.key==='A'){
+  if(e.ctrlKey && e.shiftKey && e.key==='L'){
     e.preventDefault();
     go('admin', document.getElementById('nav-admin'));
   }
