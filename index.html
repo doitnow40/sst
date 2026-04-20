@@ -3882,6 +3882,11 @@ document.addEventListener('mouseover',function(e){
   if(!el){tip.style.display='none';_activeEl=null;return;}
   var txt=getTipText(el);
   if(!txt){tip.style.display='none';_activeEl=null;return;}
+  // 브라우저 기본 흰색 툴팁 억제: title 값을 data-tip-stored에 보관 후 title 제거
+  if(el.hasAttribute('title')&&!el.hasAttribute('data-tip-stored')){
+    el.setAttribute('data-tip-stored',el.getAttribute('title'));
+    el.removeAttribute('title');
+  }
   _activeEl=el;
   tip.textContent=txt;
   tip.style.display='block';
@@ -3896,6 +3901,11 @@ document.addEventListener('mousemove',function(e){
 document.addEventListener('mouseout',function(e){
   var el=getTarget(e);
   if(!el||!el.contains(e.relatedTarget)){
+    // title 복원 (접근성 및 다음 hover 대비)
+    if(el&&el.hasAttribute('data-tip-stored')){
+      el.setAttribute('title',el.getAttribute('data-tip-stored'));
+      el.removeAttribute('data-tip-stored');
+    }
     tip.style.display='none';
     _activeEl=null;
   }
