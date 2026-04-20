@@ -288,9 +288,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-<div class="ad-slot ad-slot-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins></div>
-</div>
-<div id="page-us-history" style="display:none">
+<div class="ad-slot ad-slot-btm" id="adfit-kr-list-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-1c2FIgCcmjN3PLlk" data-ad-width="728" data-ad-height="90"></ins></div>
 <div class="page-header">
 <div class="page-flag">🇺🇸</div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -369,7 +367,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 </div>
-<div class="ad-slot ad-slot-btm" id="adfit-us-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins></div>
+<div class="ad-slot ad-slot-btm" id="adfit-us-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-6XDvdRkp0aT4I8BH" data-ad-width="728" data-ad-height="90"></ins></div>
 </div>
 <div id="page-us-list" style="display:none">
 <div class="page-header">
@@ -392,7 +390,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
-<div class="ad-slot ad-slot-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins></div>
+<div class="ad-slot ad-slot-btm" id="adfit-us-list-btm" style="display:block;text-align:center;"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-VqRpN1P5eQcLkXwz" data-ad-width="728" data-ad-height="90"></ins></div>
 </div>
 <div id="page-about" style="display:none">
 <div class="page-header">
@@ -2951,29 +2949,6 @@ else renderUsList();
 }
 else if(page==='admin')initAdminPage();
 document.querySelector('.main').scrollTo({top:0});
-// 카카오 애드핏 재초기화
-// 이미 처리된 <ins> 태그는 재실행해도 건너뛰므로, 현재 페이지의 ins를 새것으로 교체 후 스크립트 재로드
-(function(){
-  var pe2=document.getElementById('page-'+page);
-  if(pe2){
-    pe2.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
-      var clone=document.createElement('ins');
-      clone.className=ins.className;
-      clone.style.cssText='display:none;';
-      ['data-ad-unit','data-ad-width','data-ad-height'].forEach(function(attr){
-        if(ins.getAttribute(attr)) clone.setAttribute(attr, ins.getAttribute(attr));
-      });
-      ins.parentNode.replaceChild(clone, ins);
-    });
-  }
-  var old=document.querySelector('script[src*="ba.min.js"]');
-  if(old)old.parentNode.removeChild(old);
-  var s=document.createElement('script');
-  s.type='text/javascript';
-  s.src='//t1.daumcdn.net/kas/static/ba.min.js?_='+Date.now();
-  s.async=true;
-  document.body.appendChild(s);
-})();
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
