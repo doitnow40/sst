@@ -2949,9 +2949,50 @@ if(usList) renderUsList(listSorted);
 }
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
+
+// ── AdFit 페이지 전환 시 광고 재초기화 ──
+const ADFIT_UNITS = {
+  'kr-history': ['DAN-URl434E25F4mNMKM'],
+  'kr-list':    ['DAN-1c2FIgCcmjN3PLlk'],
+  'us-history': ['DAN-6XDvdRkp0aT4I8BH'],
+  'us-list':    ['DAN-VqRpN1P5eQcLkXwz'],
+};
+function reloadAdfit(page) {
+  const units = ADFIT_UNITS[page];
+  if (!units) return;
+  // 현재 페이지 내 ins 태그 찾아서 재생성
+  const pageEl = document.getElementById('page-' + page);
+  if (!pageEl) return;
+  pageEl.querySelectorAll('ins.kakao_ad_area').forEach(function(ins) {
+    const unit = ins.getAttribute('data-ad-unit');
+    if (!unit) return;
+    // ins를 새 ins로 교체 (AdFit은 이미 처리된 ins는 재처리 안 함)
+    const newIns = document.createElement('ins');
+    newIns.className = 'kakao_ad_area';
+    newIns.style.display = 'none';
+    newIns.setAttribute('data-ad-unit', unit);
+    newIns.setAttribute('data-ad-width', ins.getAttribute('data-ad-width') || '728');
+    newIns.setAttribute('data-ad-height', ins.getAttribute('data-ad-height') || '90');
+    ins.parentNode.replaceChild(newIns, ins);
+  });
+  // ba.min.js 재실행 (window.adfit 객체가 있으면 refresh, 없으면 script 재삽입)
+  if (window.adfit && typeof window.adfit.load === 'function') {
+    units.forEach(function(u) {
+      try { window.adfit.load(u); } catch(e) {}
+    });
+  } else {
+    // 스크립트 태그 재삽입으로 강제 재처리
+    const s = document.createElement('script');
+    s.src = '//t1.daumcdn.net/kas/static/ba.min.js';
+    s.async = true;
+    document.body.appendChild(s);
+  }
+}
+
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
+reloadAdfit(page);
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
