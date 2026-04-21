@@ -265,7 +265,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </div>
 </div>
-<div class="ad-slot ad-slot-btm" id="adfit-kr-btm" style="overflow:hidden;padding:0"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins><script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script></div>
+<div class="ad-slot ad-slot-btm" id="adfit-kr-history" style="overflow:hidden;padding:0;min-height:90px"></div>
 </div>
 <div id="page-kr-list" style="display:none">
 <div class="page-header">
@@ -288,7 +288,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-<div class="ad-slot ad-slot-btm" style="overflow:hidden;padding:0"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-1c2FIgCcmjN3PLlk" data-ad-width="728" data-ad-height="90"></ins><script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script></div>
+<div class="ad-slot ad-slot-btm" id="adfit-kr-list" style="overflow:hidden;padding:0;min-height:90px"></div>
 </div>
 <div id="page-us-history" style="display:none">
 <div class="page-header">
@@ -369,7 +369,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 </div>
-<div class="ad-slot ad-slot-btm" id="adfit-us-btm" style="overflow:hidden;padding:0"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-6XDvdRkp0aT4I8BH" data-ad-width="728" data-ad-height="90"></ins><script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script></div>
+<div class="ad-slot ad-slot-btm" id="adfit-us-history" style="overflow:hidden;padding:0;min-height:90px"></div>
 </div>
 <div id="page-us-list" style="display:none">
 <div class="page-header">
@@ -392,7 +392,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
-<div class="ad-slot ad-slot-btm" style="overflow:hidden;padding:0"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-1c2FIgCcmjN3PLlk" data-ad-width="728" data-ad-height="90"></ins><script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script></div>
+<div class="ad-slot ad-slot-btm" id="adfit-us-list" style="overflow:hidden;padding:0;min-height:90px"></div>
 </div>
 <div id="page-about" style="display:none">
 <div class="page-header">
@@ -2950,42 +2950,62 @@ if(usList) renderUsList(listSorted);
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
 
-// ── AdFit 페이지 전환 시 광고 재초기화 ──
-const ADFIT_UNITS = {
-  'kr-history': ['DAN-URl434E25F4mNMKM'],
-  'kr-list':    ['DAN-1c2FIgCcmjN3PLlk'],
-  'us-history': ['DAN-6XDvdRkp0aT4I8BH'],
-  'us-list':    ['DAN-VqRpN1P5eQcLkXwz'],
+// ── AdFit: 페이지 전환 시 해당 슬롯에만 ins 동적 삽입 ──
+// 초기 HTML에는 ins 태그 없음 → 페이지 진입 시 삽입 → 떠날 때 제거
+const ADFIT_MAP = {
+  'kr-history': {slot:'adfit-kr-history', unit:'DAN-URl434E25F4mNMKM'},
+  'kr-list':    {slot:'adfit-kr-list',    unit:'DAN-1c2FIgCcmjN3PLlk'},
+  'us-history': {slot:'adfit-us-history', unit:'DAN-6XDvdRkp0aT4I8BH'},
+  'us-list':    {slot:'adfit-us-list',    unit:'DAN-VqRpN1P5eQcLkXwz'},
 };
+let _adfitLoaded = false;
+let _adfitCurrentPage = null;
+
 function reloadAdfit(page) {
-  const units = ADFIT_UNITS[page];
-  if (!units) return;
-  // 현재 페이지 내 ins 태그 찾아서 재생성
-  const pageEl = document.getElementById('page-' + page);
-  if (!pageEl) return;
-  pageEl.querySelectorAll('ins.kakao_ad_area').forEach(function(ins) {
-    const unit = ins.getAttribute('data-ad-unit');
-    if (!unit) return;
-    // ins를 새 ins로 교체 (AdFit은 이미 처리된 ins는 재처리 안 함)
-    const newIns = document.createElement('ins');
-    newIns.className = 'kakao_ad_area';
-    newIns.style.display = 'none';
-    newIns.setAttribute('data-ad-unit', unit);
-    newIns.setAttribute('data-ad-width', ins.getAttribute('data-ad-width') || '728');
-    newIns.setAttribute('data-ad-height', ins.getAttribute('data-ad-height') || '90');
-    ins.parentNode.replaceChild(newIns, ins);
-  });
-  // ba.min.js 재실행 (window.adfit 객체가 있으면 refresh, 없으면 script 재삽입)
-  if (window.adfit && typeof window.adfit.load === 'function') {
-    units.forEach(function(u) {
-      try { window.adfit.load(u); } catch(e) {}
-    });
-  } else {
-    // 스크립트 태그 재삽입으로 강제 재처리
+  // 이전 페이지 슬롯 비우기
+  if (_adfitCurrentPage && _adfitCurrentPage !== page) {
+    const prev = ADFIT_MAP[_adfitCurrentPage];
+    if (prev) {
+      const el = document.getElementById(prev.slot);
+      if (el) el.innerHTML = '';
+    }
+  }
+  _adfitCurrentPage = page;
+
+  const cfg = ADFIT_MAP[page];
+  if (!cfg) return;
+
+  const container = document.getElementById(cfg.slot);
+  if (!container) return;
+
+  // 이미 ins가 있으면 건너뜀 (같은 페이지 재진입)
+  if (container.querySelector('ins.kakao_ad_area')) return;
+
+  // ins 삽입
+  const ins = document.createElement('ins');
+  ins.className = 'kakao_ad_area';
+  ins.style.display = 'none';
+  ins.setAttribute('data-ad-unit', cfg.unit);
+  ins.setAttribute('data-ad-width', '728');
+  ins.setAttribute('data-ad-height', '90');
+  container.appendChild(ins);
+
+  // ba.min.js: 최초 1회만 로드, 이후엔 window.adfit.load() 사용
+  if (!_adfitLoaded) {
+    _adfitLoaded = true;
     const s = document.createElement('script');
     s.src = '//t1.daumcdn.net/kas/static/ba.min.js';
     s.async = true;
     document.body.appendChild(s);
+  } else if (window.adfit && typeof window.adfit.load === 'function') {
+    try { window.adfit.load(cfg.unit); } catch(e) {}
+  } else {
+    // adfit 객체 준비 안 됐을 때 짧게 대기 후 재시도
+    setTimeout(function() {
+      if (window.adfit && typeof window.adfit.load === 'function') {
+        try { window.adfit.load(cfg.unit); } catch(e) {}
+      }
+    }, 800);
   }
 }
 
