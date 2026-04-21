@@ -2950,18 +2950,18 @@ if(usList) renderUsList(listSorted);
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
 
-// ── AdFit: 페이지 전환 시 해당 슬롯에만 ins 동적 삽입 ──
-// 초기 HTML에는 ins 태그 없음 → 페이지 진입 시 삽입 → 떠날 때 제거
+// ── AdFit: 페이지 전환 시 동적 ins 삽입 + script 재로드 ──
 const ADFIT_MAP = {
   'kr-history': {slot:'adfit-kr-history', unit:'DAN-URl434E25F4mNMKM'},
   'kr-list':    {slot:'adfit-kr-list',    unit:'DAN-1c2FIgCcmjN3PLlk'},
   'us-history': {slot:'adfit-us-history', unit:'DAN-6XDvdRkp0aT4I8BH'},
   'us-list':    {slot:'adfit-us-list',    unit:'DAN-VqRpN1P5eQcLkXwz'},
 };
-let _adfitLoaded = false;
 let _adfitCurrentPage = null;
 
 function reloadAdfit(page) {
+  const cfg = ADFIT_MAP[page];
+
   // 이전 페이지 슬롯 비우기
   if (_adfitCurrentPage && _adfitCurrentPage !== page) {
     const prev = ADFIT_MAP[_adfitCurrentPage];
@@ -2971,17 +2971,16 @@ function reloadAdfit(page) {
     }
   }
   _adfitCurrentPage = page;
-
-  const cfg = ADFIT_MAP[page];
   if (!cfg) return;
 
   const container = document.getElementById(cfg.slot);
   if (!container) return;
 
-  // 이미 ins가 있으면 건너뜀 (같은 페이지 재진입)
-  if (container.querySelector('ins.kakao_ad_area')) return;
+  // 기존 ins + 이전 adfit 스크립트 모두 제거
+  container.innerHTML = '';
+  document.querySelectorAll('script[src*="ba.min.js"]').forEach(function(s){ s.remove(); });
 
-  // ins 삽입
+  // 새 ins 삽입
   const ins = document.createElement('ins');
   ins.className = 'kakao_ad_area';
   ins.style.display = 'none';
@@ -2990,23 +2989,11 @@ function reloadAdfit(page) {
   ins.setAttribute('data-ad-height', '90');
   container.appendChild(ins);
 
-  // ba.min.js: 최초 1회만 로드, 이후엔 window.adfit.load() 사용
-  if (!_adfitLoaded) {
-    _adfitLoaded = true;
-    const s = document.createElement('script');
-    s.src = '//t1.daumcdn.net/kas/static/ba.min.js';
-    s.async = true;
-    document.body.appendChild(s);
-  } else if (window.adfit && typeof window.adfit.load === 'function') {
-    try { window.adfit.load(cfg.unit); } catch(e) {}
-  } else {
-    // adfit 객체 준비 안 됐을 때 짧게 대기 후 재시도
-    setTimeout(function() {
-      if (window.adfit && typeof window.adfit.load === 'function') {
-        try { window.adfit.load(cfg.unit); } catch(e) {}
-      }
-    }, 800);
-  }
+  // ba.min.js 새로 삽입 → 방금 추가한 ins 하나만 DOM에 있으므로 충돌 없음
+  const s = document.createElement('script');
+  s.src = '//t1.daumcdn.net/kas/static/ba.min.js?' + Date.now();
+  s.async = true;
+  document.body.appendChild(s);
 }
 
 function go(page,el){
@@ -4056,19 +4043,6 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
-<!-- ===== 카카오 AdFit 초기화 ===== -->
-<!-- 
-  ⚠️ 아래 DAN-URl434E25F4mNMKM ~ DAN-1c2FIgCcmjN3PLlk 를
-     카카오 AdFit (https://adfit.kakao.com) 에서
-     발급받은 실제 광고단위 ID로 교체하세요.
-     
-  현재 광고 슬롯: 4개 (AdFit 정책 한도 준수)
-    - DAN-URl434E25F4mNMKM : 한국 섹터 히스토리 하단
-    - DAN-6XDvdRkp0aT4I8BH : 미국 섹터 히스토리 하단
-    - DAN-VqRpN1P5eQcLkXwz : 미국 섹터 종목List 상단
-    - DAN-1c2FIgCcmjN3PLlk : 미국 섹터 종목List 하단
--->
-<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
 <!-- ============================= -->
 </body>
 </html>
