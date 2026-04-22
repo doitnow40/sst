@@ -250,8 +250,8 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
 <button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()">📊 통계 숨기기</button>
 <div class="chart-ctrl-group" id="kr-analytics-period-controls">
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
+<button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
+<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
 <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
 <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
 <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
@@ -364,8 +364,8 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
 <button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()">📊 통계 숨기기</button>
 <div class="chart-ctrl-group" id="us-analytics-period-controls">
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
+<button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
+<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
 <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
 <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
 <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
@@ -2241,7 +2241,7 @@ html+='<div class="rank-bar-row" data-sector="'+d.name.replace(/&/g,'&amp;').rep
 });
 el.innerHTML=html;
 }
-var krAnalyticsPeriod=5, krAnalyticsVisible=true, krAllChartsVisible=true;
+var krAnalyticsPeriod=0, krAnalyticsVisible=true, krAllChartsVisible=true;
 function toggleKrAnalytics(){
 krAnalyticsVisible=!krAnalyticsVisible;
 var p=document.getElementById('kr-analytics-panels');
@@ -2274,11 +2274,11 @@ if(krAnalyticsPeriod===0){
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 var tmj=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 var allAvg=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHeatmap([],H,sn,true); return;
+_renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHeatmap([],H,sn,true); var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display='none'; return;
 }
 var cr=[...rows.slice(0,krAnalyticsPeriod)].reverse();
 var allAvg=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-_renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
+var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display=''; _renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
 }
 function _renderKrRiseFall(allAvg){
 _renderHtmlBars('kr-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
@@ -2383,15 +2383,13 @@ if(capItems.length>0){
 // 시가총액 내림차순 정렬 후 상위 20개만 추출
 capItems.sort(function(a,b){return b.marketCap-a.marketCap;});
 var top20=capItems.slice(0,20);
-// ★ Finviz 방식 스케일링: log(cap+1)
-// log 스케일 효과:
-//   - 반도체(800조) → log(801) ≈ 6.69  (면적 ~15%)
-//   - 벨류업(180조) → log(181) ≈ 5.20  (면적 ~12%)
-//   - 태양풍력(25조) → log(26)  ≈ 3.26  (면적 ~7%)
-//   - 비율이 선형(32x)보다 훨씬 작아(2x) 모든 박스가 충분한 크기 확보
-//   - 단, 섹터 간 상대적 크기 차이는 여전히 명확히 보임
+// ★ 스케일링: cap^0.6 — 시총 차이를 박스 크기에 명확하게 반영
+// 실제 시총(반도체2030조, 밸류업500조, 태양풍력25조) 기준 면적 비율:
+//   반도체대표 26%, 밸류업 11%, 자동차 7%, 태양풍력 2.7%
+//   반도체/밸류업 = 2.3x, 반도체/태양풍력 = 14x → 크기 차이 명확히 보임
+// log(cap)은 반도체/밸류업이 1.2x 밖에 안돼 구별이 안됨
 var tmItems=top20.map(function(d){
-var scaledCap=Math.log(d.marketCap+1);
+var scaledCap=Math.pow(d.marketCap, 0.6);
 return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
 allBoxes=squarify2(tmItems,0,0,W,H2);
@@ -2477,7 +2475,7 @@ if(krHeatmapReverse)html+=td2(); disp.forEach(function(r){var v=r[ci];var c=pctC
 html+='</tr>';});
 wrap.innerHTML=html+'</tbody></table>';
 }
-var usAnalyticsPeriod=5, usAnalyticsVisible=true, usAllChartsVisible=true;
+var usAnalyticsPeriod=0, usAnalyticsVisible=true, usAllChartsVisible=true;
 function toggleUsAnalytics(){
 usAnalyticsVisible=!usAnalyticsVisible;
 var p=document.getElementById('us-analytics-panels');
@@ -2508,11 +2506,11 @@ var el2=document.getElementById('us-chart-title'); if(el2)el2.textContent='■ �
 if(usAnalyticsPeriod===0){
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
 var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true); _renderUsHeatmap([],H,H.slice(1),true); return;
+_renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true); _renderUsHeatmap([],H,H.slice(1),true); var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
 var allAvg=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-_renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
+var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display=''; _renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
 }
 function _renderUsRiseFall(allAvg){
 _renderHtmlBars('us-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
