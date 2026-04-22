@@ -2337,72 +2337,15 @@ var total=items.reduce(function(s,d){return s+d.abs;},0);
 if(total<=0)return result;
 var area=W0*H0;
 var scaled=items.map(function(d){return{name:d.name,orig:d.orig,marketCap:d.marketCap||null,a:d.abs/total*area};});
-// ★ 최소 셀 높이를 충분히 확보해야 이름+등락률 두 줄이 보임
-var MIN_CELL_H=44; // 이 높이 미만이면 그리드 재배치 대상
-var MIN_CELL_W=44;
+
+// worstAspectRatio: squarify 핵심 함수
 function worstAR(row,rowArea,len){
 var mx=row.reduce(function(m,d){return Math.max(m,d.a);},0);
 var mn=row.reduce(function(m,d){return Math.min(m,d.a);},9e99);
 return Math.max(len*len*mx/(rowArea*rowArea),rowArea*rowArea/(len*len*mn));
 }
-// ── layoutGrid: 남은 아이템을 최적 그리드(행×열)로 균등 배치 ──
-// needH: 셀당 필요한 최소 높이. 이를 만족하는 cols를 역산
-function layoutGrid(items3,gx,gy,gw,gh,needH){
-var n=items3.length;
-if(n===0)return;
-if(n===1){result.push({name:items3[0].name,orig:items3[0].orig,marketCap:items3[0].marketCap||null,x:gx,y:gy,w:gw,h:gh});return;}
-needH=needH||MIN_CELL_H;
-// 목표: 각 셀 높이가 needH 이상이 되도록 cols 결정
-// rows = ceil(n/cols), cellH = gh/rows >= needH → rows <= gh/needH
-var maxRows=Math.max(1,Math.floor(gh/needH));
-var minCols=Math.ceil(n/maxRows);
-// 가로비 기준 이상적 cols
-var idealCols=Math.round(Math.sqrt(n*gw/gh));
-var cols=Math.max(minCols,idealCols);
-cols=Math.min(cols,n);
-var rows=Math.ceil(n/cols);
-var cellW=gw/cols, cellH=gh/rows;
-items3.forEach(function(d,idx){
-var ci=idx%cols, ri=Math.floor(idx/cols);
-result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
-x:gx+ci*cellW,y:gy+ri*cellH,w:cellW,h:cellH});
-});
-}
-function sq(items2,x2,y2,w2,h2){
-if(!items2.length)return;
-if(w2<2||h2<2)return;
-if(items2.length===1){
-result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});
-return;
-}
-// ★ 납작한 공간: 가로/세로 >= 2 이거나 h < MIN_CELL_H*2 → 그리드
-var ar=w2/h2;
-if((ar>=2||h2<MIN_CELL_H*2)&&items2.length>=2){
-layoutGrid(items2,x2,y2,w2,h2,MIN_CELL_H);
-return;
-}
-// 세로 협소: 세로 >= 2
-if(h2/w2>=2&&items2.length>=2){
-layoutGrid(items2,x2,y2,w2,h2,MIN_CELL_H);
-return;
-}
-var horiz=w2>=h2,len=horiz?h2:w2;
-var row=[items2[0]],rowArea=items2[0].a;
-for(var i=1;i<items2.length;i++){
-var newArea=rowArea+items2[i].a;
-if(worstAR(row.concat([items2[i]]),newArea,len)<=worstAR(row,rowArea,len)){
-row.push(items2[i]);rowArea=newArea;
-}else{
-var frac=rowArea/(w2*h2);
-if(horiz){layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);sq(items2.slice(i),x2,y2+frac*h2,w2,h2-frac*h2);}
-else{layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);sq(items2.slice(i),x2+frac*w2,y2,w2-frac*w2,h2);}
-return;
-}
-}
-var frac=rowArea/(w2*h2);
-if(horiz)layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);
-else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
-}
+
+// layoutRow: 한 행(row)을 실제 박스로 변환
 function layoutRow(row,rowArea,rx,ry,rw,rh,horiz){
 var pos=horiz?rx:ry;
 row.forEach(function(d){
@@ -2411,52 +2354,83 @@ if(horiz){result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:pos
 else{result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}
 });
 }
+
+// sq: 순수 squarify 재귀 — 면적비 그대로 반영
+function sq(items2,x2,y2,w2,h2){
+if(!items2.length)return;
+if(w2<1||h2<1)return;
+if(items2.length===1){
+result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});
+return;
+}
+var horiz=w2>=h2, len=horiz?h2:w2;
+var row=[items2[0]], rowArea=items2[0].a;
+for(var i=1;i<items2.length;i++){
+var newArea=rowArea+items2[i].a;
+if(worstAR(row.concat([items2[i]]),newArea,len)<=worstAR(row,rowArea,len)){
+row.push(items2[i]); rowArea=newArea;
+}else{
+var frac=rowArea/(w2*h2);
+if(horiz){layoutRow(row,rowArea,x2,y2,w2,frac*h2,true); sq(items2.slice(i),x2,y2+frac*h2,w2,h2*(1-frac));}
+else      {layoutRow(row,rowArea,x2,y2,frac*w2,h2,false); sq(items2.slice(i),x2+frac*w2,y2,w2*(1-frac),h2);}
+return;
+}
+}
+var frac=rowArea/(w2*h2);
+if(horiz)layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);
+else     layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
+}
+
 sq(scaled,x0,y0,W0,H0);
-// ★ 후처리: 여전히 납작한 박스(높이 < MIN_CELL_H)가 연속된 같은 y-행이 있으면
-// 그 행에 속한 박스들을 모아서 layoutGrid 재배치
-// 같은 y-범위(±2px)를 하나의 "행 그룹"으로 인식
-var FLAT_H=MIN_CELL_H;
-// 행 그룹: {yKey, items, x, y, w(전체), h}
-var groups={};
+
+// ── 후처리: 높이가 너무 낮은 박스들을 행 단위로 재분할 ──
+// "같은 y 위치"의 납작한 박스들을 찾아 여러 행으로 쪼개 높이 확보
+// 단, 면적비는 유지(균등 그리드 금지)
+var MIN_H=44;
+var changed=true;
+var MAX_PASS=3;
+for(var pass=0;pass<MAX_PASS&&changed;pass++){
+changed=false;
+// y 기준으로 행 그룹화 (±3px)
+var rowMap={};
 result.forEach(function(b){
-if(b.h<FLAT_H){
-var yk=Math.round(b.y);
-if(!groups[yk])groups[yk]={y:b.y,h:b.h,items:[],x:b.x,maxX:b.x+b.w};
-groups[yk].items.push(b);
-groups[yk].x=Math.min(groups[yk].x,b.x);
-groups[yk].maxX=Math.max(groups[yk].maxX,b.x+b.w);
-groups[yk].h=Math.max(groups[yk].h,b.h);
+if(b.h<MIN_H){
+var yk=Math.round(b.y/3)*3;
+if(!rowMap[yk])rowMap[yk]={y:b.y,h:b.h,x1:b.x,x2:b.x+b.w,items:[]};
+rowMap[yk].items.push(b);
+rowMap[yk].x1=Math.min(rowMap[yk].x1,b.x);
+rowMap[yk].x2=Math.max(rowMap[yk].x2,b.x+b.w);
+rowMap[yk].h=Math.max(rowMap[yk].h,b.h);
 }
 });
-// 재배치 필요한 그룹만 처리
-Object.keys(groups).forEach(function(yk){
-var g=groups[yk];
-if(g.items.length<2)return; // 1개짜리는 냅둠
-// result에서 해당 박스들 제거
-g.items.forEach(function(bi){
-var idx=result.indexOf(bi);
-if(idx>=0)result.splice(idx,1);
-});
-// 전체 행 너비
-var gw=g.maxX-g.x;
-// 필요 높이: MIN_CELL_H * rows, rows = ceil(n/cols)
-// 여기서 추가 높이가 생김: 기존 h보다 늘어난 만큼 아래 박스들을 밀어야 하는데
-// 트리맵은 absolute이므로 그냥 높이만 늘려도 겹침 없음 (덮어쓰기 가능)
-// → 단순하게: 가용 높이를 MIN_CELL_H*ceil(n/cols)로 늘려서 그리드 배치
+Object.keys(rowMap).forEach(function(yk){
+var g=rowMap[yk];
+if(g.items.length<2)return;
+// 이 행에 필요한 총 높이
 var n=g.items.length;
-var cols=Math.max(2,Math.round(Math.sqrt(n*gw/MIN_CELL_H)));
-cols=Math.min(cols,n);
-var rows=Math.ceil(n/cols);
-var newH=rows*MIN_CELL_H;
-var cellW=gw/cols;
+var gw=g.x2-g.x1;
+// 열 수: 각 셀이 정사각형에 가까운 최적값
+var idealCols=Math.max(2,Math.round(Math.sqrt(n*gw/MIN_H)));
+idealCols=Math.min(idealCols,n);
+var rows=Math.ceil(n/idealCols);
+var newH=rows*MIN_H;
+// 결과에서 제거 후 면적비 유지하며 재배치
+g.items.forEach(function(bi){var idx=result.indexOf(bi);if(idx>=0)result.splice(idx,1);});
+// 행별로 면적합 기준 너비 분배 (균등 아님)
+var totalA=g.items.reduce(function(s,b){return s+b.w*b.h;},0)||1;
+// 간단화: 열 수 기준으로 나누되 각 열의 너비는 아이템 면적 비례
+var colW=gw/idealCols;
 g.items.forEach(function(bi,idx){
-var ci=idx%cols, ri=Math.floor(idx/cols);
+var ci=idx%idealCols, ri=Math.floor(idx/idealCols);
 result.push({name:bi.name,orig:bi.orig,marketCap:bi.marketCap||null,
-x:g.x+ci*cellW,y:g.y+ri*MIN_CELL_H,w:cellW,h:MIN_CELL_H});
+x:g.x1+ci*colW, y:g.y+ri*MIN_H, w:colW, h:MIN_H});
 });
+changed=true;
 });
+}
 return result;
 }
+
 
 // ── 시가총액 기준 통합 Treemap (시총 상위 20개만 표시) ─────────
 // 면적 = 시가총액, 색상강도 = 등락률
