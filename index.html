@@ -2370,91 +2370,6 @@ else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 }
 sq(scaled,x0,y0,W0,H0);
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 후처리: 납작 행 세로 확장 + 아래 박스 밀기
-// 이미지 개선안 방식:
-//   1) 납작 행(h < MIN_H) 감지
-//   2) 그 행 안의 박스들을 가로/세로 균등 그리드로 재배치 (각 셀 높이 = MIN_H)
-//   3) 행 높이가 늘어난 만큼(deltaH) 그 행 아래의 모든 박스를 deltaH 만큼 아래로 밀기
-//   4) 전체 컨테이너 높이도 deltaH 합산만큼 늘어남
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-var MIN_H = 54;       // 섹터명+등락률 표시 가능한 최소 높이
-var FLAT  = 2.2;      // w/h 이 비율 이상이면 납작 판정
-
-// y 기준 행 그룹화: 같은 y(±3px)는 같은 행
-var rowMap = {};
-result.forEach(function(b){
-  var yk = Math.round(b.y / 3) * 3;
-  if(!rowMap[yk]) rowMap[yk] = {y:b.y, h:0, x1:Infinity, x2:-Infinity, all:[], flat:[]};
-  rowMap[yk].all.push(b);
-  rowMap[yk].h   = Math.max(rowMap[yk].h,  b.h);
-  rowMap[yk].x1  = Math.min(rowMap[yk].x1, b.x);
-  rowMap[yk].x2  = Math.max(rowMap[yk].x2, b.x + b.w);
-  if((b.w / b.h) > FLAT && b.h < MIN_H) rowMap[yk].flat.push(b);
-});
-
-// y 오름차순으로 행 처리
-var sortedYks = Object.keys(rowMap).map(Number).sort(function(a,b){return a-b;});
-var totalDelta = 0; // 누적 밀림량
-
-sortedYks.forEach(function(yk){
-  var g = rowMap[yk];
-
-  // 이 행보다 아래에 있는 모든 박스를 totalDelta만큼 이미 밀었으므로 실제 y 보정
-  if(totalDelta > 0){
-    g.all.forEach(function(b){ b.y += totalDelta; });
-    g.y += totalDelta;
-  }
-
-  // 납작 박스가 없으면 스킵
-  if(g.flat.length === 0) return;
-
-  // 이 행에 납작 박스가 있음 → 행 전체를 세로 확장
-  var rowW = g.x2 - g.x1;
-  var n    = g.flat.length;
-
-  // 최적 열 수: 각 셀이 정사각형에 가까운 cols
-  var idealCols = Math.max(1, Math.round(Math.sqrt(n * rowW / MIN_H)));
-  idealCols = Math.min(idealCols, n);
-  var numRows   = Math.ceil(n / idealCols);
-  var newH      = numRows * MIN_H;
-  var cellW     = rowW / idealCols;
-  var deltaH    = newH - g.h; // 이 행이 늘어난 높이
-
-  if(deltaH <= 0) return; // 이미 충분히 높으면 스킵
-
-  // 납작 박스들 result에서 제거 후 새 좌표로 추가
-  // 면적(=원래 w*h) 내림차순 정렬 → 시총 큰 것 앞에
-  g.flat.sort(function(a,b){ return (b.w*b.h) - (a.w*a.h); });
-  g.flat.forEach(function(b){
-    var idx = result.indexOf(b);
-    if(idx >= 0) result.splice(idx, 1);
-  });
-  g.flat.forEach(function(b, idx){
-    var ci = idx % idealCols;
-    var ri = Math.floor(idx / idealCols);
-    result.push({
-      name:b.name, orig:b.orig, marketCap:b.marketCap||null,
-      x: g.x1 + ci * cellW,
-      y: g.y  + ri * MIN_H,
-      w: cellW,
-      h: MIN_H
-    });
-  });
-
-  // 이 행보다 아래에 있는 모든 박스를 deltaH 만큼 밀기
-  var rowBottomY = g.y + g.h;
-  result.forEach(function(b){
-    if(b.y >= rowBottomY - 1) b.y += deltaH;
-  });
-
-  totalDelta += deltaH;
-});
-
-// 전체 컨테이너 높이 반영용으로 result에 메타 정보 저장
-result._extraH = totalDelta;
-
-
 return result;
 }
 
@@ -2473,8 +2388,58 @@ var tmItems=top20.map(function(d){
 var scaledCap=Math.pow(d.marketCap, 0.6);
 return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
-allBoxes=squarify2(tmItems,0,0,W,H2);
-if(allBoxes._extraH){H2+=allBoxes._extraH; wrap.style.height=H2+'px';}
+// ── 2-존 트리맵: 상위는 squarify(면적비), 하위는 균등 그리드(모두 읽힘) ──
+var MIN_CELL_H=54; // 텍스트 표시 최소 높이
+
+// 분할점: squarify로 min 높이를 확보할 수 있는 최대 개수 찾기
+// "squarify 영역의 가장 작은 박스 높이 >= MIN_CELL_H"가 되는 최소 n
+var splitN = tmItems.length; // 기본: 전부 squarify
+for(var ni=tmItems.length; ni>=4; ni--){
+    var topFrac=tmItems.slice(0,ni).reduce(function(s,d){return s+d.abs;},0)
+                / tmItems.reduce(function(s,d){return s+d.abs;},0);
+    var topH = H2 * topFrac;
+    var botH = H2 - topH;
+    var mi   = tmItems.length - ni;
+    if(mi===0){splitN=ni;break;}
+    // 하단 mi개를 botH에 배치할 때 셀 높이
+    var maxRows=Math.max(1,Math.floor(botH/MIN_CELL_H));
+    var cols2=Math.ceil(mi/maxRows);
+    var cellH2=botH/Math.ceil(mi/cols2);
+    if(cellH2>=MIN_CELL_H){splitN=ni;break;}
+}
+
+var topItems=tmItems.slice(0,splitN);
+var botItems=tmItems.slice(splitN);
+
+// 상단: squarify
+var topFrac2=topItems.reduce(function(s,d){return s+d.abs;},0)
+             / tmItems.reduce(function(s,d){return s+d.abs;},0);
+var topH2=Math.round(H2*topFrac2);
+var botH2=H2-topH2;
+allBoxes=squarify2(topItems,0,0,W,topH2);
+
+// 하단: 균등 그리드 (셀 높이 보장)
+if(botItems.length>0){
+    var mi2=botItems.length;
+    var maxRows2=Math.max(1,Math.floor(botH2/MIN_CELL_H));
+    var cols2b=Math.ceil(mi2/maxRows2);
+    // 실제 행 수 재계산
+    var numRows2=Math.ceil(mi2/cols2b);
+    // botH2가 numRows2*MIN_CELL_H보다 작으면 H2 확장
+    var neededBotH=numRows2*MIN_CELL_H;
+    if(neededBotH>botH2){
+        var diff=neededBotH-botH2;
+        H2+=diff; botH2=neededBotH;
+        wrap.style.height=H2+'px';
+    }
+    var cW2=W/cols2b;
+    var cH2=botH2/numRows2;
+    botItems.forEach(function(d,idx){
+        var ci=idx%cols2b, ri=Math.floor(idx/cols2b);
+        allBoxes.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
+            x:ci*cW2, y:topH2+ri*cH2, w:cW2, h:cH2});
+    });
+}
 }else{
 // 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 (기존 방식)
 var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
