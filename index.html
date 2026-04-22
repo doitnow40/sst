@@ -2289,11 +2289,11 @@ var wrap=document.getElementById('kr-chart-wrap'); if(!wrap)return;
 if(krChart){krChart.destroy();krChart=null;}
 var toggleBtn=document.getElementById('kr-toggleall-btn');
 if(today){
-var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 오늘 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
+var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
 if(toggleBtn)toggleBtn.style.display='none';
 var data=allAvgIn||[];
 if(!data.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
-var W=wrap.clientWidth||700, H2=680;
+var W=wrap.clientWidth||700, H2=720;
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
 var mcapMap={};
@@ -2369,6 +2369,69 @@ if(horiz)layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);
 else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 }
 sq(scaled,x0,y0,W0,H0);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 후처리: 납작한 박스(w/h > 2.5) 를 세로형으로 변환
+// 같은 y-행에 묶인 납작 박스들을 찾아
+// 그 행의 공간을 "열" 방향으로 재분할
+// → 각 셀이 세로로 길어져 섹터명+등락률 표시 가능
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+var MIN_READABLE_H = 52; // 섹터명+등락률 두 줄이 보이는 최소 높이
+var FLAT_RATIO     = 2.5; // w/h 이 비율 이상이면 "납작"으로 판단
+
+// 1) 납작한 박스 추출
+var flatBoxes = result.filter(function(b){ return (b.w / b.h) > FLAT_RATIO && b.h < MIN_READABLE_H; });
+if(flatBoxes.length > 0){
+  // 2) y좌표 기준으로 행 그룹화 (±4px 오차 허용)
+  var rows = {};
+  flatBoxes.forEach(function(b){
+    var yk = Math.round(b.y / 4) * 4;
+    if(!rows[yk]) rows[yk] = {y:b.y, h:b.h, x1:b.x, x2:b.x+b.w, items:[]};
+    rows[yk].items.push(b);
+    rows[yk].x1 = Math.min(rows[yk].x1, b.x);
+    rows[yk].x2 = Math.max(rows[yk].x2, b.x + b.w);
+    rows[yk].h  = Math.max(rows[yk].h,  b.h);
+  });
+
+  Object.keys(rows).forEach(function(yk){
+    var g = rows[yk];
+    var n = g.items.length;
+    if(n === 0) return;
+
+    var rowW = g.x2 - g.x1; // 행 전체 너비
+    // 목표: 각 셀 높이 >= MIN_READABLE_H
+    // cols 수 = 가능한 최대 (각 셀 너비가 MIN_READABLE_H 이상이어야 정사각형에 가까움)
+    // idealCols: 셀이 정사각형에 가장 가까운 열 수
+    var idealCols = Math.max(1, Math.round(Math.sqrt(n * rowW / MIN_READABLE_H)));
+    idealCols = Math.min(idealCols, n);
+    var rows2 = Math.ceil(n / idealCols);
+    var newH  = rows2 * MIN_READABLE_H;
+    var cellW = rowW / idealCols;
+
+    // 3) result에서 납작 박스 제거
+    g.items.forEach(function(b){
+      var idx = result.indexOf(b);
+      if(idx >= 0) result.splice(idx, 1);
+    });
+
+    // 4) 면적 기준 내림차순 정렬 후 재배치 (시총 큰 것이 앞에)
+    g.items.sort(function(a,b){ return (b.w*b.h) - (a.w*a.h); });
+
+    // 5) 새 박스 추가 (y는 원래 행 시작점부터 아래로 확장)
+    g.items.forEach(function(b, idx){
+      var ci = idx % idealCols;
+      var ri = Math.floor(idx / idealCols);
+      result.push({
+        name:b.name, orig:b.orig, marketCap:b.marketCap||null,
+        x: g.x1 + ci * cellW,
+        y: g.y  + ri * MIN_READABLE_H,
+        w: cellW,
+        h: MIN_READABLE_H
+      });
+    });
+  });
+}
+
 return result;
 }
 
