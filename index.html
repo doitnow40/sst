@@ -2388,54 +2388,70 @@ var tmItems=top20.map(function(d){
 var scaledCap=Math.pow(d.marketCap, 0.6);
 return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
-// ── 2-존 트리맵: 상위는 squarify(면적비), 하위는 균등 그리드(모두 읽힘) ──
-var MIN_CELL_H=54; // 텍스트 표시 최소 높이
+// ── 2-존 트리맵 ──
+// 원칙:
+//   상단: 충분히 큰 섹터 → squarify (면적비 유지)
+//   하단: 작은 섹터들  → 균등 그리드 (최소 높이 54px 보장, 모두 텍스트 표시)
+//
+// splitN 결정 방법:
+//   tmItems는 abs 내림차순(시총 큰 것 먼저)
+//   상위 n개의 면적 합 비율 = topFrac
+//   남은 높이 botH = H2 * (1-topFrac)
+//   하단 (20-n)개를 botH에 n열로 배치할 때 각 셀 높이 >= 54px 가 되는
+//   최소 n을 앞에서부터 찾는다 (n이 작을수록 상단이 좁고 하단이 넓어짐)
 
-// 분할점: squarify로 min 높이를 확보할 수 있는 최대 개수 찾기
-// "squarify 영역의 가장 작은 박스 높이 >= MIN_CELL_H"가 되는 최소 n
-var splitN = tmItems.length; // 기본: 전부 squarify
-for(var ni=tmItems.length; ni>=4; ni--){
-    var topFrac=tmItems.slice(0,ni).reduce(function(s,d){return s+d.abs;},0)
-                / tmItems.reduce(function(s,d){return s+d.abs;},0);
-    var topH = H2 * topFrac;
-    var botH = H2 - topH;
-    var mi   = tmItems.length - ni;
-    if(mi===0){splitN=ni;break;}
-    // 하단 mi개를 botH에 배치할 때 셀 높이
-    var maxRows=Math.max(1,Math.floor(botH/MIN_CELL_H));
-    var cols2=Math.ceil(mi/maxRows);
-    var cellH2=botH/Math.ceil(mi/cols2);
-    if(cellH2>=MIN_CELL_H){splitN=ni;break;}
+var MIN_BOT_H=56; // 하단 그리드 셀 최소 높이
+var totalAbs=tmItems.reduce(function(s,d){return s+d.abs;},0);
+var splitN=tmItems.length; // 기본: 전부 squarify(하단 없음)
+
+// n=1부터 늘려가며, "하단 그리드가 MIN_BOT_H를 만족"하는 최대 splitN 탐색
+// → n이 클수록 하단에 더 적은 아이템 → 셀 더 넓어짐
+// 원하는 것: 가능한 한 많이 squarify에 넣되, 하단도 읽힐 것
+for(var sn2=4; sn2<tmItems.length; sn2++){
+    var topAbs=tmItems.slice(0,sn2).reduce(function(s,d){return s+d.abs;},0);
+    var topFracT=topAbs/totalAbs;
+    var topHT=Math.round(H2*topFracT);
+    var botHT=H2-topHT;
+    var mi=tmItems.length-sn2;
+    // mi개를 botHT에 배치: 최적 cols
+    var idealC=Math.max(1,Math.round(Math.sqrt(mi*W/MIN_BOT_H)));
+    idealC=Math.min(idealC,mi);
+    var numR=Math.ceil(mi/idealC);
+    var cellH=botHT/numR;
+    if(cellH>=MIN_BOT_H){
+        splitN=sn2;
+        // 더 많이 squarify에 넣어도 되는지 계속 시도
+        // (셀이 MIN_BOT_H 이상이면 splitN을 계속 늘릴 수 있음)
+    }
 }
 
 var topItems=tmItems.slice(0,splitN);
 var botItems=tmItems.slice(splitN);
 
 // 상단: squarify
-var topFrac2=topItems.reduce(function(s,d){return s+d.abs;},0)
-             / tmItems.reduce(function(s,d){return s+d.abs;},0);
-var topH2=Math.round(H2*topFrac2);
+var topAbsSum=topItems.reduce(function(s,d){return s+d.abs;},0);
+var topFracFinal=topAbsSum/totalAbs;
+var topH2=Math.round(H2*topFracFinal);
 var botH2=H2-topH2;
 allBoxes=squarify2(topItems,0,0,W,topH2);
 
-// 하단: 균등 그리드 (셀 높이 보장)
+// 하단: 균등 그리드
 if(botItems.length>0){
     var mi2=botItems.length;
-    var maxRows2=Math.max(1,Math.floor(botH2/MIN_CELL_H));
-    var cols2b=Math.ceil(mi2/maxRows2);
-    // 실제 행 수 재계산
-    var numRows2=Math.ceil(mi2/cols2b);
-    // botH2가 numRows2*MIN_CELL_H보다 작으면 H2 확장
-    var neededBotH=numRows2*MIN_CELL_H;
-    if(neededBotH>botH2){
-        var diff=neededBotH-botH2;
-        H2+=diff; botH2=neededBotH;
+    var idealCols=Math.max(1,Math.round(Math.sqrt(mi2*W/MIN_BOT_H)));
+    idealCols=Math.min(idealCols,mi2);
+    var numRows2=Math.ceil(mi2/idealCols);
+    // 실제 셀 높이
+    var cH2=Math.max(MIN_BOT_H, Math.floor(botH2/numRows2));
+    // 필요하면 H2 확장
+    var neededBotH2=numRows2*cH2;
+    if(neededBotH2>botH2){
+        H2+=(neededBotH2-botH2);
         wrap.style.height=H2+'px';
     }
-    var cW2=W/cols2b;
-    var cH2=botH2/numRows2;
+    var cW2=W/idealCols;
     botItems.forEach(function(d,idx){
-        var ci=idx%cols2b, ri=Math.floor(idx/cols2b);
+        var ci=idx%idealCols, ri=Math.floor(idx/idealCols);
         allBoxes.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
             x:ci*cW2, y:topH2+ri*cH2, w:cW2, h:cH2});
     });
