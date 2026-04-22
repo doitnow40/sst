@@ -2468,12 +2468,20 @@ if(capItems.length>0){
 // 시가총액 내림차순 정렬 후 상위 20개만 추출
 capItems.sort(function(a,b){return b.marketCap-a.marketCap;});
 var top20=capItems.slice(0,20);
-// ★ pow(cap, 0.65) 스케일: 시총 차이가 박스 크기에 명확히 반영되는 균형점
-// 0.45(이전): 너무 평탄 → 모든 박스가 비슷해 보임
-// 0.65(현재): 반도체 대표 약 40% 면적, 소형 섹터 2%대 → 격차가 눈에 보임
-// 1.0(선형): 반도체 독식으로 소형 박스 사라짐
+// ★ 2단계 스케일링: 반도체 clamp + 나머지 pow(cap, 0.85)
+// 문제: 반도체 시총이 압도적이라 squarify가 나머지 섹터를 균등 분배해버림
+// 해결:
+//   1) 전체 시총 중앙값 기준으로 반도체 상한(clamp) → 반도체가 ~18% 면적 차지
+//   2) 나머지는 exp=0.85(선형에 가까움) → 시총 격차가 박스 크기에 그대로 반영
+//   3) 결과: 벨류업/자동차 큰 박스, 태양풍력/DDR5 작은 박스가 뚜렷이 구별됨
+var allCaps=top20.map(function(d){return d.marketCap;});
+allCaps.sort(function(a,b){return a-b;});
+// 중앙값의 12배를 상한으로 설정 (상위 시총이 너무 독식하지 않도록)
+var medianCap=allCaps[Math.floor(allCaps.length/2)];
+var capClampMax=medianCap*12;
 var tmItems=top20.map(function(d){
-var scaledCap=Math.pow(d.marketCap,0.65);
+var clampedCap=Math.min(d.marketCap, capClampMax);
+var scaledCap=Math.pow(clampedCap, 0.85);
 return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
 allBoxes=squarify2(tmItems,0,0,W,H2);
