@@ -2331,21 +2331,18 @@ return'rgb(255,255,255)';
 }
 }
 function squarify2(items,x0,y0,W0,H0){
+// 순수 squarify: 면적비를 박스 크기에 그대로 반영
 var result=[];
 if(!items.length)return result;
 var total=items.reduce(function(s,d){return s+d.abs;},0);
 if(total<=0)return result;
 var area=W0*H0;
 var scaled=items.map(function(d){return{name:d.name,orig:d.orig,marketCap:d.marketCap||null,a:d.abs/total*area};});
-
-// worstAspectRatio: squarify 핵심 함수
 function worstAR(row,rowArea,len){
 var mx=row.reduce(function(m,d){return Math.max(m,d.a);},0);
 var mn=row.reduce(function(m,d){return Math.min(m,d.a);},9e99);
 return Math.max(len*len*mx/(rowArea*rowArea),rowArea*rowArea/(len*len*mn));
 }
-
-// layoutRow: 한 행(row)을 실제 박스로 변환
 function layoutRow(row,rowArea,rx,ry,rw,rh,horiz){
 var pos=horiz?rx:ry;
 row.forEach(function(d){
@@ -2354,88 +2351,93 @@ if(horiz){result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:pos
 else{result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}
 });
 }
-
-// sq: 순수 squarify 재귀 — 면적비 그대로 반영
 function sq(items2,x2,y2,w2,h2){
-if(!items2.length)return;
-if(w2<1||h2<1)return;
-if(items2.length===1){
-result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});
-return;
-}
-var horiz=w2>=h2, len=horiz?h2:w2;
-var row=[items2[0]], rowArea=items2[0].a;
+if(!items2.length||w2<1||h2<1)return;
+if(items2.length===1){result.push({name:items2[0].name,orig:items2[0].orig,marketCap:items2[0].marketCap||null,x:x2,y:y2,w:w2,h:h2});return;}
+var horiz=w2>=h2,len=horiz?h2:w2;
+var row=[items2[0]],rowArea=items2[0].a;
 for(var i=1;i<items2.length;i++){
 var newArea=rowArea+items2[i].a;
-if(worstAR(row.concat([items2[i]]),newArea,len)<=worstAR(row,rowArea,len)){
-row.push(items2[i]); rowArea=newArea;
-}else{
-var frac=rowArea/(w2*h2);
-if(horiz){layoutRow(row,rowArea,x2,y2,w2,frac*h2,true); sq(items2.slice(i),x2,y2+frac*h2,w2,h2*(1-frac));}
-else      {layoutRow(row,rowArea,x2,y2,frac*w2,h2,false); sq(items2.slice(i),x2+frac*w2,y2,w2*(1-frac),h2);}
-return;
-}
+if(worstAR(row.concat([items2[i]]),newArea,len)<=worstAR(row,rowArea,len)){row.push(items2[i]);rowArea=newArea;}
+else{var frac=rowArea/(w2*h2);
+if(horiz){layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);sq(items2.slice(i),x2,y2+frac*h2,w2,h2*(1-frac));}
+else{layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);sq(items2.slice(i),x2+frac*w2,y2,w2*(1-frac),h2);}
+return;}
 }
 var frac=rowArea/(w2*h2);
 if(horiz)layoutRow(row,rowArea,x2,y2,w2,frac*h2,true);
-else     layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
+else layoutRow(row,rowArea,x2,y2,frac*w2,h2,false);
 }
-
 sq(scaled,x0,y0,W0,H0);
-
-// ── 후처리: 높이가 너무 낮은 박스들을 행 단위로 재분할 ──
-// "같은 y 위치"의 납작한 박스들을 찾아 여러 행으로 쪼개 높이 확보
-// 단, 면적비는 유지(균등 그리드 금지)
-var MIN_H=44;
-var changed=true;
-var MAX_PASS=3;
-for(var pass=0;pass<MAX_PASS&&changed;pass++){
-changed=false;
-// y 기준으로 행 그룹화 (±3px)
-var rowMap={};
-result.forEach(function(b){
-if(b.h<MIN_H){
-var yk=Math.round(b.y/3)*3;
-if(!rowMap[yk])rowMap[yk]={y:b.y,h:b.h,x1:b.x,x2:b.x+b.w,items:[]};
-rowMap[yk].items.push(b);
-rowMap[yk].x1=Math.min(rowMap[yk].x1,b.x);
-rowMap[yk].x2=Math.max(rowMap[yk].x2,b.x+b.w);
-rowMap[yk].h=Math.max(rowMap[yk].h,b.h);
-}
-});
-Object.keys(rowMap).forEach(function(yk){
-var g=rowMap[yk];
-if(g.items.length<2)return;
-// 이 행에 필요한 총 높이
-var n=g.items.length;
-var gw=g.x2-g.x1;
-// 열 수: 각 셀이 정사각형에 가까운 최적값
-var idealCols=Math.max(2,Math.round(Math.sqrt(n*gw/MIN_H)));
-idealCols=Math.min(idealCols,n);
-var rows=Math.ceil(n/idealCols);
-var newH=rows*MIN_H;
-// 결과에서 제거 후 면적비 유지하며 재배치
-g.items.forEach(function(bi){var idx=result.indexOf(bi);if(idx>=0)result.splice(idx,1);});
-// 행별로 면적합 기준 너비 분배 (균등 아님)
-var totalA=g.items.reduce(function(s,b){return s+b.w*b.h;},0)||1;
-// 간단화: 열 수 기준으로 나누되 각 열의 너비는 아이템 면적 비례
-var colW=gw/idealCols;
-g.items.forEach(function(bi,idx){
-var ci=idx%idealCols, ri=Math.floor(idx/idealCols);
-result.push({name:bi.name,orig:bi.orig,marketCap:bi.marketCap||null,
-x:g.x1+ci*colW, y:g.y+ri*MIN_H, w:colW, h:MIN_H});
-});
-changed=true;
-});
-}
 return result;
+}
+
+// ── 2패스 트리맵: 큰 섹터는 squarify, 작은 섹터는 하단 고정 그리드 ──
+// items: [{name,abs,orig,marketCap}], W: 너비, baseH: 기본 높이
+// 반환: {boxes:[{name,orig,marketCap,x,y,w,h}], totalH: 실제 사용 높이}
+function treemapTwoPass(items,W,baseH){
+if(!items.length)return{boxes:[],totalH:baseH};
+var GRID_CELL_H=54; // 하단 그리드 셀 높이 (섹터명+등락률 보장)
+var GRID_CELL_MIN_W=60; // 그리드 셀 최소 너비
+
+// 1단계: 전체 squarify로 1차 배치
+var boxes1=squarify2(items,0,0,W,baseH);
+
+// 2단계: 납작한 박스(h < GRID_CELL_H) 분리
+var bigBoxes=[], smallItems=[];
+boxes1.forEach(function(b){
+if(b.h>=GRID_CELL_H){bigBoxes.push(b);}
+else{
+// 원본 items에서 abs 값 찾기
+var orig=items.filter(function(d){return d.name===b.name;})[0];
+smallItems.push({name:b.name,abs:orig?orig.abs:1,orig:b.orig,marketCap:b.marketCap});
+}
+});
+
+if(!smallItems.length)return{boxes:boxes1,totalH:baseH};
+
+// 3단계: 작은 아이템들을 하단 그리드에 배치
+// 몇 열이 필요한지 계산: 열 너비 >= GRID_CELL_MIN_W, 셀 높이 = GRID_CELL_H
+var n=smallItems.length;
+var maxCols=Math.floor(W/GRID_CELL_MIN_W);
+// 이상적 cols: 셀이 최대한 정사각형에 가까운 cols
+var idealCols=Math.round(Math.sqrt(n*W/GRID_CELL_H));
+var cols=Math.max(1,Math.min(idealCols,maxCols,n));
+var gridRows=Math.ceil(n/cols);
+var gridH=gridRows*GRID_CELL_H;
+var cellW=W/cols;
+
+// 4단계: 큰 박스들을 (baseH - gridH) 높이 안에서 다시 squarify
+var mainH=baseH-gridH;
+var mainBoxes=[];
+if(bigBoxes.length){
+// 큰 아이템들만 추출해서 재squarify
+var bigItems=bigBoxes.map(function(b){
+var orig=items.filter(function(d){return d.name===b.name;})[0];
+return{name:b.name,abs:orig?orig.abs:1,orig:b.orig,marketCap:b.marketCap};
+});
+mainBoxes=squarify2(bigItems,0,0,W,Math.max(mainH,60));
+}
+
+// 5단계: 그리드 박스 생성 (y offset = mainH)
+var gridBoxes=[];
+// 작은 아이템들을 abs 내림차순 정렬 (시총 큰 것부터)
+smallItems.sort(function(a,b){return b.abs-a.abs;});
+smallItems.forEach(function(d,idx){
+var ci=idx%cols, ri=Math.floor(idx/cols);
+gridBoxes.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
+x:ci*cellW, y:mainH+ri*GRID_CELL_H, w:cellW, h:GRID_CELL_H});
+});
+
+var totalH=mainH+gridH;
+return{boxes:mainBoxes.concat(gridBoxes), totalH:totalH};
 }
 
 
 // ── 시가총액 기준 통합 Treemap (시총 상위 20개만 표시) ─────────
 // 면적 = 시가총액, 색상강도 = 등락률
 var PAD=1.5;
-var html='<div style="position:relative;width:100%;height:'+H2+'px;overflow:hidden;background:#0f1117;">';
+var html='<div style="position:relative;width:100%;height:'+H2+'px;background:#0f1117;">';
 var capItems=dataWithCap.filter(function(d){return d.marketCap&&d.marketCap>0;});
 var allBoxes=[];
 if(capItems.length>0){
@@ -2458,7 +2460,10 @@ var clampedCap=Math.min(d.marketCap, capClampMax);
 var scaledCap=Math.pow(clampedCap, 0.85);
 return{name:d.name,abs:scaledCap,orig:d.avg,marketCap:d.marketCap};
 });
-allBoxes=squarify2(tmItems,0,0,W,H2);
+var tpResult=treemapTwoPass(tmItems,W,H2);
+allBoxes=tpResult.boxes;
+H2=tpResult.totalH;
+wrap.style.height=H2+'px';
 }else{
 // 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 (기존 방식)
 var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
@@ -2470,7 +2475,15 @@ var dnW=W-upW-gap;
 if(gap>0)html+='<div style="position:absolute;left:'+upW+'px;top:0;width:'+gap+'px;height:100%;background:#0f1117;z-index:2"></div>';
 var upItems2=upList.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg,marketCap:null};});
 var dnItems2=dnList.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg,marketCap:null};});
-allBoxes=squarify2(upItems2,0,0,upW,H2).concat(squarify2(dnItems2,upW+gap,0,dnW,H2));
+var tpUp=treemapTwoPass(upItems2,upW,H2);
+var tpDn=treemapTwoPass(dnItems2,dnW,H2);
+var newH2=Math.max(tpUp.totalH,tpDn.totalH);
+// 동일 높이로 통일하여 재실행
+tpUp=treemapTwoPass(upItems2,upW,newH2);
+tpDn=treemapTwoPass(dnItems2,dnW,newH2);
+H2=Math.max(tpUp.totalH,tpDn.totalH);
+wrap.style.height=H2+'px';
+allBoxes=tpUp.boxes.concat(tpDn.boxes.map(function(b){return Object.assign({},b,{x:b.x+upW+gap});}));
 }
 allBoxes.forEach(function(b){
 var col=tmColor(b.orig);
