@@ -2338,7 +2338,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
 }
 
-var W=wrap.clientWidth||700, H2=Math.round(W*1.08);
+var W=wrap.clientWidth||700, H2=Math.round(W*0.68); // 가로형: W > H
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
 var mcapMap={};
@@ -2375,6 +2375,63 @@ return'rgb('+r+','+g+','+b2+')';
 return'rgb(255,255,255)';
 }
 }
+// ── rowLayout: 행 기반 트리맵 레이아웃 ──
+// 아이템을 면적 기준으로 여러 행에 나누고,
+// 각 행 내에서는 면적 비례로 너비를 배분
+// → 모든 박스가 가로형이 되어 섹터명+등락률 표시 가능
+function rowLayout(items, W0, H0){
+  var result=[];
+  if(!items.length) return result;
+  var totalA=items.reduce(function(s,d){return s+d.abs;},0);
+  if(totalA<=0) return result;
+
+  // 최적 행 수: 각 행이 최대 정사각형에 가까운 박스를 만드는 행 수
+  // 경험칙: sqrt(N * H/W) 행이 최적 (N=아이템 수)
+  var N=items.length;
+  var numRows=Math.max(1, Math.round(Math.sqrt(N * H0/W0)));
+  numRows=Math.min(numRows, N);
+
+  // 탐욕법으로 행 그루핑:
+  // 각 행의 목표 면적 = totalA / numRows
+  // 아이템을 앞에서부터 넣다가 목표 초과하면 다음 행으로
+  var targetRowA=totalA/numRows;
+  var rows=[];
+  var curRow=[], curA=0;
+  items.forEach(function(d, idx){
+    curRow.push(d); curA+=d.abs;
+    var remaining=items.length-idx-1;
+    var rowsLeft=numRows-rows.length-1;
+    // 현재 행 마감 조건:
+    //   1) 목표 면적 달성 AND 아직 행이 더 필요
+    //   2) 남은 행 수만큼 아이템이 남아있어야 함
+    if(curA>=targetRowA && rowsLeft>0 && remaining>=rowsLeft){
+      rows.push(curRow); curRow=[]; curA=0;
+    }
+  });
+  if(curRow.length) rows.push(curRow);
+
+  // 각 행 배치
+  var yPos=0;
+  rows.forEach(function(row){
+    var rowA=row.reduce(function(s,d){return s+d.abs;},0);
+    var rowFrac=rowA/totalA;
+    var rowH=Math.round(H0*rowFrac);
+    // 마지막 행은 남은 높이 전부
+    if(yPos+rowH>H0) rowH=H0-yPos;
+    if(rowH<=0) return;
+    var xPos=0;
+    row.forEach(function(d, ci){
+      var cellFrac=d.abs/rowA;
+      var cellW=(ci===row.length-1)?(W0-xPos):Math.round(W0*cellFrac);
+      result.push({name:d.name,orig:d.orig,marketCap:d.marketCap||null,
+        x:xPos, y:yPos, w:cellW, h:rowH});
+      xPos+=cellW;
+    });
+    yPos+=rowH;
+  });
+  return result;
+}
+
 function squarify2(items,x0,y0,W0,H0){
 // Finviz 방식 순수 squarify: 면적비 그대로, 2패스 없음
 var result=[];
@@ -2440,7 +2497,7 @@ if(krTreemapMode==='watch'){
   H2=Math.max(H2, Math.round(W*(watchN<=5?0.5:watchN<=10?0.7:0.9)));
   wrap.style.height=H2+'px';
 }
-allBoxes=squarify2(tmItems,0,0,W,H2);
+allBoxes=rowLayout(tmItems,W,H2);
 }else{
 // 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 (기존 방식)
 var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
