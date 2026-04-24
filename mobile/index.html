@@ -64,7 +64,103 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .analytics-center-col{grid-column:1;grid-row:2;grid-template-columns:1fr}
   .analytics-main-col{grid-column:1;grid-row:1}
   .analytics-rank-col-fall{grid-column:1;grid-row:2}
-}@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   모바일 레이아웃 핵심 수정
+   - body의 height:100vh + overflow:hidden 구조를 모바일에서 해제
+   - 전체 페이지가 세로 스크롤되는 일반 레이아웃으로 전환
+   ═══════════════════════════════════════════════════════════════ */
+
+@media(max-width:768px){
+  /* ── 레이아웃 구조 전환 ── */
+  body{
+    height:auto !important;
+    min-height:100vh;
+    overflow:visible !important;
+    overflow-x:hidden;
+  }
+  .layout{
+    overflow:visible !important;
+    flex:none;
+    min-height:calc(100vh - var(--header-h));
+  }
+  .sidebar{ display:none; }
+  .main{
+    padding:12px 10px 80px;
+    overflow:visible !important;
+    flex:none;
+    width:100%;
+  }
+  /* 테이블 스크롤은 개별 컨테이너에서 처리 */
+  .table-scroll{
+    overflow-x:auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    max-height:60vh;
+  }
+}
+
+@media(max-width:480px){
+  /* ── 헤더 ── */
+  :root{ --header-h:48px; }
+  header{ gap:6px; padding:0 10px; }
+  .logo-text{ font-size:12px; letter-spacing:1px; }
+  .logo-sub{ display:none; }
+  .hdr-badge{ display:none !important; }
+  #kr-countdown-badge,#us-countdown-badge{ display:none !important; }
+  #refresh-all-btn span:last-child{ display:none; }
+  #refresh-all-btn{ padding:4px 8px; margin-right:2px; font-size:11px; }
+
+  /* ── 페이지 헤더 ── */
+  .page-header{ margin-bottom:10px; }
+  .page-title{ font-size:16px; }
+  .page-subtitle{ display:none; }
+  .page-badge{ font-size:9px; padding:2px 6px; }
+
+  /* ── 컨트롤 바 ── */
+  .controls-bar{ gap:4px; margin-bottom:8px; flex-wrap:wrap; }
+  .range-btn{ padding:3px 8px; font-size:10px; min-height:32px; }
+  .font-ctrl{ display:none; }
+
+  /* ── stats 카드 ── */
+  .stats-row{ gap:5px; margin-bottom:8px; }
+  .stat-card{ padding:7px 9px; }
+  .stat-val{ font-size:13px; }
+
+  /* ── 섹터 그리드 ── */
+  .sector-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  /* ── 차트 ── */
+  .chart-canvas-wrap{ height:200px; }
+  .chart-body{ padding:6px 8px 10px; }
+
+  /* ── analytics panels 1열 ── */
+  #kr-analytics-panels,
+  #us-analytics-panels{
+    grid-template-columns:1fr !important;
+    gap:8px;
+  }
+  .analytics-rank-col-rise,
+  .analytics-rank-col-fall,
+  .analytics-center-col,
+  .analytics-main-col{
+    grid-column:1 !important;
+    grid-row:auto !important;
+    grid-template-columns:1fr !important;
+  }
+  #kr-chart-wrap,#us-chart-wrap{ height:200px !important; }
+
+  /* ── 모바일 하단 내비 표시 ── */
+  #mobile-nav{ display:flex !important; }
+
+  /* ── 관리자 레이아웃 ── */
+  .admin-mgmt-layout{ grid-template-columns:1fr; }
+}
+
 /* ═══════════════════════════════════════════════════════
    PWA / 모바일 최적화 CSS
    ═══════════════════════════════════════════════════════ */
@@ -76,56 +172,6 @@ gtag('config','G-3PTKMRYZZ3');</script>
 }
 
 /* 모바일 전용 (≤480px) */
-@media(max-width:480px){
-  /* 헤더 */
-  :root{--header-h:48px;}
-  .logo-text{font-size:13px;letter-spacing:1px;}
-  .logo-sub{display:none;}
-  .hdr-badge{display:none!important;}
-  #refresh-all-btn span:last-child{display:none;}
-  #refresh-all-btn{padding:4px 8px;margin-right:4px;}
-  #kr-countdown-badge,#us-countdown-badge{display:none!important;}
-
-  /* 레이아웃 */
-  .main{padding:10px 8px 80px;overflow-y:auto;}
-
-  /* 페이지 헤더 */
-  .page-title{font-size:18px;}
-  .page-subtitle{display:none;}
-  .page-badge{font-size:9px;padding:2px 6px;}
-
-  /* controls bar */
-  .controls-bar{gap:4px;margin-bottom:8px;}
-  .range-btn{padding:3px 7px;font-size:9px;}
-  .font-ctrl{display:none;}
-
-  /* stats 카드 */
-  .stats-row{gap:5px;margin-bottom:8px;}
-  .stat-card{padding:7px 9px;}
-  .stat-val{font-size:13px;}
-
-  /* 히스토리 테이블 */
-  .table-scroll{max-height:calc(100vh - 240px);}
-  table{font-size:7px;}
-
-  /* 섹터 카드 그리드 */
-  .sector-grid{grid-template-columns:1fr;gap:8px;}
-
-  /* 차트 */
-  .chart-canvas-wrap{height:200px;}
-  .chart-body{padding:6px 8px 10px;}
-
-  /* FAB 버튼 (홈버튼과 겹치지 않게) */
-  #fab-group{bottom:16px;right:12px;}
-  #scrollTop{bottom:16px;right:12px;}
-
-  /* 관리자 레이아웃 */
-  .admin-mgmt-layout{grid-template-columns:1fr;}
-
-  /* 모바일 하단 내비 표시 */
-  #mobile-nav{display:flex!important;}
-  .main{padding-bottom:72px;}
-}
 
 /* 모바일 하단 내비게이션 바 */
 #mobile-nav{
@@ -206,43 +252,6 @@ gtag('config','G-3PTKMRYZZ3');</script>
   tr:hover td{filter:none;}  /* hover 효과 제거 (모바일에서 깜빡임 방지) */
 }
 
-/* analytics 통계/차트 영역 모바일 */
-@media(max-width:480px){
-  /* 통계 컨트롤 버튼 가로 스크롤 */
-  #kr-analytics-section > div:first-child,
-  #us-analytics-section > div:first-child{
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    flex-wrap:nowrap;
-  }
-  /* analytics panels: 1열 세로 스택 */
-  #kr-analytics-panels,
-  #us-analytics-panels{
-    grid-template-columns:1fr !important;
-  }
-  .analytics-rank-col-rise,
-  .analytics-rank-col-fall,
-  .analytics-center-col,
-  .analytics-main-col{
-    grid-column:1 !important;
-    grid-row:auto !important;
-    grid-template-columns:1fr !important;
-  }
-  /* 트리맵/차트 높이 모바일 최적화 */
-  #kr-chart-wrap,
-  #us-chart-wrap{
-    height:220px !important;
-  }
-  /* 트리맵 모드 버튼 */
-  #kr-treemap-mode-btns,
-  #us-treemap-mode-btns{
-    gap:4px !important;
-  }
-  .tm-mode-btn{
-    font-size:9px !important;
-    padding:3px 7px !important;
-  }
-}
 
 /* 가로 모드 (landscape) */
 @media(max-width:900px) and (orientation:landscape){
