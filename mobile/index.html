@@ -85,7 +85,11 @@ gtag('config','G-3PTKMRYZZ3');</script>
     flex:none;
     min-height:calc(100vh - var(--header-h));
   }
-  .sidebar{ display:none; }
+  /* 사이드바 완전 숨김 — 하단 내비로 대체 */
+  .sidebar{ display:none !important; }
+  /* 햄버거 버튼 숨김 */
+  #sidebar-toggle-btn{ display:none !important; }
+  #sidebar-pin-btn{ display:none !important; }
   .main{
     padding:12px 10px 80px;
     overflow:visible !important;
@@ -99,6 +103,8 @@ gtag('config','G-3PTKMRYZZ3');</script>
     -webkit-overflow-scrolling:touch;
     max-height:60vh;
   }
+  /* 하단 내비 항상 표시 */
+  #mobile-nav{ display:flex !important; }
 }
 
 @media(max-width:480px){
@@ -4310,6 +4316,8 @@ pinLabel.textContent = '고정';
 }
 }
 window.toggleSidebar = function() {
+  // 모바일에서는 사이드바 대신 하단 내비 사용
+  if(window.matchMedia('(max-width:768px)').matches) return;
 open = !open;
 localStorage.setItem(SIDEBAR_KEY, open);
 applyState(true);
