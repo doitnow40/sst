@@ -3629,10 +3629,10 @@ renderStockList(sec, ADM.selectedSector);
 async function adminPost(action, payload){
 if(!ADM.user) throw new Error('로그인 필요');
 const params=new URLSearchParams({
-type:   'admin',
+type:    'admin',
 action,
-token:  ADM.user.token,
-_t:     Date.now(),
+pw_hash: ADMIN_CONFIG.PW_HASH,
+_t:      Date.now(),
 ...payload
 });
 const r=await fetch(GAS_WEBAPP_URL+'?'+params.toString(),{cache:'no-store'});
