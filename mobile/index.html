@@ -74,37 +74,60 @@ gtag('config','G-3PTKMRYZZ3');</script>
 
 @media(max-width:768px){
   /* ── 레이아웃 구조 전환 ── */
-  body{
-    height:auto !important;
-    min-height:100vh;
-    overflow:visible !important;
+  /* ── 모바일 핵심: fixed 네비가 확실히 뷰포트에 고정되도록 ──
+     html/body 모두 height:100%+overflow:auto로 설정해야
+     안드로이드 크롬에서 position:fixed가 뷰포트 기준으로 동작함 */
+  html{
+    height:100%;
     overflow-x:hidden;
+    overflow-y:auto;
   }
+  body{
+    height:100% !important;
+    min-height:100%;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    display:block !important;
+  }
+  /* 레이아웃을 block으로 전환 (flex 해제) */
   .layout{
+    display:block !important;
     overflow:visible !important;
-    flex:none;
-    min-height:calc(100vh - var(--header-h));
+    min-height:calc(100vh - var(--header-h) - 56px);
+    padding-bottom:56px;
+  }
+  /* 헤더 고정 */
+  header{
+    position:sticky;
+    top:0;
+    z-index:200;
   }
   /* 사이드바 완전 숨김 — 하단 내비로 대체 */
   .sidebar{ display:none !important; }
-  /* 햄버거 버튼 숨김 */
   #sidebar-toggle-btn{ display:none !important; }
   #sidebar-pin-btn{ display:none !important; }
   .main{
-    padding:12px 10px 80px;
-    overflow:visible !important;
-    flex:none;
+    display:block;
+    padding:12px 10px 76px;
     width:100%;
+    overflow:visible;
   }
-  /* 테이블 스크롤은 개별 컨테이너에서 처리 */
+  /* 테이블 스크롤 */
   .table-scroll{
     overflow-x:auto;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
     max-height:60vh;
   }
-  /* 하단 내비 항상 표시 */
-  #mobile-nav{ display:flex !important; }
+  /* 하단 내비: position:fixed — html/body 스크롤 구조 덕에 뷰포트 기준 동작 */
+  #mobile-nav{
+    display:flex !important;
+    position:fixed !important;
+    bottom:0 !important;
+    left:0 !important;
+    right:0 !important;
+    z-index:9000 !important;
+  }
 }
 
 @media(max-width:480px){
@@ -160,8 +183,6 @@ gtag('config','G-3PTKMRYZZ3');</script>
   }
   #kr-chart-wrap,#us-chart-wrap{ height:200px !important; }
 
-  /* ── 모바일 하단 내비 표시 ── */
-  #mobile-nav{ display:flex !important; }
 
   /* ── 관리자 레이아웃 ── */
   .admin-mgmt-layout{ grid-template-columns:1fr; }
