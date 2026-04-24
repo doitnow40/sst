@@ -1,70 +1,26 @@
 {
-  "name": "Stock Sector Tracker",
-  "short_name": "섹터 트래커",
-  "description": "한국·미국 섹터 등락률 트래커 — 실시간 섹터별 주가 흐름을 한눈에",
-  "start_url": "/",
-  "scope": "/",
+  "name": "섹터 트래커",
+  "short_name": "섹터트래커",
+  "description": "한국·미국 섹터 등락률 트래커 PWA",
+  "start_url": "./index.html",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "background_color": "#0f1117",
-  "theme_color": "#161b27",
+  "theme_color": "#0f1117",
   "lang": "ko",
-  "categories": ["finance", "business"],
   "icons": [
     {
-      "src": "icons/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-192.png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23121828'/%3E%3Cpolyline points='20,145 56,108 84,126 120,66 162,36' fill='none' stroke='%234fc3f7' stroke-width='14' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='20,168 56,131 84,149 120,89 162,59' fill='none' stroke='%23ef5350' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23121828'/%3E%3Cpolyline points='50,390 150,290 224,336 320,176 432,96' fill='none' stroke='%234fc3f7' stroke-width='36' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='50,448 150,348 224,394 320,234 432,154' fill='none' stroke='%23ef5350' stroke-width='20' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "🇰🇷 한국 섹터",
-      "short_name": "KR 섹터",
-      "description": "한국 섹터 히스토리 바로가기",
-      "url": "/?view=kr-history",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "🇺🇸 미국 섹터",
-      "short_name": "US 섹터",
-      "description": "미국 섹터 히스토리 바로가기",
-      "url": "/?view=us-history",
-      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/mobile-kr.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "한국 섹터 히스토리"
-    }
-  ]
+  "categories": ["finance", "utilities"]
 }
