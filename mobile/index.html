@@ -406,24 +406,26 @@ button[title]:hover::after{
 th.sector-clickable{cursor:pointer;transition:filter .12s}
 th.sector-clickable:hover{filter:brightness(1.35)}
 th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
-/* ── Adfit 광고 컨테이너 (페이지 하단) ── */
+/* ── Adfit 광고 컨테이너 ── */
 .adfit-wrap{
   width:100%;
   display:flex;
   justify-content:center;
   margin:12px 0 0;
-  padding:0;
+  padding:0 0 12px 0;
   min-height:0;
   overflow:hidden;
+  box-sizing:border-box;
 }
-.adfit-wrap:empty{ display:none !important; margin:0 !important; }
+/* 비어있을 때 공간 없음 */
+.adfit-wrap:empty{
+  display:none !important;
+  margin:0 !important;
+  padding:0 !important;
+}
 .adfit-wrap ins.kakao_ad_area{ display:block; }
-/* 기존 adfit-btm-wrap 초기화 */
-.adfit-btm-wrap{ margin:0; padding:0; }
-/* 사이드바 광고 모바일 숨김 */
-@media(max-width:768px){
-  #sidebar-adfit-wrap{ display:none !important; }
-}
+/* 사이드바 광고 숨김 */
+#sidebar-adfit-wrap{ display:none !important; }
 </style>
 </head>
 <body>
@@ -3535,17 +3537,22 @@ if(usList) renderUsList(listSorted);
 }
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
-// ── 카카오 Adfit: 페이지 하단 컨테이너에 광고 1회 삽입 ──
-var _adfitLoaded = false;
-var _adfitDone   = {};
+// ── 카카오 Adfit: 현재 페이지 하단 컨테이너에만 광고 삽입 ──
+var _ADFIT_PAGES = ['kr-history','kr-list','us-history','us-list','about'];
 
 function reinitAdfit(pageId){
-  if(_adfitDone[pageId]) return;
-  _adfitDone[pageId] = true;
+  // 1. 모든 adfit 컨테이너 비우기 (이전 ins 완전 제거)
+  _ADFIT_PAGES.forEach(function(pid){
+    var w = document.getElementById('adfit-'+pid);
+    if(w) w.innerHTML = '';
+  });
 
+  // 2. 이전에 삽입된 ba.min.js script 태그 모두 제거
+  document.querySelectorAll('script[data-adfit]').forEach(function(s){ s.remove(); });
+
+  // 3. 현재 페이지 컨테이너에 ins 삽입
   var wrap = document.getElementById('adfit-'+pageId);
   if(!wrap) return;
-
   var unit = wrap.getAttribute('data-adunit');
   var w    = wrap.getAttribute('data-adw');
   var h    = wrap.getAttribute('data-adh');
@@ -3558,19 +3565,18 @@ function reinitAdfit(pageId){
   ins.setAttribute('data-ad-height', h);
   wrap.appendChild(ins);
 
-  if(!_adfitLoaded){
-    _adfitLoaded = true;
-    var sc = document.createElement('script');
-    sc.async = true;
-    sc.type  = 'text/javascript';
-    sc.src   = '//t1.daumcdn.net/kas/static/ba.min.js';
-    document.head.appendChild(sc);
-  }
+  // 4. 이 시점 DOM에 ins가 1개뿐 → ba.min.js가 그것만 렌더
+  var sc = document.createElement('script');
+  sc.setAttribute('data-adfit', '1');
+  sc.async = true;
+  sc.type  = 'text/javascript';
+  sc.src   = '//t1.daumcdn.net/kas/static/ba.min.js';
+  document.head.appendChild(sc);
 }
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
-setTimeout(function(){ reinitAdfit(page); }, 200);
+setTimeout(function(){ reinitAdfit(page); }, 150);
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
@@ -3592,8 +3598,7 @@ if(window.innerWidth<=768){
   document.body.scrollTop=0;
   document.documentElement.scrollTop=0;
 } else {
-  var _m=document.querySelector('.main');
-  if(_m) _m.scrollTop=0;
+  var _m=document.querySelector('.main'); if(_m) _m.scrollTop=0;
 }
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
