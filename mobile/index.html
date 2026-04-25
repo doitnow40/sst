@@ -167,39 +167,45 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .chart-canvas-wrap{ height:200px; }
   .chart-body{ padding:6px 8px 10px; }
 
-  /* ── analytics panels: flex column으로 전환, 순서: 트리맵/차트 → 상승+하락 좌우 ── */
+  /* ── analytics panels 모바일: 트리맵 위 전체, 상승(좌)+하락(우) 아래 ── */
   #kr-analytics-panels,
   #us-analytics-panels{
-    display:flex !important;
-    flex-direction:row !important;
-    flex-wrap:wrap !important;
-    gap:8px;
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    grid-template-rows:auto auto !important;
+    gap:8px !important;
+    align-items:start !important;
   }
-  /* 트리맵/차트 섹션 → 전체 너비로 1번째 */
+  /* 차트/트리맵 → 1행 전체 너비 */
   .analytics-center-col{
-    order:1 !important;
-    flex:0 0 100% !important;
-    width:100% !important;
+    grid-column:1 / span 2 !important;
+    grid-row:1 !important;
     display:flex !important;
     flex-direction:column !important;
     gap:8px !important;
+    min-width:0 !important;
   }
   .analytics-main-col{
     display:flex !important;
     flex-direction:column !important;
     gap:8px !important;
-    min-width:0;
-  }
-  /* 상승·하락 랭킹: 동일 order → flex wrap으로 자동 좌우 나란히 배치 */
-  .analytics-rank-col-rise,
-  .analytics-rank-col-fall{
-    order:2 !important;
-    flex:1 1 calc(50% - 4px) !important;
     min-width:0 !important;
   }
-  /* 좁은 칸에 맞게 랭킹 바 내부 요소 크기 축소 */
-  .rank-bar-label{ width:50px !important; font-size:8px !important; }
-  .rank-bar-pct  { width:36px !important; font-size:8px !important; }
+  /* 상승랭킹 → 2행 왼쪽 */
+  .analytics-rank-col-rise{
+    grid-column:1 !important;
+    grid-row:2 !important;
+    min-width:0 !important;
+  }
+  /* 하락랭킹 → 2행 오른쪽 */
+  .analytics-rank-col-fall{
+    grid-column:2 !important;
+    grid-row:2 !important;
+    min-width:0 !important;
+  }
+  /* 랭킹 바 내부: 좁은 칸에 맞게 조정 */
+  .rank-bar-label{ width:52px !important; font-size:8px !important; }
+  .rank-bar-pct  { width:38px !important; font-size:8px !important; }
   .rank-bar-track{ max-width:none !important; }
   .rank-ticks span{ font-size:7px !important; }
   #kr-chart-wrap,#us-chart-wrap{ height:200px !important; }
@@ -587,6 +593,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div style="padding:6px 10px 10px;overflow:auto;max-height:300px"><div id="kr-heatmap-wrap"></div></div>
 </div>
 </div>
+</div>
 <div class="analytics-rank-col-fall">
 <div class="chart-section" style="margin:0" id="kr-fall-panel">
 <div class="chart-header" style="padding:8px 12px 6px"><div class="chart-title" style="font-size:11px">■ 하락 섹터 등락률 랭킹</div></div>
@@ -699,6 +706,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
 </div>
 <div style="padding:6px 10px 10px;overflow:auto;max-height:300px"><div id="us-heatmap-wrap"></div></div>
+</div>
 </div>
 </div>
 <div class="analytics-rank-col-fall">
