@@ -251,7 +251,7 @@ gtag('config','G-3PTKMRYZZ3');</script>
 /* iOS Safe Area 대응 */
 @supports(padding: env(safe-area-inset-top)){
   header{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));}
-  .main{padding-bottom:max(20px,env(safe-area-inset-bottom));}
+  .main{padding-bottom:max(100px,env(safe-area-inset-bottom));}
 }
 
 /* 모바일 전용 (≤480px) */
@@ -356,8 +356,8 @@ button[title]:hover::after{
   display:none; /* JS 통합 툴팁으로 대체 */
 }
 /* ── 섹터 종목 팝업 ── */
-#sector-popup-overlay{position:fixed;inset:0;z-index:3000;pointer-events:none}
-#sector-popup-overlay.active{pointer-events:auto}
+#sector-popup-overlay{position:fixed;inset:0;z-index:3000;pointer-events:none;visibility:hidden}
+#sector-popup-overlay.active{pointer-events:auto;visibility:visible}
 #sector-popup{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
   width:360px;max-height:75vh;
@@ -1234,8 +1234,10 @@ function openSectorPopup(sectorName, isKr) {
   avgEl.textContent = '';
   body.innerHTML = '<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>';
 
+  const overlayEl = document.getElementById('sector-popup-overlay');
   popup.classList.add('open');
   backdrop.classList.add('active');
+  if(overlayEl) overlayEl.classList.add('active');
   document.addEventListener('keydown', _popupEscHandler);
 
   // 종목 데이터 로드
