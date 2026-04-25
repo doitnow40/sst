@@ -106,13 +106,14 @@ gtag('config','G-3PTKMRYZZ3');</script>
      html/body 모두 height:100%+overflow:auto로 설정해야
      안드로이드 크롬에서 position:fixed가 뷰포트 기준으로 동작함 */
   html{
-    height:100%;
+    height:auto;
+    min-height:100dvh;
     overflow-x:hidden;
     overflow-y:auto;
   }
   body{
-    height:100% !important;
-    min-height:100%;
+    height:auto !important;
+    min-height:100dvh;
     overflow-x:hidden !important;
     overflow-y:auto !important;
     display:block !important;
@@ -121,8 +122,8 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .layout{
     display:block !important;
     overflow:visible !important;
-    min-height:calc(100vh - var(--header-h) - 56px);
-    padding-bottom:56px;
+    min-height:0 !important;
+    padding-bottom:0;
   }
   /* 헤더 고정 */
   header{
@@ -405,27 +406,11 @@ button[title]:hover::after{
 th.sector-clickable{cursor:pointer;transition:filter .12s}
 th.sector-clickable:hover{filter:brightness(1.35)}
 th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
-/* ── Adfit 광고 래퍼: 빈 공간 방지 ── */
-.adfit-btm-wrap{
-  margin:12px 0 0;
-  padding:0;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  min-height:0;
-  line-height:0;
-  overflow:hidden;
-}
-/* 래퍼가 비어있을 때 공간 차지 안 함 */
-.adfit-btm-wrap:empty{
-  display:none !important;
-  margin:0 !important;
-  padding:0 !important;
-}
-/* ins 태그 기본 */
-.adfit-btm-wrap ins.kakao_ad_area{
-  display:block;
-}
+/* ── Adfit 광고 래퍼 ── */
+.adfit-btm-wrap{margin:10px 0 0;padding:0;display:flex;justify-content:center;min-height:0;overflow:hidden}
+.adfit-btm-wrap:empty{display:none !important;margin:0 !important}
+/* ins 태그 로드 전 공간 차지 방지 */
+ins.kakao_ad_area{display:block;min-height:0}
 </style>
 </head>
 <body>
@@ -652,7 +637,9 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </div>
 </div>
-<div id="adfit-kr-btm" class="adfit-btm-wrap"></div>
+<div id="adfit-kr-btm" class="adfit-btm-wrap">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="728" data-ad-height="90"></ins>
+</div>
 </div>
 <div id="page-kr-list" style="display:none">
 <div class="page-header">
@@ -675,7 +662,6 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-<div id="adfit-kr-list-btm" class="adfit-btm-wrap"></div>
 
 </div>
 <div id="page-us-history" style="display:none">
@@ -764,7 +750,9 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 </div>
-<div id="adfit-us-btm" class="adfit-btm-wrap"></div>
+<div id="adfit-us-btm" class="adfit-btm-wrap">
+<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-6XDvdRkp0aT4I8BH" data-ad-width="728" data-ad-height="90"></ins>
+</div>
 </div>
 <div id="page-us-list" style="display:none">
 <div class="page-header">
@@ -787,7 +775,6 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
-<div id="adfit-us-list-btm" class="adfit-btm-wrap"></div>
 
 </div>
 <div id="page-about" style="display:none">
@@ -3540,49 +3527,40 @@ if(usList) renderUsList(listSorted);
 }
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
-// ── 카카오 Adfit: SPA 페이지 전환 시 광고 동적 삽입 ──
-// 각 페이지의 adfit 래퍼(빈 div)에 ins 태그를 페이지 표시 후 1회 생성
-var _adfitScriptLoaded = false;
-var _ADFIT_MAP = {
-  'adfit-kr-btm':      ['DAN-URl434E25F4mNMKM','728','90'],
-  'adfit-us-btm':      ['DAN-6XDvdRkp0aT4I8BH','728','90'],
-  'adfit-kr-list-btm': ['DAN-URl434E25F4mNMKM','728','90'],
-  'adfit-us-list-btm': ['DAN-6XDvdRkp0aT4I8BH','728','90']
-};
+// ── 카카오 Adfit: SPA 페이지 전환 시 광고 초기화 ──
+var _adfitDone = false;
 function reinitAdfit(pageId){
   var page=document.getElementById('page-'+pageId);
-  if(!page) return;
-  // 이 페이지의 adfit 래퍼들을 찾아서 ins 삽입
-  Object.keys(_ADFIT_MAP).forEach(function(wrapperId){
-    var wrap=page.querySelector('#'+wrapperId);
-    if(!wrap) return;
-    // 이미 ins가 있으면 스킵
-    if(wrap.querySelector('ins')) return;
-    var cfg=_ADFIT_MAP[wrapperId];
-    var ins=document.createElement('ins');
-    ins.className='kakao_ad_area';
-    ins.setAttribute('data-ad-unit', cfg[0]);
-    ins.setAttribute('data-ad-width', cfg[1]);
-    ins.setAttribute('data-ad-height', cfg[2]);
-    wrap.appendChild(ins);
+  if(!page)return;
+  // 이 페이지의 ins 태그를 새 ins로 교체 (매번 새로 렌더되도록)
+  page.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
+    var fresh=document.createElement('ins');
+    fresh.className='kakao_ad_area';
+    ['data-ad-unit','data-ad-width','data-ad-height'].forEach(function(a){
+      var v=ins.getAttribute(a); if(v) fresh.setAttribute(a,v);
+    });
+    ins.parentNode.replaceChild(fresh,ins);
   });
-  // ba.min.js는 전체에서 딱 1번만 로드
-  if(!_adfitScriptLoaded){
-    _adfitScriptLoaded=true;
+  // ba.min.js: 최초 1회만 head에 추가
+  if(!_adfitDone){
+    _adfitDone=true;
     var sc=document.createElement('script');
-    sc.async=true;
-    sc.type='text/javascript';
+    sc.async=true; sc.type='text/javascript';
     sc.src='//t1.daumcdn.net/kas/static/ba.min.js';
     document.head.appendChild(sc);
+  } else {
+    // 이미 로드된 경우 kakao adfit SDK 재실행 시도
+    if(window.adfit && typeof window.adfit.load==='function'){
+      page.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
+        try{ window.adfit.load(ins); }catch(e){}
+      });
+    }
   }
 }
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
-// 광고는 페이지가 완전히 렌더된 후에 삽입 (빈 공간/위치 오류 방지)
-requestAnimationFrame(function(){
-  setTimeout(function(){reinitAdfit(page);},100);
-});
+setTimeout(function(){ reinitAdfit(page); }, 300);
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
@@ -3599,18 +3577,13 @@ if(!S.usOk) loadUs().then(()=>renderUsList());
 else renderUsList();
 }
 else if(page==='admin')initAdminPage();
-{
-// 모바일(body 스크롤)과 PC(.main 스크롤) 분기 처리
-var _main=document.querySelector('.main');
-var _isMobScroll=(_main && getComputedStyle(_main).overflow==='visible');
-if(_isMobScroll){
-  window.scrollTo(0,0);
-  document.documentElement.scrollTop=0;
-  document.body.scrollTop=0;
-} else if(_main){
-  _main.scrollTo({top:0});
-}
-}
+// 모바일은 window/body 스크롤, PC는 .main 스크롤
+(function(){
+  var m=document.querySelector('.main');
+  var mob=(window.innerWidth<=768);
+  if(mob){ window.scrollTo(0,0); document.body.scrollTop=0; document.documentElement.scrollTop=0; }
+  else if(m){ m.scrollTop=0; }
+})();
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
@@ -4767,10 +4740,10 @@ function mobileGo(view, navId) {
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   const mob = document.getElementById(navId);
   if (mob) mob.classList.add('active');
-  // 모바일: 페이지 전환 시 맨 위로 스크롤
+  // 모바일 스크롤 맨 위로
   window.scrollTo(0,0);
-  document.documentElement.scrollTop=0;
   document.body.scrollTop=0;
+  document.documentElement.scrollTop=0;
 }
 
 // go() 함수 원본을 래핑해서 모바일 내비도 동기화
