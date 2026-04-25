@@ -4644,6 +4644,17 @@ document.addEventListener('click', function(e) {
 // ═══════════════════════════════════════════════════════════════
 
 // ── Service Worker 등록 ────────────────────────────────────────
+// ── 구버전 캐시 강제 삭제 ──
+if ('caches' in window) {
+  caches.keys().then(function(names) {
+    names.forEach(function(name) {
+      if (name.includes('sst-') && !name.includes('-v2')) {
+        caches.delete(name);
+        console.log('[Cache] 구버전 삭제:', name);
+      }
+    });
+  });
+}
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
