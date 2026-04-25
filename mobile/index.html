@@ -137,7 +137,7 @@ gtag('config','G-3PTKMRYZZ3');</script>
   #sidebar-pin-btn{ display:none !important; }
   .main{
     display:block;
-    padding:12px 10px 80px;
+    padding:12px 10px 100px;
     width:100%;
     overflow:visible;
   }
@@ -412,7 +412,7 @@ th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
   display:flex;
   justify-content:center;
   margin:12px 0 0;
-  padding:0 0 12px 0;
+  padding:0;
   min-height:0;
   overflow:hidden;
   box-sizing:border-box;
@@ -1245,8 +1245,10 @@ function openSectorPopup(sectorName, isKr) {
 function closeSectorPopup() {
   const popup    = document.getElementById('sector-popup');
   const backdrop = document.getElementById('sector-popup-backdrop');
+  const overlay  = document.getElementById('sector-popup-overlay');
   popup.classList.remove('open');
   backdrop.classList.remove('active');
+  if(overlay) overlay.classList.remove('active');
   document.removeEventListener('keydown', _popupEscHandler);
 }
 
