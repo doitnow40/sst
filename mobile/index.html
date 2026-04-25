@@ -405,12 +405,11 @@ button[title]:hover::after{
 th.sector-clickable{cursor:pointer;transition:filter .12s}
 th.sector-clickable:hover{filter:brightness(1.35)}
 th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
-/* ── Adfit 광고 빈공간 방지 ── */
-.adfit-btm-wrap{margin:0;padding:0;line-height:0;font-size:0;display:block;min-height:0;overflow:hidden}
-.adfit-btm-wrap:empty{display:none}
-.adfit-btm-wrap ins.kakao_ad_area{display:block !important;margin:0 auto}
-/* 광고 로드 전 ins 태그 자체가 공간 차지하지 않도록 */
-ins.kakao_ad_area:not([data-adfit-inited]){display:none !important;height:0 !important;min-height:0 !important}
+/* ── Adfit 광고: 로드 전 공간 점유 방지 ── */
+ins.kakao_ad_area{display:block;min-height:0;line-height:0}
+.adfit-btm-wrap{margin:8px 0 0;padding:0;display:flex;justify-content:center;min-height:0;line-height:0}
+/* ── 모바일 페이지 전환 시 빈 공간 방지: 각 page div는 최소 높이 없음 ── */
+[id^="page-"]{min-height:0}
 </style>
 </head>
 <body>
@@ -662,6 +661,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
+
 </div>
 <div id="page-us-history" style="display:none">
 <div class="page-header">
@@ -774,6 +774,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
+
 </div>
 <div id="page-about" style="display:none">
 <div class="page-header">
@@ -3525,27 +3526,40 @@ if(usList) renderUsList(listSorted);
 }
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
-// ── 카카오 Adfit: SPA 페이지 전환 시 광고 초기화 (1회만, 중복 방지) ──
+// ── 카카오 Adfit: 페이지 전환 시 광고 초기화 (1회만, 중복 방지) ──
+// ba.min.js는 전체 페이지에서 1번만 로드, 이후 ins 태그만 재생성
+var _adfitScriptLoaded = false;
 function reinitAdfit(pageId){
   var page=document.getElementById('page-'+pageId);
   if(!page)return;
   page.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
-    // 이미 초기화된 광고는 스킵 (중복 로드/빈공간 방지)
-    if(ins.getAttribute('data-adfit-inited')==='1')return;
-    ins.setAttribute('data-adfit-inited','1');
-    // ins 자체 display:none 해제 (Adfit 스크립트가 내부적으로 처리하도록)
-    ins.style.display='';
+    // 이미 초기화된 광고는 스킵
+    if(ins.getAttribute('data-adfit-done')==='1')return;
+    ins.setAttribute('data-adfit-done','1');
+    // ins 자체를 새 ins로 교체 (Adfit이 이미 렌더한 흔적 제거)
+    var fresh=document.createElement('ins');
+    fresh.className='kakao_ad_area';
+    ['data-ad-unit','data-ad-width','data-ad-height'].forEach(function(a){
+      if(ins.getAttribute(a))fresh.setAttribute(a,ins.getAttribute(a));
+    });
+    fresh.setAttribute('data-adfit-done','1');
+    ins.parentNode.replaceChild(fresh,ins);
+  });
+  // ba.min.js 스크립트는 딱 1번만 삽입 (이후에는 이미 로드된 상태)
+  if(!_adfitScriptLoaded){
+    _adfitScriptLoaded=true;
     var sc=document.createElement('script');
+    sc.async=true;
     sc.type='text/javascript';
     sc.src='//t1.daumcdn.net/kas/static/ba.min.js';
-    ins.parentNode.insertBefore(sc,ins.nextSibling);
-  });
+    document.head.appendChild(sc);
+  }
 }
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
-// 광고 초기화는 레이아웃 안정 후 실행 (빈공간/밀림 방지)
-setTimeout(function(){reinitAdfit(page);},100);
+// 광고 초기화: 레이아웃 확정 후 실행
+setTimeout(function(){reinitAdfit(page);},200);
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
@@ -3562,7 +3576,15 @@ if(!S.usOk) loadUs().then(()=>renderUsList());
 else renderUsList();
 }
 else if(page==='admin')initAdminPage();
-document.querySelector('.main').scrollTo({top:0});
+// 모바일(body 스크롤)과 PC(.main 스크롤) 모두 처리
+var mainEl=document.querySelector('.main');
+if(mainEl && mainEl.scrollHeight>mainEl.clientHeight && getComputedStyle(mainEl).overflowY!=='visible'){
+  mainEl.scrollTo({top:0});
+} else {
+  window.scrollTo({top:0});
+  document.documentElement.scrollTop=0;
+  document.body.scrollTop=0;
+}
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
@@ -4719,6 +4741,12 @@ function mobileGo(view, navId) {
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   const mob = document.getElementById(navId);
   if (mob) mob.classList.add('active');
+  // 모바일: body/window 스크롤 맨 위로
+  setTimeout(function(){
+    window.scrollTo({top:0,behavior:'instant'});
+    document.documentElement.scrollTop=0;
+    document.body.scrollTop=0;
+  },0);
 }
 
 // go() 함수 원본을 래핑해서 모바일 내비도 동기화
