@@ -167,16 +167,19 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .chart-canvas-wrap{ height:200px; }
   .chart-body{ padding:6px 8px 10px; }
 
-  /* ── analytics panels: flex column으로 전환, 순서: 트리맵/차트 → 상승 → 하락 ── */
+  /* ── analytics panels: flex column으로 전환, 순서: 트리맵/차트 → 상승+하락 좌우 ── */
   #kr-analytics-panels,
   #us-analytics-panels{
     display:flex !important;
-    flex-direction:column !important;
+    flex-direction:row !important;
+    flex-wrap:wrap !important;
     gap:8px;
   }
-  /* 트리맵/차트 섹션 → 1번째 */
+  /* 트리맵/차트 섹션 → 전체 너비로 1번째 */
   .analytics-center-col{
     order:1 !important;
+    flex:0 0 100% !important;
+    width:100% !important;
     display:flex !important;
     flex-direction:column !important;
     gap:8px !important;
@@ -187,10 +190,18 @@ gtag('config','G-3PTKMRYZZ3');</script>
     gap:8px !important;
     min-width:0;
   }
-  /* 상승랭킹 → 2번째 */
-  .analytics-rank-col-rise{ order:2 !important; }
-  /* 하락랭킹 → 3번째 */
-  .analytics-rank-col-fall{ order:3 !important; }
+  /* 상승·하락 랭킹: 동일 order → flex wrap으로 자동 좌우 나란히 배치 */
+  .analytics-rank-col-rise,
+  .analytics-rank-col-fall{
+    order:2 !important;
+    flex:1 1 calc(50% - 4px) !important;
+    min-width:0 !important;
+  }
+  /* 좁은 칸에 맞게 랭킹 바 내부 요소 크기 축소 */
+  .rank-bar-label{ width:50px !important; font-size:8px !important; }
+  .rank-bar-pct  { width:36px !important; font-size:8px !important; }
+  .rank-bar-track{ max-width:none !important; }
+  .rank-ticks span{ font-size:7px !important; }
   #kr-chart-wrap,#us-chart-wrap{ height:200px !important; }
 
 
