@@ -1,6 +1,7 @@
 // sw.js — Stock Sector Tracker PWA Service Worker
-const CACHE_NAME = 'sector-tracker-v1';
-const DATA_CACHE  = 'sector-data-v1';
+const CACHE_NAME   = 'sst-kr-v2';
+const STATIC_CACHE = 'sst-static-v2';
+const API_CACHE    = 'sst-api-v2';
 
 // 앱 셸 파일 (오프라인에서도 로드 가능)
 const SHELL_URLS = [
