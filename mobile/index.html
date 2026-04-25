@@ -167,19 +167,25 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .chart-canvas-wrap{ height:200px; }
   .chart-body{ padding:6px 8px 10px; }
 
-  /* ── analytics panels 1열 ── */
+  /* ── analytics panels 1열, 순서: 트리맵/차트 → 상승랭킹 → 하락랭킹 ── */
   #kr-analytics-panels,
   #us-analytics-panels{
     grid-template-columns:1fr !important;
     gap:8px;
   }
-  .analytics-rank-col-rise,
-  .analytics-rank-col-fall,
   .analytics-center-col,
   .analytics-main-col{
     grid-column:1 !important;
-    grid-row:auto !important;
+    grid-row:1 !important;
     grid-template-columns:1fr !important;
+  }
+  .analytics-rank-col-rise{
+    grid-column:1 !important;
+    grid-row:2 !important;
+  }
+  .analytics-rank-col-fall{
+    grid-column:1 !important;
+    grid-row:3 !important;
   }
   #kr-chart-wrap,#us-chart-wrap{ height:200px !important; }
 
@@ -1798,13 +1804,22 @@ const CHART_COLORS=[
 '#26a69a','#ffca28','#8d6e63','#78909c','#d4e157',
 '#42a5f5','#ff5252','#69f0ae','#ffab40','#ea80fc',
 ];
+// 모바일 여부 감지 헬퍼 (480px 기준)
+function _isMobile(){ return window.innerWidth<=480; }
 const CHART_OPTS_BASE={
 responsive:true,maintainAspectRatio:false,
 interaction:{mode:'index',intersect:false},
 plugins:{
 legend:{display:true,position:'bottom',
 labels:{color:'#8a9ab5',font:{size:10,family:"'JetBrains Mono',monospace"},
-boxWidth:12,boxHeight:2,padding:8,usePointStyle:true,pointStyle:'line'},
+boxWidth:12,boxHeight:2,padding:8,usePointStyle:true,pointStyle:'line',
+// 모바일: hidden 데이터셋(Top5 이외)은 범례에서 제외 → 범례가 납작해지지 않음
+filter(item, chartData){
+if(!_isMobile()) return true;
+// datasets[index].hidden 이 true면 범례 미표시
+return chartData.datasets[item.datasetIndex] && !chartData.datasets[item.datasetIndex].hidden;
+}
+},
 onClick(e,item,legend){
 const meta=legend.chart.getDatasetMeta(item.datasetIndex);
 meta.hidden=!meta.hidden; legend.chart.update();
@@ -2486,6 +2501,9 @@ hidden:!top5.has(name)};
 });
 const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
 usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+// JSON 딥카피로 소실된 함수 복원
+usOpts.plugins.legend.labels.filter=function(item,chartData){if(!_isMobile())return true;return chartData.datasets[item.datasetIndex]&&!chartData.datasets[item.datasetIndex].hidden;};
+usOpts.plugins.legend.onClick=CHART_OPTS_BASE.plugins.legend.onClick;
 usOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
 usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
 usChartAllOn=true;
@@ -2958,6 +2976,8 @@ var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
 var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
 var opts=JSON.parse(JSON.stringify(CHART_OPTS_BASE)); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+opts.plugins.legend.labels.filter=function(item,chartData){if(!_isMobile())return true;return chartData.datasets[item.datasetIndex]&&!chartData.datasets[item.datasetIndex].hidden;};
+opts.plugins.legend.onClick=CHART_OPTS_BASE.plugins.legend.onClick;
 usChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
 }
 function _renderUsHeatmap(cr,H,ah,today){
