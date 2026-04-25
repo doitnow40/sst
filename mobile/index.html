@@ -137,7 +137,7 @@ gtag('config','G-3PTKMRYZZ3');</script>
   #sidebar-pin-btn{ display:none !important; }
   .main{
     display:block;
-    padding:12px 10px 76px;
+    padding:12px 10px 80px;
     width:100%;
     overflow:visible;
   }
@@ -406,33 +406,23 @@ button[title]:hover::after{
 th.sector-clickable{cursor:pointer;transition:filter .12s}
 th.sector-clickable:hover{filter:brightness(1.35)}
 th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
-/* ── Adfit 광고 컨테이너 (페이지 상단) ── */
-.adfit-top-wrap{
+/* ── Adfit 광고 컨테이너 (페이지 하단) ── */
+.adfit-wrap{
   width:100%;
   display:flex;
   justify-content:center;
-  align-items:flex-start;
-  margin:0 0 12px 0;
+  margin:12px 0 0;
   padding:0;
   min-height:0;
   overflow:hidden;
 }
-/* 광고 없을 때(ins 미삽입) 공간 차지 안 함 */
-.adfit-top-wrap:empty{
-  display:none !important;
-  margin:0 !important;
-}
-.adfit-top-wrap ins.kakao_ad_area{
-  display:block;
-}
-/* 모바일: .main 하단 여백 — 하단 네비바(56px)가 콘텐츠/광고 가리지 않도록 */
+.adfit-wrap:empty{ display:none !important; margin:0 !important; }
+.adfit-wrap ins.kakao_ad_area{ display:block; }
+/* 기존 adfit-btm-wrap 초기화 */
+.adfit-btm-wrap{ margin:0; padding:0; }
+/* 사이드바 광고 모바일 숨김 */
 @media(max-width:768px){
-  .main{
-    padding-bottom:72px !important;
-  }
-  #sidebar-adfit-wrap{
-    display:none !important;
-  }
+  #sidebar-adfit-wrap{ display:none !important; }
 }
 </style>
 </head>
@@ -577,7 +567,6 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
 </div>
-<div id="adfit-kr-history" class="adfit-top-wrap" data-adunit="DAN-URl434E25F4mNMKM" data-adwidth="320" data-adheight="100"></div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
 <button onclick="refreshKrToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 10분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
@@ -659,7 +648,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </div>
 </div>
-
+<div id="adfit-kr-history" class="adfit-wrap" data-adunit="DAN-URl434E25F4mNMKM" data-adw="320" data-adh="100"></div>
 </div>
 <div id="page-kr-list" style="display:none">
 <div class="page-header">
@@ -667,7 +656,6 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
 <div class="page-badge badge-kr">KR STOCKS</div>
 </div>
-<div id="adfit-kr-list" class="adfit-top-wrap" data-adunit="DAN-1c2FIgCcmjN3PLlk" data-adwidth="320" data-adheight="100"></div>
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:10px;color:#ffb74d;font-family:var(--font-mono)">
 <span id="kr-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
 <div style="display:flex;gap:5px;margin-left:auto">
@@ -683,7 +671,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-
+<div id="adfit-kr-list" class="adfit-wrap" data-adunit="DAN-1c2FIgCcmjN3PLlk" data-adw="320" data-adh="100"></div>
 </div>
 <div id="page-us-history" style="display:none">
 <div class="page-header">
@@ -694,7 +682,6 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div class="page-badge badge-us" id="us-status">로딩 중...</div>
 </div>
-<div id="adfit-us-history" class="adfit-top-wrap" data-adunit="DAN-6XDvdRkp0aT4I8BH" data-adwidth="320" data-adheight="100"></div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">10분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
 <button onclick="refreshUsToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 10분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
@@ -772,7 +759,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 </div>
-
+<div id="adfit-us-history" class="adfit-wrap" data-adunit="DAN-6XDvdRkp0aT4I8BH" data-adw="320" data-adh="100"></div>
 </div>
 <div id="page-us-list" style="display:none">
 <div class="page-header">
@@ -780,7 +767,6 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div><div class="page-title">미국 섹터 종목 LIST</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">10분마다 자동 갱신</span></div></div>
 <div class="page-badge badge-us">US ETF</div>
 </div>
-<div id="adfit-us-list" class="adfit-top-wrap" data-adunit="DAN-VqRpN1P5eQcLkXwz" data-adwidth="320" data-adheight="100"></div>
 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:10px;color:#ef9a9a;font-family:var(--font-mono)">
 <span id="us-list-mode-label">● 오늘 실시간 (약 20분 지연 · 10분 자동갱신)</span>
 <div style="display:flex;gap:5px;margin-left:auto">
@@ -796,14 +782,13 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 </div>
 </div>
 <div id="us-list"></div>
-
+<div id="adfit-us-list" class="adfit-wrap" data-adunit="DAN-VqRpN1P5eQcLkXwz" data-adw="320" data-adh="100"></div>
 </div>
 <div id="page-about" style="display:none">
 <div class="page-header">
 <div class="page-flag">ℹ️</div>
 <div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">Stock Sector Tracker 소개 및 이용 안내 · <span style="color:#80cbc4">오늘 실시간 등락률: 10분마다 자동 갱신</span></div></div>
 </div>
-<div id="adfit-about" class="adfit-top-wrap" data-adunit="DAN-URl434E25F4mNMKM" data-adwidth="320" data-adheight="100"></div>
 <div class="about-section">
 <div class="about-section-title">📌 서비스 소개</div>
 <div class="about-section-body">
@@ -887,6 +872,7 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다.
 투자 결정에 따른 모든 손익은 투자자 본인에게 귀속되며, 본 서비스는 이에 대한 어떠한 책임도 지지 않습니다.
 </div>
 </div>
+<div id="adfit-about" class="adfit-wrap" data-adunit="DAN-URl434E25F4mNMKM" data-adw="320" data-adh="100"></div>
 <div id="page-admin" style="display:none">
 <div class="page-header">
 <div class="page-flag">⚙️</div>
@@ -3549,24 +3535,20 @@ if(usList) renderUsList(listSorted);
 }
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
-// ── 카카오 Adfit: 페이지 상단에 광고 1회 삽입 ──
-var _adfitScriptLoaded = false;
-var _adfitInited = {};
+// ── 카카오 Adfit: 페이지 하단 컨테이너에 광고 1회 삽입 ──
+var _adfitLoaded = false;
+var _adfitDone   = {};
 
 function reinitAdfit(pageId){
-  // 이미 초기화한 페이지는 스킵
-  if(_adfitInited[pageId]) return;
-  _adfitInited[pageId] = true;
+  if(_adfitDone[pageId]) return;
+  _adfitDone[pageId] = true;
 
   var wrap = document.getElementById('adfit-'+pageId);
   if(!wrap) return;
 
-  // 컨테이너가 비어있을 때만 ins 삽입
-  if(wrap.querySelector('ins')) return;
-
-  var unit  = wrap.getAttribute('data-adunit');
-  var w     = wrap.getAttribute('data-adwidth');
-  var h     = wrap.getAttribute('data-adheight');
+  var unit = wrap.getAttribute('data-adunit');
+  var w    = wrap.getAttribute('data-adw');
+  var h    = wrap.getAttribute('data-adh');
   if(!unit) return;
 
   var ins = document.createElement('ins');
@@ -3576,9 +3558,8 @@ function reinitAdfit(pageId){
   ins.setAttribute('data-ad-height', h);
   wrap.appendChild(ins);
 
-  // ba.min.js 전체에서 딱 1번만 로드
-  if(!_adfitScriptLoaded){
-    _adfitScriptLoaded = true;
+  if(!_adfitLoaded){
+    _adfitLoaded = true;
     var sc = document.createElement('script');
     sc.async = true;
     sc.type  = 'text/javascript';
@@ -3589,7 +3570,6 @@ function reinitAdfit(pageId){
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
-// 페이지 렌더 완료 후 광고 삽입 (레이아웃 안정화)
 setTimeout(function(){ reinitAdfit(page); }, 200);
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
@@ -3607,7 +3587,6 @@ if(!S.usOk) loadUs().then(()=>renderUsList());
 else renderUsList();
 }
 else if(page==='admin')initAdminPage();
-// 모바일(body스크롤) / PC(.main스크롤) 분기
 if(window.innerWidth<=768){
   window.scrollTo(0,0);
   document.body.scrollTop=0;
@@ -4770,7 +4749,6 @@ function mobileGo(view, navId) {
   document.querySelectorAll('.mob-nav-item').forEach(el => el.classList.remove('active'));
   const mob = document.getElementById(navId);
   if (mob) mob.classList.add('active');
-  // 맨 위로 스크롤
   window.scrollTo(0,0);
   document.body.scrollTop=0;
   document.documentElement.scrollTop=0;
