@@ -3,9 +3,9 @@
 //  캐시 전략: 정적 자산은 Cache First, GAS API는 Network First
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME   = 'sst-kr-v2';
-const STATIC_CACHE = 'sst-static-v2';
-const API_CACHE    = 'sst-api-v2';
+const CACHE_NAME   = 'sst-kr-v5';
+const STATIC_CACHE = 'sst-static-v5';
+const API_CACHE    = 'sst-api-v5';
 
 // 설치 시 사전 캐시할 정적 자산
 const PRECACHE_URLS = [
