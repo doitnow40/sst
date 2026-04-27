@@ -67,6 +67,29 @@ gtag('config','G-3PTKMRYZZ3');</script>
 button[title]:hover::after{
   display:none; /* JS 통합 툴팁으로 대체 */
 }
+/* ── FnG 전용 팝업 ── */
+#fng-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+  width:320px;max-height:82vh;overflow-y:auto;
+  background:var(--bg-card);border:1px solid #4A235A44;
+  border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.75);
+  display:flex;flex-direction:column;
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:3002;
+}
+#fng-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+#fng-popup::-webkit-scrollbar{width:4px}
+#fng-popup::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
+#fng-popup-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;border-bottom:1px solid var(--border-light);
+  background:linear-gradient(90deg,#2a1a35,#1a1a2e);flex-shrink:0;border-radius:14px 14px 0 0;
+}
+#fng-popup-title{font-size:13px;font-weight:700;color:#E8DAEF;flex:1}
+#fng-popup-close{
+  background:none;border:none;color:var(--text-muted);font-size:14px;
+  cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .15s,color .15s;
+}
+#fng-popup-close:hover{background:rgba(239,83,80,.3);color:#ef5350}
 /* ── 섹터 종목 팝업 ── */
 #sector-popup-overlay{position:fixed;inset:0;z-index:3000;pointer-events:none}
 #sector-popup-overlay.active{pointer-events:auto}
@@ -860,6 +883,7 @@ const KR_FIXED = {
 '코스닥':{type:'GF',  bg:'#FFE082',fg:'#000000'},
 'ADR피': {type:'ADR', bg:'#E8F5E9',fg:'#1B5E20'},
 'ADR닥': {type:'ADR', bg:'#E3F2FD',fg:'#0D47A1'},
+'FnG':   {type:'FNG', bg:'#E8DAEF',fg:'#4A235A'},
 };
 const KR_SEC_COLORS=[
 {bg:'#DAE3F3',fg:'#1A237E'},{bg:'#E2EFDA',fg:'#1B5E20'},{bg:'#FCE4D6',fg:'#BF360C'},
@@ -883,6 +907,9 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 //  섹터 종목 팝업
 // ══════════════════════════════════════════════════
 function openSectorPopup(sectorName, isKr) {
+  // FnG 컬럼은 전용 팝업으로 분기
+  if (sectorName === 'FnG') { openFnGPopup(); return; }
+
   const popup    = document.getElementById('sector-popup');
   const backdrop = document.getElementById('sector-popup-backdrop');
   const title    = document.getElementById('sector-popup-title');
@@ -909,6 +936,168 @@ function closeSectorPopup() {
   popup.classList.remove('open');
   backdrop.classList.remove('active');
   document.removeEventListener('keydown', _popupEscHandler);
+}
+
+// ══════════════════════════════════════════════════
+//  공포탐욕지수 (FnG) 전용 팝업
+// ══════════════════════════════════════════════════
+function openFnGPopup() {
+  // 오늘 FnG 값: krToday.sectors['FnG'] 에서 읽기
+  const todayScore = (S.krToday && S.krToday.sectors && S.krToday.sectors['FnG'] !== undefined)
+    ? parseFloat(S.krToday.sectors['FnG']) : null;
+
+  // 최근 히스토리: krD.rows 에서 FnG 열 추출
+  let history = [];
+  if (S.krD && S.krD.headers && S.krD.rows) {
+    const fngIdx = S.krD.headers.indexOf('FnG');
+    if (fngIdx >= 0) {
+      history = S.krD.rows.slice(0, 30)
+        .map(r => ({ date: r[0], score: parseFloat(r[fngIdx]) }))
+        .filter(r => !isNaN(r.score));
+    }
+  }
+
+  const popup    = document.getElementById('fng-popup');
+  const backdrop = document.getElementById('sector-popup-backdrop');
+  if (!popup) return;
+
+  // 게이지 렌더
+  _renderFnGPopup(todayScore, history);
+  popup.classList.add('open');
+  backdrop.classList.add('active');
+  document.addEventListener('keydown', _fngEscHandler);
+}
+
+function closeFnGPopup() {
+  const popup    = document.getElementById('fng-popup');
+  const backdrop = document.getElementById('sector-popup-backdrop');
+  if (popup) popup.classList.remove('open');
+  backdrop.classList.remove('active');
+  document.removeEventListener('keydown', _fngEscHandler);
+}
+
+function _fngEscHandler(e) { if (e.key === 'Escape') closeFnGPopup(); }
+
+function _fngLabel(score) {
+  if (score === null || isNaN(score)) return { label:'--', color:'#8a9ab5' };
+  if (score <= 24)  return { label:'극단적 공포', color:'#1565C0' };
+  if (score <= 44)  return { label:'공포',        color:'#42a5f5' };
+  if (score <= 54)  return { label:'중립',         color:'#8a9ab5' };
+  if (score <= 74)  return { label:'탐욕',         color:'#ef5350' };
+  return              { label:'극단적 탐욕',       color:'#b71c1c' };
+}
+
+function _fngGaugeColor(score) {
+  if (score === null || isNaN(score)) return '#8a9ab5';
+  if (score <= 24)  return '#1565C0';
+  if (score <= 44)  return '#42a5f5';
+  if (score <= 54)  return '#78909C';
+  if (score <= 74)  return '#ef5350';
+  return '#b71c1c';
+}
+
+function _renderFnGPopup(score, history) {
+  const info  = _fngLabel(score);
+  const color = _fngGaugeColor(score);
+  const deg   = score !== null ? Math.round(score * 1.8) : 0; // 0~100 → 0~180deg
+
+  // 게이지 SVG
+  const gaugeHtml = `
+  <div style="text-align:center;padding:18px 0 10px">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px">KOSPI · KOSDAQ</div>
+    <div style="position:relative;width:160px;height:82px;margin:0 auto">
+      <svg viewBox="0 0 160 82" width="160" height="82" style="overflow:visible">
+        <!-- 배경 반원 -->
+        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="#1e2535" stroke-width="14" stroke-linecap="round"/>
+        <!-- 색상 그라데이션 트랙 (공포→탐욕) -->
+        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="url(#fngGrad)" stroke-width="14" stroke-linecap="round" opacity="0.25"/>
+        <!-- 진행 호 -->
+        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="${deg * 2.13} 999" opacity="0.85"/>
+        <!-- 바늘 -->
+        <g transform="translate(80,80) rotate(${deg - 90})">
+          <line x1="0" y1="0" x2="0" y2="-56" stroke="${color}" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+          <circle cx="0" cy="0" r="5" fill="${color}" opacity="0.9"/>
+        </g>
+        <!-- 눈금 라벨 -->
+        <text x="6"   y="78" font-size="8" fill="#42a5f5" text-anchor="middle">0</text>
+        <text x="40"  y="24" font-size="8" fill="#8a9ab5" text-anchor="middle">25</text>
+        <text x="80"  y="10" font-size="8" fill="#8a9ab5" text-anchor="middle">50</text>
+        <text x="120" y="24" font-size="8" fill="#8a9ab5" text-anchor="middle">75</text>
+        <text x="154" y="78" font-size="8" fill="#ef5350" text-anchor="end">100</text>
+        <defs>
+          <linearGradient id="fngGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#1565C0"/>
+            <stop offset="50%"  stop-color="#78909C"/>
+            <stop offset="100%" stop-color="#b71c1c"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <!-- 중앙 점수 -->
+      <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center">
+        <div style="font-size:30px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
+          ${score !== null ? Math.round(score) : '--'}
+        </div>
+        <div style="font-size:11px;font-weight:600;color:${color};margin-top:2px">${info.label}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // 구간 기준표
+  const rangeHtml = `
+  <div style="padding:0 14px 10px">
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 구간 기준 —</div>
+    ${[
+      { range:'0 ~ 20',   label:'극단적 공포', color:'#1565C0', dot:'#1565C0' },
+      { range:'20 ~ 40',  label:'공포',         color:'#42a5f5', dot:'#42a5f5' },
+      { range:'40 ~ 60',  label:'중립',          color:'#78909C', dot:'#78909C' },
+      { range:'60 ~ 80',  label:'탐욕',          color:'#ef5350', dot:'#ef5350' },
+      { range:'80 ~ 100', label:'극단적 탐욕',  color:'#b71c1c', dot:'#b71c1c' },
+    ].map(r => {
+      const isActive = score !== null && (
+        (r.range==='0 ~ 20'   && score<=20) ||
+        (r.range==='20 ~ 40'  && score>20 && score<=40) ||
+        (r.range==='40 ~ 60'  && score>40 && score<=60) ||
+        (r.range==='60 ~ 80'  && score>60 && score<=80) ||
+        (r.range==='80 ~ 100' && score>80)
+      );
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;
+        ${isActive ? 'background:rgba(255,255,255,0.06);border:1px solid '+r.dot+'44;' : 'border:1px solid transparent'}">
+        <span style="width:9px;height:9px;border-radius:50%;background:${r.dot};flex-shrink:0;
+          ${isActive ? 'box-shadow:0 0 6px '+r.dot : ''}"></span>
+        <span style="font-size:10px;color:${isActive ? r.color : 'var(--text-muted)'};
+          font-weight:${isActive ? '700' : '400'}">
+          ${r.range} <span style="color:var(--text-secondary)">(${r.label})</span>
+        </span>
+        ${isActive ? '<span style="margin-left:auto;font-size:9px;color:'+r.color+';font-weight:700">◀ 현재</span>' : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  // 최근 히스토리 (최대 7일)
+  let histHtml = '';
+  if (history.length > 0) {
+    const recent = history.slice(0, 7).reverse(); // 오래된 순
+    histHtml = `
+    <div style="padding:0 14px 14px">
+      <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 최근 추이 —</div>
+      ${recent.map(r => {
+        const c = _fngGaugeColor(r.score);
+        const lbl = _fngLabel(r.score);
+        const barW = Math.round(r.score);
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.2)">
+          <span style="font-size:9px;color:var(--text-muted);width:72px;flex-shrink:0">${r.date}</span>
+          <div style="flex:1;height:10px;background:#1e2535;border-radius:4px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${c};border-radius:4px;opacity:.8"></div>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:${c};width:24px;text-align:right">${Math.round(r.score)}</span>
+          <span style="font-size:9px;color:${c};width:52px">${lbl.label}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml;
 }
 
 function _popupEscHandler(e) {
@@ -4227,7 +4416,19 @@ tooltip.style.top=Math.round(y-h)+'px';
 </script>
 
 <!-- 섹터 종목 팝업 -->
-<div id="sector-popup-backdrop" onclick="closeSectorPopup()"></div>
+<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
+
+<!-- FnG 전용 팝업 -->
+<div id="fng-popup">
+  <div id="fng-popup-header">
+    <span style="font-size:16px">😱🤑</span>
+    <span id="fng-popup-title">공포탐욕지수 (FnG)</span>
+    <button id="fng-popup-close" onclick="closeFnGPopup()" title="닫기">✕</button>
+  </div>
+  <div id="fng-popup-body" style="flex:1"></div>
+</div>
+
+<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
 <div id="sector-popup-overlay">
   <div id="sector-popup">
     <div id="sector-popup-header">
