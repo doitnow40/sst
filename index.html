@@ -1285,6 +1285,21 @@ else if(dev<0){const t=Math.abs(dev)/R,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t
 else{const t=dev/R,c1=t<.5?W:MR,c2=t<.5?MR:DR,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
 return{bg:hex(bg[0],bg[1],bg[2]),fg:(dev<=-7||dev>=7)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:Math.abs(dev)>=5,t:n.toFixed(2)};
 }
+function fngCell(v){
+// FnG: 0~100 점수 → 구간별 색상
+// 0-20 극공포: 어두운파랑, 20-40 공포: 하늘색, 40-60 중립: 흰색
+// 60-80 탐욕: 밝은빨강, 80-100 극탐욕: 어두운빨강
+const n=parseFloat(v);
+if(isNaN(n)||v===null||v===undefined||v==='')return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
+let bg,fg,b=false;
+if(n<=20){bg='#1565C0';fg='#FFFFFF';b=true;}           // 극공포: 어두운 파랑
+else if(n<=40){bg='#90CAF9';fg='#003060';b=false;}     // 공포: 하늘색
+else if(n<=60){bg='#F5F5F5';fg='#546E7A';b=false;}     // 중립: 흰색
+else if(n<=80){bg='#EF9A9A';fg='#7B0000';b=false;}     // 탐욕: 밝은 빨강
+else{bg='#B71C1C';fg='#FFFFFF';b=true;}                // 극탐욕: 어두운 빨강
+return{bg,fg,b,t:Math.round(n).toString()};
+}
+
 function yldCell(v){
 const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
 const dev=n-4.0;let bg;
@@ -1384,7 +1399,7 @@ if(filtered.length>=5){
 const vs=filtered.slice(0,5).map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
 if(vs.length){
 const a=vs.reduce((x,y)=>x+y,0)/vs.length;
-const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):pctCell(a,15));
+const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='FnG'?fngCell(a):pctCell(a,15)));
 h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(mode==='us'&&US_META[name]?.type==='YIELD'?3:2)}</td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}"></td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}"></td>`;
@@ -1398,7 +1413,7 @@ sectorHdrs.forEach((name,ci)=>{
 const val=avg20Data[ci+1];
 if(val!==null&&val!==undefined&&!isNaN(parseFloat(val))){
 const a=parseFloat(val);
-const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):pctCell(a,15));
+const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='FnG'?fngCell(a):pctCell(a,15)));
 h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(2)}</td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}"></td>`;
 });
@@ -1582,8 +1597,9 @@ const isW=WATCHED_SECTORS.has(name);
 const isFixed=!!KR_FIXED[name];
 const _isBdr=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_si));
 const _bdr=_isBdr?"border-left:3px solid #000;":"";
-const clickAttr=isFixed?'':` onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)" class="sector-clickable ${isW?'watched-col':''}"`;
-t+=`<th${isFixed?` class="${isW?'watched-col':''}"`:''} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}"${isFixed?'':` onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)" title="${name} 종목 보기"`} class="${isW?'watched-col':''} ${isFixed?'':'sector-clickable'}">${isW?'⭐ ':''}${name}</th>`;
+const isFnG=(name==='FnG');
+const clickAttr=(isFixed&&!isFnG)?'':` onclick="${isFnG?'openFnGPopup()':`openSectorPopup('${name.replace(/'/g,"\\'")}',true)`}" class="sector-clickable ${isW?'watched-col':''}"` ;
+t+=`<th${(isFixed&&!isFnG)?` class="${isW?'watched-col':''}"`:''} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}"${(isFixed&&!isFnG)?'':\` onclick="${isFnG?'openFnGPopup()':`openSectorPopup('${name.replace(/'/g,"\\'")}',true)`}" title="${isFnG?'공포탐욕지수 보기':`${name} 종목 보기`}"\`} class="${isW?'watched-col':''} ${(isFixed&&!isFnG)?'':`sector-clickable`}">${isW?'⭐ ':''}<span style="${isFnG?'font-size:10px;cursor:pointer;':''}"> ${name}</span></th>`;
 });
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
@@ -1619,7 +1635,7 @@ const val=(majorMap[name]!==undefined&&majorMap[name]!==null)?majorMap[name]:
           (todayMap[name]!==undefined&&todayMap[name]!==null)?todayMap[name]:undefined;
 if(val===undefined||val===null||isNaN(parseFloat(val))){const _bTmp=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT))?"border-left:3px solid #000;":"";t+=`<td style="${_bTmp}color:var(--text-muted)">-</td>`;return;}
 const numVal=parseFloat(val);
-const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):pctCell(numVal,15);
+const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):(name==='FnG'?fngCell(numVal):pctCell(numVal,15));
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrT=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT));
 const _bdrT=_isBdrT?"border-left:3px solid #000;":"";
@@ -1650,6 +1666,7 @@ sectorHdrs.forEach((name,ci)=>{
 const val=row[ci+1];
 let c;
 if(KR_FIXED[name]?.type==='ADR') c=adrCell(val);
+else if(name==='FnG') c=fngCell(val);
 else c=pctCell(val,15);
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
