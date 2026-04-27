@@ -1022,44 +1022,45 @@ function _renderFnGPopup(score, history) {
   const nEy   = +(100 - NEEDLE_R * Math.sin(nRad)).toFixed(2);
 
   // 게이지 SVG
+  // M16,100 A84,84 0 large,0(반시계) → 상단 반원을 왼→오 방향으로 그림
   const gaugeHtml = `
   <div style="text-align:center;padding:24px 0 10px">
     <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">KOSPI · KOSDAQ</div>
-    <div style="position:relative;width:200px;height:110px;margin:0 auto">
-      <svg viewBox="0 0 200 105" width="200" height="105" style="overflow:visible">
+    <div style="position:relative;width:200px;height:116px;margin:0 auto">
+      <svg viewBox="0 0 200 108" width="200" height="108" style="overflow:visible">
         <defs>
           <linearGradient id="fngGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"    stop-color="#1565C0"/>
-            <stop offset="25%"   stop-color="#42a5f5"/>
-            <stop offset="50%"   stop-color="#90A4AE"/>
-            <stop offset="75%"   stop-color="#EF9A9A"/>
-            <stop offset="100%"  stop-color="#B71C1C"/>
+            <stop offset="0%"   stop-color="#1565C0"/>
+            <stop offset="25%"  stop-color="#42a5f5"/>
+            <stop offset="50%"  stop-color="#90A4AE"/>
+            <stop offset="75%"  stop-color="#EF9A9A"/>
+            <stop offset="100%" stop-color="#B71C1C"/>
           </linearGradient>
         </defs>
-        <!-- 배경 반원 (어두운 트랙) -->
-        <path d="M16,100 A84,84 0 0,1 184,100"
-              fill="none" stroke="#1e2535" stroke-width="16" stroke-linecap="round"/>
-        <!-- 그라데이션 트랙 (흐리게) -->
-        <path d="M16,100 A84,84 0 0,1 184,100"
-              fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="round" opacity="0.3"/>
-        <!-- 진행 호: M(시작) A(반지름) large-arc sweep (끝점) — 좌표로 직접 그림 -->
-        <path d="M16,100 A${R},${R} 0 ${largeArc},1 ${arcEx},${arcEy}"
-              fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round" opacity="0.9"/>
-        <!-- 바늘: 중심(100,100) → 끝점 좌표 직접 지정 -->
+        <!-- 배경 트랙 (sweep=0 반시계 → 상단 반원) -->
+        <path d="M16,100 A84,84 0 0,0 184,100"
+              fill="none" stroke="#1e2535" stroke-width="16" stroke-linecap="butt"/>
+        <!-- 그라데이션 트랙 -->
+        <path d="M16,100 A84,84 0 0,0 184,100"
+              fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="butt" opacity="0.35"/>
+        <!-- 진행 호: 왼쪽(16,100)에서 score 끝점까지 반시계 -->
+        <path d="M16,100 A${R},${R} 0 ${largeArc},0 ${arcEx},${arcEy}"
+              fill="none" stroke="${color}" stroke-width="16" stroke-linecap="butt" opacity="0.95"/>
+        <!-- 바늘 -->
         <line x1="100" y1="100" x2="${nEx}" y2="${nEy}"
               stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
         <!-- 바늘 중심 원 -->
-        <circle cx="100" cy="100" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
+        <circle cx="100" cy="100" r="5" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
         <!-- 눈금 라벨 -->
-        <text x="10"  y="99" font-size="9" fill="#42a5f5"  text-anchor="middle" opacity="0.8">0</text>
-        <text x="45"  y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">25</text>
-        <text x="100" y="12" font-size="9" fill="#90A4AE"  text-anchor="middle" opacity="0.8">50</text>
-        <text x="155" y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">75</text>
-        <text x="190" y="99" font-size="9" fill="#EF5350"  text-anchor="middle" opacity="0.8">100</text>
+        <text x="10"  y="99" font-size="9" fill="#42a5f5" text-anchor="middle" opacity="0.8">0</text>
+        <text x="46"  y="30" font-size="9" fill="#8a9ab5" text-anchor="middle" opacity="0.8">25</text>
+        <text x="100" y="13" font-size="9" fill="#8a9ab5" text-anchor="middle" opacity="0.8">50</text>
+        <text x="154" y="30" font-size="9" fill="#8a9ab5" text-anchor="middle" opacity="0.8">75</text>
+        <text x="190" y="99" font-size="9" fill="#EF5350" text-anchor="middle" opacity="0.8">100</text>
       </svg>
-      <!-- 중앙 점수 (SVG 아래) -->
-      <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap">
-        <div style="font-size:34px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
+      <!-- 점수 표시 -->
+      <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap">
+        <div style="font-size:36px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
           ${score !== null ? Math.round(score) : '--'}
         </div>
         <div style="font-size:12px;font-weight:600;color:${color};margin-top:3px">${info.label}</div>
