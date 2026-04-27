@@ -1598,8 +1598,22 @@ const isFixed=!!KR_FIXED[name];
 const _isBdr=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_si));
 const _bdr=_isBdr?"border-left:3px solid #000;":"";
 const isFnG=(name==='FnG');
-const clickAttr=(isFixed&&!isFnG)?'':` onclick="${isFnG?'openFnGPopup()':`openSectorPopup('${name.replace(/'/g,"\\'")}',true)`}" class="sector-clickable ${isW?'watched-col':''}"` ;
-t+=`<th${(isFixed&&!isFnG)?` class="${isW?'watched-col':''}"`:''} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}"${(isFixed&&!isFnG)?'':\` onclick="${isFnG?'openFnGPopup()':`openSectorPopup('${name.replace(/'/g,"\\'")}',true)`}" title="${isFnG?'공포탐욕지수 보기':`${name} 종목 보기`}"\`} class="${isW?'watched-col':''} ${(isFixed&&!isFnG)?'':`sector-clickable`}">${isW?'⭐ ':''}<span style="${isFnG?'font-size:10px;cursor:pointer;':''}"> ${name}</span></th>`;
+let _onclick, _title, _cls;
+if(isFnG){
+  _onclick='onclick="openFnGPopup()"';
+  _title='title="공포탐욕지수 보기"';
+  _cls=`class="${isW?'watched-col':''} sector-clickable"`;
+} else if(!isFixed){
+  const _esc=name.replace(/'/g,"\\'");
+  _onclick=`onclick="openSectorPopup('${_esc}',true)"`;
+  _title=`title="${name} 종목 보기"`;
+  _cls=`class="${isW?'watched-col':''} sector-clickable"`;
+} else {
+  _onclick='';
+  _title='';
+  _cls=`class="${isW?'watched-col':''}"` ;
+}
+t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${isW?'⭐ ':''}${isFnG?'🧭 ':''}${name}</th>`;
 });
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
