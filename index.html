@@ -1004,23 +1004,22 @@ function _renderFnGPopup(score, history) {
 
   // ── 반원 게이지 수학 ──────────────────────────────────────────────
   // SVG 경로: M16,100 A84,84 0 0,1 184,100  (중심 100,100, 반지름 84)
-  // 반원 호 전체 둘레 = π × 84 ≈ 263.89
-  // score 0~100 → 진행 호 길이: arcLen = (score/100) × 263.89
   //
-  // 바늘 끝점 계산:
-  //   score=0   → 왼쪽 (28, 100),  angle=180°
-  //   score=50  → 위쪽 (100, 28),  angle=90°
-  //   score=100 → 오른쪽(172, 100), angle=0°
+  // ★ pathLength="100" 사용 → dasharray 값 = score 그대로 (오차 없음)
+  //   stroke-linecap:round가 dasharray에 추가되는 오차를 pathLength로 완전 제거
+  //
+  // 바늘 끝점 계산 (SVG 수학):
+  //   score=0   → angle=180° → 왼쪽 끝  (16, 100)
+  //   score=50  → angle=90°  → 맨 위    (100, 16)
+  //   score=100 → angle=0°   → 오른쪽 끝(184, 100)
   //   angle_rad = (1 - score/100) × π
-  //   nx = cos(angle_rad) × needle_r
-  //   ny = -sin(angle_rad) × needle_r  ← SVG는 y축 아래가 양수이므로 부호 반전
-  const HALF_CIRC = 263.89;   // π × 84
-  const NEEDLE_R  = 70;       // 바늘 길이 (반지름 84보다 약간 짧게)
+  //   끝점 x = 100 + cos(angle_rad) × NEEDLE_R
+  //   끝점 y = 100 - sin(angle_rad) × NEEDLE_R  ← SVG y축 아래가 양수이므로 빼기
+  const NEEDLE_R = 70;
   const s = (score !== null && !isNaN(score)) ? Math.max(0, Math.min(100, score)) : 0;
-  const arcLen   = (s / 100) * HALF_CIRC;
-  const angleRad = (1 - s / 100) * Math.PI;          // 180°(왼쪽) → 0°(오른쪽)
+  const angleRad = (1 - s / 100) * Math.PI;
   const nx = Math.cos(angleRad) * NEEDLE_R;
-  const ny = -Math.sin(angleRad) * NEEDLE_R;         // SVG y축 반전
+  const ny = -Math.sin(angleRad) * NEEDLE_R;
 
   // 게이지 SVG
   const gaugeHtml = `
@@ -1043,10 +1042,11 @@ function _renderFnGPopup(score, history) {
         <!-- 그라데이션 트랙 (흐리게) -->
         <path d="M16,100 A84,84 0 0,1 184,100"
               fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="round" opacity="0.3"/>
-        <!-- 진행 호 (score 만큼만) -->
+        <!-- 진행 호 (score 만큼만) — pathLength="100" 으로 dasharray=score 직접 사용 -->
         <path d="M16,100 A84,84 0 0,1 184,100"
               fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"
-              stroke-dasharray="${arcLen.toFixed(1)} 999" opacity="0.9"/>
+              pathLength="100"
+              stroke-dasharray="${s} 100" opacity="0.9"/>
         <!-- 바늘: 중심(100,100)에서 끝점(nx,ny)으로 -->
         <line x1="100" y1="100"
               x2="${(100 + nx).toFixed(1)}" y2="${(100 + ny).toFixed(1)}"
