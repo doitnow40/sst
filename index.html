@@ -999,46 +999,66 @@ function _fngGaugeColor(score) {
 function _renderFnGPopup(score, history) {
   const info  = _fngLabel(score);
   const color = _fngGaugeColor(score);
-  const deg   = score !== null ? Math.round(score * 1.8) : 0; // 0~100 → 0~180deg
+
+  // ── 반원 게이지 수학 ──────────────────────────────────────────────
+  // SVG 경로: M12,80 A68,68 0 0,1 148,80  (중심 80,80, 반지름 68)
+  // 반원 호 전체 둘레 = π × 68 ≈ 213.63
+  // score 0~100 → 진행 호 길이: arcLen = (score/100) × 213.63
+  // 바늘 각도: score=0 → rotate(-90), score=50 → rotate(0), score=100 → rotate(90)
+  //   rotate_deg = (score/100) × 180 - 90
+  const HALF_CIRC = 213.63;  // π × 68
+  const s = (score !== null && !isNaN(score)) ? Math.max(0, Math.min(100, score)) : 0;
+  const arcLen    = (s / 100) * HALF_CIRC;           // 진행 호 길이
+  const needleDeg = (s / 100) * 180 - 90;            // 바늘 회전각 (-90 ~ +90)
+
+  // 바늘 끝 좌표 (중심 80,80 기준, 반지름 58)
+  const nx = Math.round(Math.cos((needleDeg - 90) * Math.PI / 180) * 58 * 10) / 10;
+  const ny = Math.round(Math.sin((needleDeg - 90) * Math.PI / 180) * 58 * 10) / 10;
 
   // 게이지 SVG
   const gaugeHtml = `
-  <div style="text-align:center;padding:18px 0 10px">
-    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px">KOSPI · KOSDAQ</div>
-    <div style="position:relative;width:160px;height:82px;margin:0 auto">
-      <svg viewBox="0 0 160 82" width="160" height="82" style="overflow:visible">
-        <!-- 배경 반원 -->
-        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="#1e2535" stroke-width="14" stroke-linecap="round"/>
-        <!-- 색상 그라데이션 트랙 (공포→탐욕) -->
-        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="url(#fngGrad)" stroke-width="14" stroke-linecap="round" opacity="0.25"/>
-        <!-- 진행 호 -->
-        <path d="M12,80 A68,68 0 0,1 148,80" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"
-          stroke-dasharray="${deg * 2.13} 999" opacity="0.85"/>
-        <!-- 바늘 -->
-        <g transform="translate(80,80) rotate(${deg - 90})">
-          <line x1="0" y1="0" x2="0" y2="-56" stroke="${color}" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
-          <circle cx="0" cy="0" r="5" fill="${color}" opacity="0.9"/>
-        </g>
-        <!-- 눈금 라벨 -->
-        <text x="6"   y="78" font-size="8" fill="#42a5f5" text-anchor="middle">0</text>
-        <text x="40"  y="24" font-size="8" fill="#8a9ab5" text-anchor="middle">25</text>
-        <text x="80"  y="10" font-size="8" fill="#8a9ab5" text-anchor="middle">50</text>
-        <text x="120" y="24" font-size="8" fill="#8a9ab5" text-anchor="middle">75</text>
-        <text x="154" y="78" font-size="8" fill="#ef5350" text-anchor="end">100</text>
+  <div style="text-align:center;padding:24px 0 10px">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">KOSPI · KOSDAQ</div>
+    <div style="position:relative;width:200px;height:110px;margin:0 auto">
+      <svg viewBox="0 0 200 105" width="200" height="105" style="overflow:visible">
         <defs>
-          <linearGradient id="fngGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stop-color="#1565C0"/>
-            <stop offset="50%"  stop-color="#78909C"/>
-            <stop offset="100%" stop-color="#b71c1c"/>
+          <linearGradient id="fngGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"    stop-color="#1565C0"/>
+            <stop offset="25%"   stop-color="#42a5f5"/>
+            <stop offset="50%"   stop-color="#90A4AE"/>
+            <stop offset="75%"   stop-color="#EF9A9A"/>
+            <stop offset="100%"  stop-color="#B71C1C"/>
           </linearGradient>
         </defs>
+        <!-- 배경 반원 (어두운 트랙) -->
+        <path d="M16,100 A84,84 0 0,1 184,100"
+              fill="none" stroke="#1e2535" stroke-width="16" stroke-linecap="round"/>
+        <!-- 그라데이션 트랙 (흐리게) -->
+        <path d="M16,100 A84,84 0 0,1 184,100"
+              fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="round" opacity="0.3"/>
+        <!-- 진행 호 (score 만큼만) -->
+        <path d="M16,100 A84,84 0 0,1 184,100"
+              fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"
+              stroke-dasharray="${arcLen.toFixed(1)} 999" opacity="0.9"/>
+        <!-- 바늘: 중심(100,100)에서 끝점(nx,ny)으로 -->
+        <line x1="100" y1="100"
+              x2="${(100 + nx).toFixed(1)}" y2="${(100 + ny).toFixed(1)}"
+              stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
+        <!-- 바늘 중심 원 -->
+        <circle cx="100" cy="100" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
+        <!-- 눈금 라벨 -->
+        <text x="10"  y="99" font-size="9" fill="#42a5f5"  text-anchor="middle" opacity="0.8">0</text>
+        <text x="45"  y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">25</text>
+        <text x="100" y="12" font-size="9" fill="#90A4AE"  text-anchor="middle" opacity="0.8">50</text>
+        <text x="155" y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">75</text>
+        <text x="190" y="99" font-size="9" fill="#EF5350"  text-anchor="middle" opacity="0.8">100</text>
       </svg>
-      <!-- 중앙 점수 -->
-      <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center">
-        <div style="font-size:30px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
+      <!-- 중앙 점수 (SVG 아래) -->
+      <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap">
+        <div style="font-size:34px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
           ${score !== null ? Math.round(score) : '--'}
         </div>
-        <div style="font-size:11px;font-weight:600;color:${color};margin-top:2px">${info.label}</div>
+        <div style="font-size:12px;font-weight:600;color:${color};margin-top:3px">${info.label}</div>
       </div>
     </div>
   </div>`;
