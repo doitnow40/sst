@@ -2914,7 +2914,8 @@ label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tcol+';line-height
 }
 }
 var mcapStr=b.marketCap?('시가총액: '+(b.marketCap>=10000?(b.marketCap/10000).toFixed(1)+'조':b.marketCap.toLocaleString()+'억')):'';
-html+='<div title="'+b.name+' '+pct+(mcapStr?' | '+mcapStr:'')+'" class="tm-cell" style="position:absolute;left:'+(b.x+PAD)+'px;top:'+(b.y+PAD)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+'">'+label+'</div>';
+var _tmEsc=b.name.replace(/'/g,"\\'");
+html+='<div title="'+b.name+' '+pct+(mcapStr?' | '+mcapStr:'')+'" class="tm-cell" onclick="openSectorPopup(\''+_tmEsc+'\',true)" style="position:absolute;left:'+(b.x+PAD)+'px;top:'+(b.y+PAD)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';cursor:pointer">'+label+'</div>';
 });
 html+='</div>';
 wrap.innerHTML=html;
