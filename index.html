@@ -2959,13 +2959,15 @@ if(IS_DEMO){
 d=demoUs();
 document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
-const [histData, todayData, watchListData, watchHistData] = await Promise.all([
-api('us_history', 365),
+const [watchHistData, todayData, watchListData, legacyHistData] = await Promise.all([
+api('us_watch_history', 365),
 api('us_today', 0).catch(()=>null),
 api('us_watch_list', 0).catch(()=>null),
-api('us_watch_history', 365).catch(()=>null)
+api('us_history', 365).catch(()=>null)
 ]);
-d = histData;
+// ★ US섹터등락률(관심종목 기반) 데이터가 있으면 메인으로, 없으면 기존 Sector Tracker 로 fallback
+const hasWatchHist = watchHistData && watchHistData.rows && watchHistData.rows.length > 0;
+d = hasWatchHist ? watchHistData : (legacyHistData || watchHistData);
 document.getElementById('us-status').textContent=d.count+'일 데이터';
 if(todayData){
 S.usToday = todayData;
@@ -3003,9 +3005,9 @@ const rows=baseRows; // rows는 항상 baseRows만 사용
 const f=rows.slice(0,S.usR);
 const sh=H.slice(1);
 if(f.length){
-const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
 const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
-_buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
+_buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
 }
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{
@@ -3381,9 +3383,9 @@ const{headers:H,rows}=S.usD;
 const f=rows.slice(0,S.usR);
 const sh=H.slice(1);
 if(f.length){
-const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
+const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
 const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
-_buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
+_buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
 }
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
