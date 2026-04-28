@@ -3101,7 +3101,13 @@ if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+sh.forEach(h=>{
+const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};
+const isW=US_WATCHED_SECTORS.has(h);
+t+=`<th class="${isW?'watched-col':''} sector-clickable"
+  style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px"
+  onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${isW?'⭐ ':''}${h}</th>`;
+});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
@@ -3160,7 +3166,11 @@ t+=`</tr>`;
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
-sh.forEach((name,ci)=>{const v=row[ci+1],c=usCell(name,v);t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;});
+sh.forEach((name,ci)=>{
+const v=row[ci+1],c=usCell(name,v);
+const isW=US_WATCHED_SECTORS.has(name);
+t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
+});
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -3513,8 +3523,14 @@ const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
-t+='</tr><tr><th>Date</th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
+sh.forEach(h=>{
+const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};
+const isW=US_WATCHED_SECTORS.has(h);
+t+=`<th class="${isW?'watched-col':''} sector-clickable"
+  style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px"
+  onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${isW?'⭐ ':''}${h}</th>`;
+});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
@@ -3524,7 +3540,11 @@ t+='</tr>'
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
-sh.forEach((name,ci)=>{const v=row[ci+1],c=usCell(name,v);t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;});
+sh.forEach((name,ci)=>{
+const v=row[ci+1],c=usCell(name,v);
+const isW=US_WATCHED_SECTORS.has(name);
+t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
+});
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -4024,7 +4044,10 @@ await _usRefreshWatchList();
 }
 
 // ── US 주목 섹터 관리 ──────────────────────────────────────────────
-let US_WATCHED_SECTORS = new Set();
+const US_WATCHED_KEY = 'us_watched_sectors_v1';
+let US_WATCHED_SECTORS = new Set(
+  JSON.parse(localStorage.getItem(US_WATCHED_KEY)||'[]')
+);
 function renderUsWatchSectorList(){
 const wrap=document.getElementById('us-watch-sector-list');
 if(!wrap)return;
@@ -4071,17 +4094,19 @@ if(el&&el.checked) selected.push(sec.sector);
 const btn=document.getElementById('us-watch-save-btn');
 btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중';
 try{
-// US 주목 섹터는 PropertiesService 별도 키 'us_watched_sectors' 로 저장
-await _usAdminApi('save_us_watched',{sectors:selected.join(',')});
+// localStorage에 영구 저장 (새로고침해도 유지)
+localStorage.setItem(US_WATCHED_KEY, JSON.stringify(selected));
 US_WATCHED_SECTORS=new Set(selected);
+// US History 표 & US List 즉시 갱신
+if(S.usOk) renderUs();
+if(S.usWatchL) renderUsList(listSorted);
 const msg=document.getElementById('us-watch-save-msg');
 msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
 msg.style.display='inline';
 setTimeout(()=>{msg.style.display='none';},3000);
 onUsWatchChange();
 }catch(e){
-// fallback: GAS에 save_us_watched 없으면 안내
-alert('US 주목 섹터 저장 기능은 GAS에 save_us_watched 액션 추가가 필요합니다.\n선택된 섹터: '+selected.join(', '));
+alert('저장 실패: '+e.message);
 }
 btn.disabled=false; btn.innerHTML='💾 저장';
 }
