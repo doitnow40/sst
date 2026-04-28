@@ -1222,27 +1222,22 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       avgEl.style.color = v > 0 ? '#ef5350' : v < 0 ? '#42a5f5' : 'var(--text-muted)';
     }
 
-    // US 섹터: 종목 리스트 없음 → US_META 정보 표시
+    // US 섹터 팝업: 관심종목 리스트 + 최근 5일 추이 표시
     if (!isKr) {
-      const meta = (typeof US_META !== 'undefined' && US_META[sectorName]) ? US_META[sectorName] : null;
+      const meta = US_META[sectorName] || {};
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-      const usTodayVal = usTodayMap[sectorName];
-      const usPrevMap = (S.usD && S.usD.rows && S.usD.rows[0]) ? S.usD.rows[0] : null;
+      // 최근 5일 추이 (S.usD 기반)
+      let trend5 = '';
       const usHeaders = S.usD ? S.usD.headers : [];
       const prevIdx = usHeaders.indexOf(sectorName);
-      const prevVal = (usPrevMap && prevIdx > 0) ? parseFloat(usPrevMap[prevIdx]) : null;
-
-      // 최근 5일 추이
-      let trend5 = '';
-      if (S.usD && S.usD.rows) {
-        const rows5 = S.usD.rows.slice(0, 5);
-        // 오래된 날짜 순(과거→최신)으로 표시: rows5는 최신순이므로 reverse
-        const rows5Asc = [...rows5].reverse();
+      if (S.usD && S.usD.rows && prevIdx > 0) {
+        const rows5Asc = [...S.usD.rows.slice(0, 5)].reverse();
         const pairs5 = rows5Asc
-          .map(r => ({ date: r[0], val: prevIdx > 0 ? parseFloat(r[prevIdx]) : NaN }))
+          .map(r => ({ date: r[0], val: parseFloat(r[prevIdx]) }))
           .filter(p => !isNaN(p.val));
         if (pairs5.length) {
-          trend5 = '<div style="margin-top:10px"><div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">최근 5일 등락률 (과거→최신)</div>';
+          trend5 = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
+          trend5 += '<div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">— 최근 5일 등락률 (과거→최신) —</div>';
           pairs5.forEach(p => {
             const c = p.val > 0 ? '#ef5350' : p.val < 0 ? '#42a5f5' : 'var(--text-muted)';
             const dow = dateToDow(p.date, false);
@@ -1256,13 +1251,49 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
         }
       }
 
-      const sym = meta ? (meta.symbol || '') : '';
-      const grp = meta ? (meta.group || '') : '';
+      // 관심종목 리스트 (S.usWatchL 기반)
+      let stocksHtml = '';
+      if (S.usWatchL && S.usWatchL.sectors) {
+        const sec = S.usWatchL.sectors.find(s => s.sector === sectorName);
+        if (sec && sec.stocks && sec.stocks.length > 0) {
+          stocksHtml = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
+          stocksHtml += `<div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">— 종목 목록 (${sec.stocks.length}개) —</div>`;
+          sec.stocks.forEach((st, idx) => {
+            if (!st.name) return;
+            const chg = st.chg;
+            let chgHtml = '';
+            if (chg !== null && chg !== undefined && !isNaN(chg)) {
+              const col = chg > 0 ? '#ef5350' : chg < 0 ? '#42a5f5' : '#8a9ab5';
+              chgHtml = `<span style="font-family:var(--font-mono);font-size:11px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'}">${chg>0?'+':''}${chg.toFixed(2)}%</span>`;
+            }
+            const tkrShort = st.ticker ? st.ticker.split(':').pop() : '';
+            const mcap = st.marketCap !== null && st.marketCap !== undefined
+              ? `<span style="font-size:9px;color:var(--text-muted);margin-left:4px">$${st.marketCap.toFixed(1)}B</span>` : '';
+            const memo = st.memo || '';
+            const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" title="${memo}">ℹ</span>` : '';
+            const isEtf = idx === 0;
+            stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
+              <span style="color:var(--text-primary)">${isEtf?'⭐ ':''}${st.name}${memoHtml}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${tkrShort}</span>
+              ${mcap}
+              ${chgHtml}
+            </div>`;
+          });
+          stocksHtml += '</div>';
+        }
+      }
+
+      // 메타 정보 + 오늘 실시간 + 종목 목록 + 최근 5일
+      const todayVal = usTodayMap[sectorName];
+      const grpLabel = meta.group ? ({'INDEX':'주요지수','SECTOR':'GICS섹터','THEMATIC':'테마ETF','BOND':'채권·달러'}[meta.group]||meta.group) : '';
       body.innerHTML = `
         <div style="padding:4px 2px">
-          ${sym ? `<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px">📌 심볼: <span style="font-family:var(--font-mono);color:var(--accent-us)">${sym}</span> &nbsp;|&nbsp; 그룹: <span style="color:var(--accent-gold)">${grp}</span></div>` : ''}
-          ${usTodayVal !== undefined ? `<div style="font-size:12px;margin-bottom:6px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(usTodayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(usTodayVal)>=0?'+':''}${parseFloat(usTodayVal).toFixed(2)}%</span></div>` : ''}
-          ${prevVal !== null && !isNaN(prevVal) ? `<div style="font-size:11px;margin-bottom:4px;color:var(--text-secondary)">최근 확정: <span style="color:${prevVal>0?'#ef5350':'#42a5f5'}">${prevVal>=0?'+':''}${prevVal.toFixed(2)}%</span></div>` : ''}
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap">
+            ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
+            ${grpLabel?`<span>그룹: <span style="color:var(--accent-gold)">${grpLabel}</span></span>`:''}
+          </div>
+          ${todayVal !== undefined && !isNaN(todayVal) ? `<div style="font-size:13px;margin-bottom:4px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(todayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(todayVal)>=0?'+':''}${parseFloat(todayVal).toFixed(2)}%</span></div>` : ''}
+          ${stocksHtml}
           ${trend5}
         </div>`;
       return;
@@ -3188,90 +3219,129 @@ h+=`</div></div>`;
 return h+'</div>';
 }
 function renderUsList(sorted){
-const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
-const GN={INDEX:{l:'주요 지수·지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
 const useToday=(usListMode==='today');
 const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
-// 최근 영업일 섹터 평균: US관심종목 히스토리 우선, fallback → 기존 ETF 히스토리
+// 최근 영업일 섹터 평균
 const usLastBiz={};
 if(S.usWatchD&&S.usWatchD.rows&&S.usWatchD.rows.length>0){
-const H=S.usWatchD.headers;
-const latest=S.usWatchD.rows[0];
+const H=S.usWatchD.headers;const latest=S.usWatchD.rows[0];
 H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usLastBiz[name]=v;});
 }else if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
-const H=S.usD.headers;
-const latest=S.usD.rows[0];
+const H=S.usD.headers;const latest=S.usD.rows[0];
 H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usLastBiz[name]=v;});
 }
-const dataMap=useToday?usTodayMap:usLastBiz;
-// US관심종목 데이터 유무
+
+// ── US관심종목(usWatchL) 기반 섹터 카드 렌더 ──────────────────────
 const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
-// 섹터별 관심종목 맵 (섹터명 → stocks[])
-const watchStocksMap={};
-if(hasWatchList){S.usWatchL.sectors.forEach(sec=>{watchStocksMap[sec.sector]=sec.stocks;});}
-// 그룹별 섹터 구성
-const groups={};
-Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
+if(hasWatchList){
+let sectors=[...S.usWatchL.sectors];
+// 정렬
 if(sorted){
-Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n,'ko'));});
+sectors=[...sectors].sort((a,b)=>a.sector.localeCompare(b.sector,'ko'));
 }else if(rateSort!==0){
-Object.keys(groups).forEach(g=>{
-groups[g].sort((a,b)=>{
-const va=dataMap[a.n],vb=dataMap[b.n];
+sectors=[...sectors].sort((a,b)=>{
+const va=useToday?usTodayMap[a.sector]:usLastBiz[a.sector];
+const vb=useToday?usTodayMap[b.sector]:usLastBiz[b.sector];
 if(va===undefined&&vb===undefined)return 0;
-if(va===undefined)return 1;
-if(vb===undefined)return -1;
+if(va===undefined)return 1; if(vb===undefined)return -1;
 return rateSort===1?(vb-va):(va-vb);
 });
-});
 }
+const C=KR_SEC_COLORS; // KR과 동일 팔레트
+let h='<div class="sector-grid">';
+sectors.forEach((sec,i)=>{
+const meta=US_META[sec.sector]||{};
+const c=C[i%C.length];
+const isWatched=US_WATCHED_SECTORS&&US_WATCHED_SECTORS.has(sec.sector);
+// 섹터 평균 등락률: today=usToday 맵, lastbiz=usLastBiz
+const secAvg=useToday
+?(usTodayMap[sec.sector]!==undefined?parseFloat(usTodayMap[sec.sector]):null)
+:(usLastBiz[sec.sector]!==undefined?parseFloat(usLastBiz[sec.sector]):null);
+const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
+const avgHtml=secAvg!==null
+?`<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:auto">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
+:'';
+// 막대 그래프
+const BAR_MAX=10,BARS=10;
+let barHtml='';
+if(secAvg!==null){
+const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
+const isUp=secAvg>=0;
+const fc=isUp?'#e53935':'#1e88e5';
+barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+for(let bi=0;bi<BARS;bi++){
+const active=isUp?(bi<filled):(BARS-1-bi<filled);
+barHtml+=`<span style="width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0;background:${active?fc:'rgba(255,255,255,.1)'}"></span>`;
+}
+barHtml+='</div>';
+}
+// 헤더 색: US_META에 색상 있으면 우선 사용, 없으면 KR팔레트
+const hdrBg=meta.bg?meta.bg:c.bg;
+const hdrFg=meta.fg?meta.fg:c.fg;
+const titleBg=isWatched?'linear-gradient(90deg,#c89600,#f9c900)':hdrBg;
+const titleFg=isWatched?'#1a1a00':hdrFg;
+h+=`<div class="sector-card${isWatched?' watched':''}${avgClass}">`;
+h+=`<div class="sector-card-header" style="${isWatched?'background:rgba(249,201,0,.12);border-bottom-color:rgba(249,201,0,.4)':''}">`;
+h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg};cursor:pointer"
+  onclick="openSectorPopup('${sec.sector.replace(/'/g,"\\'")}',false)">${sec.sector}`;
+if(meta.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;margin-left:6px;opacity:.7">${meta.etf}</span>`;
+h+=`</div>`;
+h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
+h+=`<span class="sector-count">${sec.stocks.length} 종목</span>`;
+if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
+h+=`${barHtml}${avgHtml}</div></div>`;
+h+=`<div class="sector-stocks">`;
+sec.stocks.forEach((st,idx)=>{
+if(!st.name)return;
+const chg=useToday?st.chg:st.prevChg;
+let chgHtml='';
+if(chg!==null&&chg!==undefined&&!isNaN(chg)){
+const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
+chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${chg>0?'+':''}${chg.toFixed(2)}%</span>`;
+}
+const tkrShort=st.ticker?st.ticker.split(':').pop():'';
+const mcap=st.marketCap!==null&&st.marketCap!==undefined
+?`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">$${st.marketCap.toFixed(1)}B</span>`:'';
+const memo=st.memo||'';
+const memoHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+const isEtf=idx===0;
+h+=`<div class="stock-item">`;
+h+=`<span class="stock-name">${isEtf?'⭐ ':''}${st.name}</span>`;
+h+=`<span class="stock-ticker" style="font-size:9px">${tkrShort||'US'}</span>`;
+if(mcap) h+=mcap;
+h+=`${chgHtml}${memoHtml}</div>`;
+});
+h+=`</div></div>`;
+});
+if(watchedOnly&&sectors.length===0) h+=`<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:12px">⭐ US 주목 섹터가 없습니다.</div>`;
+h+='</div>';
+document.getElementById('us-list').innerHTML=h;
+return;
+}
+
+// ── fallback: 관심종목 없으면 US_META 기반 대분류 카드 (기존 방식) ──
+const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
+const GN={INDEX:{l:'주요 지수·지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
+const dataMap=useToday?usTodayMap:usLastBiz;
+const groups={};
+Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
+if(sorted){Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n,'ko'));});}
+else if(rateSort!==0){Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>{const va=dataMap[a.n],vb=dataMap[b.n];if(va===undefined&&vb===undefined)return 0;if(va===undefined)return 1;if(vb===undefined)return -1;return rateSort===1?(vb-va):(va-vb);});});}
 let h='<div class="sector-grid">';
 ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
 if(!groups[g])return;
-const info=GN[g]||{l:g,i:'📌'};
-const titleFg=g==='INDEX'?'#000':'#fff';
+const info=GN[g]||{l:g,i:'📌'};const titleFg=g==='INDEX'?'#000':'#fff';
 h+=`<div class="sector-card"><div class="sector-card-header" style="background:${GC[g]}22;border-bottom-color:${GC[g]}55">`;
 h+=`<div class="sector-card-title" style="background:${GC[g]};color:${titleFg}">${info.i} ${info.l}</div>`;
-h+=`<div class="sector-card-meta"><span class="sector-count" style="font-size:10px;color:var(--text-muted)">${groups[g].length}개 섹터</span></div>`;
+h+=`<div class="sector-card-meta"><span class="sector-count">${groups[g].length}개 섹터</span></div>`;
 h+=`</div><div class="sector-stocks">`;
 groups[g].forEach(({n,m})=>{
-const chg=dataMap[n];
-let chgHtml='';
-if(chg!==undefined&&!isNaN(chg)){
-const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
-const sign=chg>0?'+':'';
-chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
-}
-// 섹터 헤더 행
-h+=`<div class="stock-item" style="border-bottom:1px solid rgba(255,255,255,.07);padding:5px 8px;cursor:pointer" onclick="openSectorPopup('${n.replace(/'/g,"\\'")}',false)">`;
-h+=`<span class="stock-name" style="display:flex;align-items:center;gap:5px;flex:1">`;
-h+=`<span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>`;
-h+=`<strong style="font-size:12px;color:var(--text-primary)">${n}</strong>`;
-if(m.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${m.etf}</span>`;
-if(m.en&&m.en!==n) h+=`<span style="font-size:9px;color:var(--text-muted)">${m.en}</span>`;
+const chg=dataMap[n];let chgHtml='';
+if(chg!==undefined&&!isNaN(chg)){const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${chg>0?'+':''}${chg.toFixed(2)}%</span>`;}
+h+=`<div class="stock-item" style="cursor:pointer" onclick="openSectorPopup('${n.replace(/'/g,"\\'")}',false)">`;
+h+=`<span class="stock-name" style="display:flex;align-items:center;gap:5px;flex:1"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span><strong style="font-size:12px;color:var(--text-primary)">${n}</strong>`;
+if(m.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">${m.etf}</span>`;
 h+=`</span>${chgHtml}</div>`;
-// 관심종목 개별 종목 행 (첫 번째 ETF 제외, 인덱스 1부터)
-const wStocks=watchStocksMap[n];
-if(wStocks&&wStocks.length>1){
-wStocks.slice(1).forEach(st=>{
-if(!st.name)return;
-const sv=st.chg;
-let sHtml='';
-if(sv!==null&&sv!==undefined&&!isNaN(sv)){
-const sc=sv>0?'#ef5350':sv<0?'#42a5f5':'#8a9ab5';
-const ss=sv>0?'+':'';
-sHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:${sc};flex-shrink:0">${ss}${sv.toFixed(2)}%</span>`;
-}
-const mcap=st.marketCap!==null&&st.marketCap!==undefined?`<span style="font-size:8px;color:var(--text-muted);margin-left:3px">$${st.marketCap.toFixed(1)}B</span>`:'';
-const tkrShort=st.ticker?st.ticker.split(':').pop():'';
-h+=`<div class="stock-item" style="padding:3px 8px 3px 22px;opacity:.82">`;
-h+=`<span style="font-size:11px;color:var(--text-secondary);flex:1;display:flex;align-items:center;gap:4px">`;
-h+=st.name;
-if(tkrShort) h+=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.15);padding:0 4px;border-radius:2px">${tkrShort}</span>`;
-h+=mcap;
-h+=`</span>${sHtml}</div>`;
-});
-}
 });
 h+=`</div></div>`;});
 h+='</div>';
