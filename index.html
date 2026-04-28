@@ -600,8 +600,9 @@ style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;b
 </div>
 </div>
 <div class="admin-tabs">
-<div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
+<div class="admin-tab" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
 <div class="admin-tab" onclick="switchAdminTab('mgmt',this)">🗂️ 섹터/종목 관리</div>
+<div class="admin-tab" onclick="switchAdminTab('us-mgmt',this)">🇺🇸 US종목 관리</div>
 <div class="admin-tab" onclick="switchAdminTab('watch',this)">⭐ 주목 섹터</div>
 <div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
 </div>
@@ -823,6 +824,25 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
   </div>
 </div>
 
+<div id="admin-tab-us-mgmt" style="display:none">
+<div class="admin-mgmt-layout">
+<div class="admin-sector-list">
+<div class="admin-sector-list-header">
+<span>🇺🇸 US 섹터 목록</span>
+<button class="admin-add-btn" style="font-size:10px;padding:3px 10px" onclick="usAdminAddSectorPrompt()">+ 섹터 추가</button>
+</div>
+<div id="us-admin-sector-list-body"></div>
+</div>
+<div class="admin-stock-panel">
+<div class="admin-panel-header" id="us-admin-panel-title">섹터를 선택하세요</div>
+<div class="admin-panel-body" id="us-admin-panel-body">
+<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:30px 0">좌측 섹터를 클릭하면 종목 목록이 표시됩니다.</div>
+</div>
+<div id="us-admin-msg" class="admin-msg"></div>
+</div>
+</div>
+</div>
+
 </div>
 </div>
 </div>
@@ -841,41 +861,45 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCv
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const IS_DEMO = false;
 const US_META = {
-'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
-'Nasdaq':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
-'DowJones':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
-'Russell2K': {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
-'3MoYield':  {type:'YIELD',bg:'#E3F2FD',fg:'#0D47A1',group:'INDEX'},
-'10YrYield': {type:'YIELD',bg:'#BBDEFB',fg:'#0D47A1',group:'INDEX'},
-'VIX':       {type:'VIX',  bg:'#FF6B6B',fg:'#fff',group:'INDEX'},
-'Bitcoin':   {type:'ETF',  bg:'#F7931A',fg:'#fff',group:'INDEX'},
-'IT':        {type:'ETF',  bg:'#4472C4',fg:'#fff',group:'SECTOR'},
-'HealthCare':{type:'ETF',  bg:'#70AD47',fg:'#fff',group:'SECTOR'},
-'Financials':{type:'ETF',  bg:'#ED7D31',fg:'#fff',group:'SECTOR'},
-'ConsDisc':  {type:'ETF',  bg:'#FFC000',fg:'#000',group:'SECTOR'},
-'Industrials':{type:'ETF', bg:'#5B9BD5',fg:'#fff',group:'SECTOR'},
-'CommSvcs':  {type:'ETF',  bg:'#9DC3E6',fg:'#000',group:'SECTOR'},
-'ConsStaples':{type:'ETF', bg:'#A9D18E',fg:'#000',group:'SECTOR'},
-'Energy':    {type:'ETF',  bg:'#FFE699',fg:'#000',group:'SECTOR'},
-'Utilities': {type:'ETF',  bg:'#B4C7E7',fg:'#000',group:'SECTOR'},
-'RealEstate':{type:'ETF',  bg:'#F4B942',fg:'#000',group:'SECTOR'},
-'Materials': {type:'ETF',  bg:'#C5E0B4',fg:'#000',group:'SECTOR'},
-'Semis':     {type:'ETF',  bg:'#5c8fcd',fg:'#fff',group:'THEMATIC'},
-'Software':  {type:'ETF',  bg:'#5c8fcd',fg:'#fff',group:'THEMATIC'},
-'Cloud':     {type:'ETF',  bg:'#5c8fcd',fg:'#fff',group:'THEMATIC'},
-'AI/Robot':  {type:'ETF',  bg:'#5c8fcd',fg:'#fff',group:'THEMATIC'},
-'Biotech':   {type:'ETF',  bg:'#4caf50',fg:'#fff',group:'THEMATIC'},
-'Banks':     {type:'ETF',  bg:'#e88235',fg:'#fff',group:'THEMATIC'},
-'RegionalBk':{type:'ETF',  bg:'#e88235',fg:'#fff',group:'THEMATIC'},
-'Defense':   {type:'ETF',  bg:'#7986cb',fg:'#fff',group:'THEMATIC'},
-'Transport': {type:'ETF',  bg:'#7986cb',fg:'#fff',group:'THEMATIC'},
-'CleanEnergy':{type:'ETF', bg:'#43a047',fg:'#fff',group:'THEMATIC'},
-'Gold':      {type:'ETF',  bg:'#ffd54f',fg:'#000',group:'THEMATIC'},
-'Oil/Gas':   {type:'ETF',  bg:'#ffd54f',fg:'#000',group:'THEMATIC'},
-'LongBond':  {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
-'ShortBond': {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
-'HiYield':   {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
-'USD':       {type:'ETF',  bg:'#5c6bc0',fg:'#fff',group:'BOND'},
+// ── 주요 지수 (INDEX) ───────────────────────────────────────────
+'S&P500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX',  en:'S&P500',    etf:'SPY'},
+'나스닥':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX',  en:'Nasdaq',    etf:'QQQ'},
+'다우존스':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX',  en:'DowJones',  etf:'DIA'},
+'러셀2000':  {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX',  en:'Russell2K', etf:'IWM'},
+'3MoYield':  {type:'YIELD',bg:'#E3F2FD',fg:'#0D47A1',group:'INDEX',en:'3M Yield'},
+'10YrYield': {type:'YIELD',bg:'#BBDEFB',fg:'#0D47A1',group:'INDEX',en:'10Y Yield'},
+'VIX':       {type:'VIX',  bg:'#FF6B6B',fg:'#fff',group:'INDEX',  en:'VIX'},
+'Bitcoin':   {type:'ETF',  bg:'#F7931A',fg:'#fff',group:'INDEX',  en:'Bitcoin'},
+// ── GICS 11 섹터 (SECTOR) ───────────────────────────────────────
+'IT':        {type:'ETF',bg:'#4472C4',fg:'#fff',group:'SECTOR',   en:'IT',          etf:'XLK'},
+'헬스케어':  {type:'ETF',bg:'#70AD47',fg:'#fff',group:'SECTOR',   en:'HealthCare',  etf:'XLV'},
+'금융':      {type:'ETF',bg:'#ED7D31',fg:'#fff',group:'SECTOR',   en:'Financials',  etf:'XLF'},
+'임의소비재':{type:'ETF',bg:'#FFC000',fg:'#000',group:'SECTOR',   en:'ConsDisc',    etf:'XLY'},
+'산업재':    {type:'ETF',bg:'#5B9BD5',fg:'#fff',group:'SECTOR',   en:'Industrials', etf:'XLI'},
+'통신서비스':{type:'ETF',bg:'#9DC3E6',fg:'#000',group:'SECTOR',   en:'CommSvcs',    etf:'XLC'},
+'필수소비재':{type:'ETF',bg:'#A9D18E',fg:'#000',group:'SECTOR',   en:'ConsStaples', etf:'XLP'},
+'에너지':    {type:'ETF',bg:'#FFE699',fg:'#000',group:'SECTOR',   en:'Energy',      etf:'XLE'},
+'유틸리티':  {type:'ETF',bg:'#B4C7E7',fg:'#000',group:'SECTOR',   en:'Utilities',   etf:'XLU'},
+'리츠':      {type:'ETF',bg:'#F4B942',fg:'#000',group:'SECTOR',   en:'RealEstate',  etf:'XLRE'},
+'소재':      {type:'ETF',bg:'#C5E0B4',fg:'#000',group:'SECTOR',   en:'Materials',   etf:'XLB'},
+// ── 테마 ETF (THEMATIC) ─────────────────────────────────────────
+'반도체':    {type:'ETF',bg:'#5c8fcd',fg:'#fff',group:'THEMATIC', en:'Semis',       etf:'SOXX'},
+'소프트웨어':{type:'ETF',bg:'#5c8fcd',fg:'#fff',group:'THEMATIC', en:'Software',    etf:'IGV'},
+'클라우드':  {type:'ETF',bg:'#5c8fcd',fg:'#fff',group:'THEMATIC', en:'Cloud',       etf:'WCLD'},
+'AI·로봇':   {type:'ETF',bg:'#5c8fcd',fg:'#fff',group:'THEMATIC', en:'AI/Robot',    etf:'BOTZ'},
+'바이오테크':{type:'ETF',bg:'#4caf50',fg:'#fff',group:'THEMATIC', en:'Biotech',     etf:'XBI'},
+'은행':      {type:'ETF',bg:'#e88235',fg:'#fff',group:'THEMATIC', en:'Banks',       etf:'KBE'},
+'지역은행':  {type:'ETF',bg:'#e88235',fg:'#fff',group:'THEMATIC', en:'RegionalBk',  etf:'KRE'},
+'방산':      {type:'ETF',bg:'#7986cb',fg:'#fff',group:'THEMATIC', en:'Defense',     etf:'ITA'},
+'운송':      {type:'ETF',bg:'#7986cb',fg:'#fff',group:'THEMATIC', en:'Transport',   etf:'IYT'},
+'클린에너지':{type:'ETF',bg:'#43a047',fg:'#fff',group:'THEMATIC', en:'CleanEnergy', etf:'ICLN'},
+'금':        {type:'ETF',bg:'#ffd54f',fg:'#000',group:'THEMATIC', en:'Gold',        etf:'GLD'},
+'원유·가스': {type:'ETF',bg:'#ffd54f',fg:'#000',group:'THEMATIC', en:'Oil/Gas',     etf:'XOP'},
+// ── 채권 & 달러 (BOND) ──────────────────────────────────────────
+'장기채권':  {type:'ETF',bg:'#78909c',fg:'#fff',group:'BOND',     en:'LongBond',   etf:'TLT'},
+'단기채권':  {type:'ETF',bg:'#78909c',fg:'#fff',group:'BOND',     en:'ShortBond',  etf:'SHY'},
+'하이일드':  {type:'ETF',bg:'#78909c',fg:'#fff',group:'BOND',     en:'HiYield',    etf:'HYG'},
+'달러':      {type:'ETF',bg:'#5c6bc0',fg:'#fff',group:'BOND',     en:'USD',        etf:'UUP'},
 };
 const KR_FIXED = {
 '날짜':  null,
@@ -895,12 +919,12 @@ const KR_SEC_COLORS=[
 {bg:'#F9D0FF',fg:'#3D0050'},{bg:'#FFF0CC',fg:'#6B4400'},
 ];
 const US_GROUPS={
-INDEX:   {label:'▶ Major Index',           bg:'#F9A825',fg:'#000'},
-SECTOR:  {label:'▶ GICS 11 Sectors (SPDR)',bg:'#1565C0',fg:'#fff'},
-THEMATIC:{label:'▶ Thematic ETF',          bg:'#4A148C',fg:'#fff'},
-BOND:    {label:'▶ Bond / USD',            bg:'#37474F',fg:'#fff'},
+INDEX:   {label:'▶ 주요 지수·지표',          bg:'#F9A825',fg:'#000'},
+SECTOR:  {label:'▶ GICS 11 섹터 (SPDR ETF)',bg:'#1565C0',fg:'#fff'},
+THEMATIC:{label:'▶ 테마 ETF',               bg:'#4A148C',fg:'#fff'},
+BOND:    {label:'▶ 채권 & 달러',            bg:'#37474F',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0};
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -2935,9 +2959,11 @@ if(IS_DEMO){
 d=demoUs();
 document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
-const [histData, todayData] = await Promise.all([
+const [histData, todayData, watchListData, watchHistData] = await Promise.all([
 api('us_history', 365),
-api('us_today', 0).catch(()=>null)
+api('us_today', 0).catch(()=>null),
+api('us_watch_list', 0).catch(()=>null),
+api('us_watch_history', 365).catch(()=>null)
 ]);
 d = histData;
 document.getElementById('us-status').textContent=d.count+'일 데이터';
@@ -2947,6 +2973,9 @@ const n=document.getElementById('us-today-notice');
 if(n&&todayData.date) n.style.display='';
 updateRealtimeTime();
 }
+if(watchListData){ S.usWatchL=watchListData; }
+if(watchHistData){ S.usWatchD=watchHistData; }
+S.usWatchAt=Date.now();
 }
 updateSheetReadTime(d.sheetReadAt);
 S.usD=d; S.usOk=true;
@@ -3106,30 +3135,38 @@ return h+'</div>';
 }
 function renderUsList(sorted){
 const GC={INDEX:'#F57F17',SECTOR:'#1565C0',THEMATIC:'#6A1B9A',BOND:'#37474F'};
-const GN={INDEX:{l:'주요 지수 & 지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
+const GN={INDEX:{l:'주요 지수·지표',i:'📊'},SECTOR:{l:'GICS 11 섹터 (SPDR ETF)',i:'🏢'},THEMATIC:{l:'테마 ETF',i:'🎯'},BOND:{l:'채권 & 달러',i:'💵'}};
 const useToday=(usListMode==='today');
 const usTodayMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+// 최근 영업일 섹터 평균: US관심종목 히스토리 우선, fallback → 기존 ETF 히스토리
 const usLastBiz={};
-if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
+if(S.usWatchD&&S.usWatchD.rows&&S.usWatchD.rows.length>0){
+const H=S.usWatchD.headers;
+const latest=S.usWatchD.rows[0];
+H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usLastBiz[name]=v;});
+}else if(S.usD&&S.usD.rows&&S.usD.rows.length>0){
 const H=S.usD.headers;
 const latest=S.usD.rows[0];
-H.slice(1).forEach((name,ci)=>{
-const v=parseFloat(latest[ci+1]);
-if(!isNaN(v)) usLastBiz[name]=v;
-});
+H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usLastBiz[name]=v;});
 }
 const dataMap=useToday?usTodayMap:usLastBiz;
+// US관심종목 데이터 유무
+const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
+// 섹터별 관심종목 맵 (섹터명 → stocks[])
+const watchStocksMap={};
+if(hasWatchList){S.usWatchL.sectors.forEach(sec=>{watchStocksMap[sec.sector]=sec.stocks;});}
+// 그룹별 섹터 구성
 const groups={};
 Object.entries(US_META).forEach(([n,m])=>{const g=m.group||'INDEX';if(!groups[g])groups[g]=[];groups[g].push({n,m});});
 if(sorted){
-Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n));});
-} else if(rateSort!==0){
+Object.keys(groups).forEach(g=>{groups[g].sort((a,b)=>a.n.localeCompare(b.n,'ko'));});
+}else if(rateSort!==0){
 Object.keys(groups).forEach(g=>{
 groups[g].sort((a,b)=>{
 const va=dataMap[a.n],vb=dataMap[b.n];
-if(va===undefined&&vb===undefined) return 0;
-if(va===undefined) return 1;
-if(vb===undefined) return -1;
+if(va===undefined&&vb===undefined)return 0;
+if(va===undefined)return 1;
+if(vb===undefined)return -1;
 return rateSort===1?(vb-va):(va-vb);
 });
 });
@@ -3138,9 +3175,10 @@ let h='<div class="sector-grid">';
 ['INDEX','SECTOR','THEMATIC','BOND'].forEach(g=>{
 if(!groups[g])return;
 const info=GN[g]||{l:g,i:'📌'};
+const titleFg=g==='INDEX'?'#000':'#fff';
 h+=`<div class="sector-card"><div class="sector-card-header" style="background:${GC[g]}22;border-bottom-color:${GC[g]}55">`;
-h+=`<div class="sector-card-title" style="background:${GC[g]};color:#fff">${info.i} ${info.l}</div>`;
-h+=`<div class="sector-card-meta"><span class="sector-count" style="font-size:10px;color:var(--text-muted)">${groups[g].length}개</span></div>`;
+h+=`<div class="sector-card-title" style="background:${GC[g]};color:${titleFg}">${info.i} ${info.l}</div>`;
+h+=`<div class="sector-card-meta"><span class="sector-count" style="font-size:10px;color:var(--text-muted)">${groups[g].length}개 섹터</span></div>`;
 h+=`</div><div class="sector-stocks">`;
 groups[g].forEach(({n,m})=>{
 const chg=dataMap[n];
@@ -3150,7 +3188,36 @@ const col=chg>0?'#ef5350':chg<0?'#42a5f5':'#8a9ab5';
 const sign=chg>0?'+':'';
 chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
 }
-h+=`<div class="stock-item"><span class="stock-name" style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
+// 섹터 헤더 행
+h+=`<div class="stock-item" style="border-bottom:1px solid rgba(255,255,255,.07);padding:5px 8px;cursor:pointer" onclick="openSectorPopup('${n.replace(/'/g,"\\'")}',false)">`;
+h+=`<span class="stock-name" style="display:flex;align-items:center;gap:5px;flex:1">`;
+h+=`<span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>`;
+h+=`<strong style="font-size:12px;color:var(--text-primary)">${n}</strong>`;
+if(m.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${m.etf}</span>`;
+if(m.en&&m.en!==n) h+=`<span style="font-size:9px;color:var(--text-muted)">${m.en}</span>`;
+h+=`</span>${chgHtml}</div>`;
+// 관심종목 개별 종목 행 (첫 번째 ETF 제외, 인덱스 1부터)
+const wStocks=watchStocksMap[n];
+if(wStocks&&wStocks.length>1){
+wStocks.slice(1).forEach(st=>{
+if(!st.name)return;
+const sv=st.chg;
+let sHtml='';
+if(sv!==null&&sv!==undefined&&!isNaN(sv)){
+const sc=sv>0?'#ef5350':sv<0?'#42a5f5':'#8a9ab5';
+const ss=sv>0?'+':'';
+sHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:${sc};flex-shrink:0">${ss}${sv.toFixed(2)}%</span>`;
+}
+const mcap=st.marketCap!==null&&st.marketCap!==undefined?`<span style="font-size:8px;color:var(--text-muted);margin-left:3px">$${st.marketCap.toFixed(1)}B</span>`:'';
+const tkrShort=st.ticker?st.ticker.split(':').pop():'';
+h+=`<div class="stock-item" style="padding:3px 8px 3px 22px;opacity:.82">`;
+h+=`<span style="font-size:11px;color:var(--text-secondary);flex:1;display:flex;align-items:center;gap:4px">`;
+h+=st.name;
+if(tkrShort) h+=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.15);padding:0 4px;border-radius:2px">${tkrShort}</span>`;
+h+=mcap;
+h+=`</span>${sHtml}</div>`;
+});
+}
 });
 h+=`</div></div>`;});
 h+='</div>';
@@ -3659,6 +3726,7 @@ document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none'
 document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
 document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
 document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
+document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
 if(tab==='watch'){
 if(!ADM.sectors.length) loadAdminSectors().then(renderWatchSectorList);
 else renderWatchSectorList();
@@ -3667,6 +3735,126 @@ if(tab==='techref'){
 const el=document.getElementById('techref-gas-url');
 if(el) el.textContent=typeof GAS_WEBAPP_URL!=='undefined'?GAS_WEBAPP_URL:'(설정 없음)';
 }
+if(tab==='us-mgmt'){
+if(!S.usWatchL){
+api('us_watch_list',0,true).then(d=>{S.usWatchL=d;usAdminRenderSectorList();}).catch(()=>{});
+}else{
+usAdminRenderSectorList();
+}
+}
+}
+// ── US관심종목 관리자 함수들 ──────────────────────────────────────
+let _usAdminSelSector=null;
+function usAdminRenderSectorList(){
+const el=document.getElementById('us-admin-sector-list-body');
+if(!el)return;
+if(!S.usWatchL||!S.usWatchL.sectors||S.usWatchL.sectors.length===0){
+el.innerHTML='<div style="padding:14px;font-size:11px;color:var(--text-muted)">데이터 없음 — GAS에서 US관심종목 초기 세팅 먼저 실행</div>';
+return;
+}
+let h='';
+S.usWatchL.sectors.forEach(sec=>{
+const sel=_usAdminSelSector===sec.sector;
+h+=`<div class="admin-sector-item${sel?' selected':''}" onclick="usAdminSelectSector('${sec.sector.replace(/'/g,"\\'")}')">
+<span>${sec.sector}</span>
+<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length}개</span>
+<button class="admin-del-btn" onclick="event.stopPropagation();usAdminDelSector('${sec.sector.replace(/'/g,"\\'")}')">삭제</button>
+</div>`;
+});
+el.innerHTML=h;
+}
+function usAdminSelectSector(sector){
+_usAdminSelSector=sector;
+usAdminRenderSectorList();
+usAdminRenderStockPanel(sector);
+}
+function usAdminRenderStockPanel(sector){
+const title=document.getElementById('us-admin-panel-title');
+const body=document.getElementById('us-admin-panel-body');
+if(!title||!body)return;
+title.textContent=`🇺🇸 ${sector} — 종목 관리`;
+if(!S.usWatchL)return;
+const sec=S.usWatchL.sectors.find(s=>s.sector===sector);
+if(!sec){body.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px">섹터 없음</div>';return;}
+let h='';
+sec.stocks.forEach((st,idx)=>{
+const isEtf=idx===0;
+const sv=st.chg;
+let chgSpan='';
+if(sv!==null&&sv!==undefined&&!isNaN(sv)){const sc=sv>0?'#ef5350':'#42a5f5';chgSpan=`<span style="font-size:10px;color:${sc};font-family:var(--font-mono)">${sv>0?'+':''}${sv.toFixed(2)}%</span>`;}
+h+=`<div class="admin-stock-item">
+<span class="admin-stock-name">${isEtf?'⭐ ':''}${st.name}</span>
+${st.ticker?`<span class="admin-stock-ticker">${st.ticker.split(':').pop()}</span>`:''}
+${chgSpan}
+${isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':`<button class="admin-del-btn" onclick="usAdminDelStock('${sector.replace(/'/g,"\\'")}','${st.name.replace(/'/g,"\\'")}')">삭제</button>`}
+</div>`;
+});
+h+=`<div class="admin-input-row" style="margin-top:12px">
+<input class="admin-input" id="us-add-stock-name" placeholder="종목명 (예: NVIDIA)" style="flex:2">
+<input class="admin-input" id="us-add-stock-ticker" placeholder="티커 (예: NASDAQ:NVDA)" style="flex:2">
+<button class="admin-add-btn" onclick="usAdminDoAddStock()">+ 추가</button>
+</div>
+<div style="font-size:10px;color:var(--text-muted);margin-top:6px">💡 티커 형식: NASDAQ:NVDA / NYSE:JPM / NYSEARCA:XLK</div>`;
+body.innerHTML=h;
+}
+function showUsAdminMsg(type,txt){
+const el=document.getElementById('us-admin-msg');
+if(!el)return;
+el.className=`admin-msg ${type}`;
+el.textContent=txt;
+el.style.display='block';
+setTimeout(()=>{el.style.display='none';},4000);
+}
+async function _usAdminApi(action,params){
+const pw_hash=window.ADMIN_PW_HASH||(window.ADMIN_CONFIG&&ADMIN_CONFIG.PW_HASH)||'';
+const qs=new URLSearchParams({type:'admin',action,pw_hash,...params}).toString();
+const res=await fetch(GAS_WEBAPP_URL+'?'+qs);
+return await res.json();
+}
+async function _usRefreshWatchList(){
+try{const d=await api('us_watch_list',0,true);S.usWatchL=d;usAdminRenderSectorList();if(_usAdminSelSector)usAdminRenderStockPanel(_usAdminSelSector);}
+catch(e){console.error('US관심종목 새로고침 실패:',e);}
+}
+async function usAdminAddSectorPrompt(){
+const name=prompt('추가할 US 섹터명을 입력하세요 (한국어 가능)\n예: 우주항공, 핀테크');
+if(!name||!name.trim())return;
+try{
+const r=await _usAdminApi('us_add_sector',{sector:name.trim()});
+if(!r.ok)throw new Error(r.error||'실패');
+showUsAdminMsg('ok',`"${name.trim()}" 섹터 추가 완료`);
+await _usRefreshWatchList();
+}catch(e){showUsAdminMsg('err',e.message);}
+}
+async function usAdminDelSector(sector){
+if(!confirm(`"${sector}" 섹터와 전체 종목을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`))return;
+try{
+const r=await _usAdminApi('us_delete_sector',{sector});
+if(!r.ok)throw new Error(r.error||'실패');
+if(_usAdminSelSector===sector)_usAdminSelSector=null;
+showUsAdminMsg('ok',`"${sector}" 섹터 삭제 완료`);
+await _usRefreshWatchList();
+}catch(e){showUsAdminMsg('err',e.message);}
+}
+async function usAdminDelStock(sector,stockName){
+if(!confirm(`"${stockName}" 종목을 삭제하시겠습니까?`))return;
+try{
+const r=await _usAdminApi('us_delete_stock',{sector,stock_name:stockName});
+if(!r.ok)throw new Error(r.error||'실패');
+showUsAdminMsg('ok',`"${stockName}" 삭제 완료`);
+await _usRefreshWatchList();
+}catch(e){showUsAdminMsg('err',e.message);}
+}
+async function usAdminDoAddStock(){
+const name=(document.getElementById('us-add-stock-name')?.value||'').trim();
+const ticker=(document.getElementById('us-add-stock-ticker')?.value||'').trim();
+if(!name){showUsAdminMsg('err','종목명을 입력하세요');return;}
+if(!_usAdminSelSector){showUsAdminMsg('err','좌측에서 섹터를 먼저 선택하세요');return;}
+try{
+const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||''});
+if(!r.ok)throw new Error(r.error||'실패');
+showUsAdminMsg('ok',`"${name}" 추가 완료`);
+await _usRefreshWatchList();
+}catch(e){showUsAdminMsg('err',e.message);}
 }
 async function loadVisitorStats(){
 document.getElementById('admin-visit-today').textContent='…';
