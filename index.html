@@ -140,7 +140,7 @@ button[title]:hover::after{
 .sp-stock-memo{font-size:9px;color:var(--text-muted);grid-column:1/-1;padding-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 th.sector-clickable{cursor:pointer;transition:filter .12s}
 th.sector-clickable:hover{filter:brightness(1.35)}
-th.sector-clickable::after{content:' ▾';font-size:7px;opacity:.6}
+th{vertical-align:top}
 </style>
 </head>
 <body>
@@ -1658,7 +1658,7 @@ if(isFnG){
   _title='';
   _cls=`class="${isW?'watched-col':''}"` ;
 }
-t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${isW?'⭐ ':''}${isFnG?'🧭 ':''}${isFnG?'F&amp;G':name}</th>`;
+t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${isW?'⭐ ':''}${isFnG?'🧭 ':''}${isFnG?'F&amp;G':name}</th>`;
 });
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
@@ -1785,7 +1785,7 @@ KR_GROUP_COLOR_CACHE[label]=KR_GROUP_COLORS[KR_GROUP_COLOR_IDX%KR_GROUP_COLORS.l
 KR_GROUP_COLOR_IDX++;
 }
 const bg=KR_GROUP_COLOR_CACHE[label];
-row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3);${borderStyle}white-space:normal;word-break:keep-all;padding:4px 6px;text-shadow:0 1px 2px rgba(0,0,0,.5)">▶ ${label}</th>`;
+row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3);${borderStyle}white-space:normal;word-break:keep-all;vertical-align:top;padding:4px 6px;text-shadow:0 1px 2px rgba(0,0,0,.5)">▶ ${label}</th>`;
 });
 row+=`</tr>`;
 return row;
@@ -3068,7 +3068,7 @@ if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px;vertical-align:top" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
@@ -3402,7 +3402,7 @@ const isW=WATCHED_SECTORS.has(name);
 const _isBdr2=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_si2));
 const _bdr2=_isBdr2?"border-left:3px solid #000;":"";
 t+=`<th class="${isW?'watched-col':''} ${KR_FIXED[name]?'':`sector-clickable`}"
-  style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr2}"
+  style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr2}"
   ${KR_FIXED[name]?'':`onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)" title="${name} 종목 보기"`}
 >${isW?'⭐ ':''}${name}</th>`;
 });
@@ -3442,7 +3442,7 @@ sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
 t+='</tr><tr><th>Date</th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px;vertical-align:top" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
