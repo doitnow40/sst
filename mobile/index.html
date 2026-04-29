@@ -3442,9 +3442,9 @@ if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
+spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3)">${gg.label}</th>`;});
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};const isW=US_WATCHED_SECTORS.has(h);t+=`<th class="${isW?'watched-col':''} sector-clickable" style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}</th>`;});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
@@ -3843,9 +3843,9 @@ _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
+spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3)">${gg.label}</th>`;});
 t+='</tr><tr><th>Date</th>';
-sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};t+=`<th style="background:${m.bg};color:${m.fg};font-size:9px" class="sector-clickable" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}</th>`;});
+sh.forEach(h=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};const isW=US_WATCHED_SECTORS.has(h);t+=`<th class="${isW?'watched-col':''} sector-clickable" style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}</th>`;});
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
