@@ -755,32 +755,14 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
         <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
-        <span id="kr-memo-msg" class="admin-msg"></span>
+        <button class="admin-add-btn" id="kr-memo-save-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
       </div>
-    </div>
-  </div>
-  <!-- US Sector Tracker -->
-  <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇺🇸 미국 섹터 History 메모 (US Sector Tracker)</div>
-    <div class="about-section-body" style="padding:14px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-        <input type="date" id="us-memo-date" class="admin-input" style="max-width:160px">
-      </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-        <textarea id="us-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) CPI 발표, 나스닥 -2% 급락"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" onclick="saveHistoryMemo('us')" style="background:var(--accent-us);color:#fff">💾 저장</button>
-        <span id="us-memo-msg" class="admin-msg"></span>
-      </div>
+      <div id="kr-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
     </div>
   </div>
   <!-- US 관심종목 섹터등락률 -->
   <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇺🇸 미국 섹터 History 메모 (US관심종목 섹터등락률)</div>
+    <div class="about-section-title">🇺🇸 미국 섹터 History 메모</div>
     <div class="about-section-body" style="padding:14px">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
@@ -791,9 +773,9 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
         <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
       </div>
       <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
-        <span id="us-watch-memo-msg" class="admin-msg"></span>
+        <button class="admin-add-btn" id="us-watch-memo-save-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
       </div>
+      <div id="us-watch-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
     </div>
   </div>
 </div>
@@ -1577,6 +1559,7 @@ h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFi
 }else h+=`<td style="${bdr}background:var(--bg-card2)"></td>`;
 }else h+=`<td style="${bdr}background:var(--bg-card2)"></td>`;
 });
+h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
 function avg20rowFromData(sectorHdrs, avg20Data, mode){
@@ -1591,6 +1574,7 @@ const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(nam
 h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(2)}</td>`;
 }else h+=`<td style="${bdr}background:var(--bg-card2)"></td>`;
 });
+h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
 function sparkline5row(sectorHdrs, filtered){
@@ -1614,10 +1598,12 @@ const svg=`<svg width="${W}" height="${H}" style="display:block;margin:auto"><po
 h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}padding:1px;background:var(--bg-card2)">${svg}</td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)"></td>`;
 });
+h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
 function separatorRow(colCount){
-return `<tr style="height:3px;background:var(--bg-card2)"><td colspan="${colCount+1}" style="background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.2));padding:0;height:3px"></td></tr>`;
+// colCount = 섹터 수. 실제 열 = 날짜(1) + 섹터들(colCount) + 메모(1) = colCount+2
+return `<tr style="height:3px;background:var(--bg-card2)"><td colspan="${colCount+2}" style="background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.2));padding:0;height:3px"></td></tr>`;
 }
 async function loadKr(){
 if(S.krOk){renderKr();return;}
@@ -1796,7 +1782,7 @@ t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
 +sparkline5row(sectorHdrs,f)
-+separatorRow(sectorHdrs.length+1)
++separatorRow(sectorHdrs.length)
 +'</thead><tbody>';
 if(S.krToday&&S.krToday.sectors){
 const todayMap=S.krToday.sectors;
@@ -3196,7 +3182,7 @@ t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
 +sparkline5row(sh,f)
-+separatorRow(sh.length+1)
++separatorRow(sh.length)
 +'</thead><tbody>';
 if(S.usToday&&S.usToday.sectors){
 const todayMap=S.usToday.sectors;
@@ -3988,7 +3974,7 @@ document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none';
 // 메모 탭 열 때 날짜 기본값 세팅 (최근 영업일)
 if(tab==='memo'){
   const today=new Date().toISOString().slice(0,10);
-  ['kr-memo-date','us-memo-date','us-watch-memo-date'].forEach(id=>{
+  ['kr-memo-date','us-watch-memo-date'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&!el.value) el.value=today;
   });
@@ -4233,36 +4219,52 @@ btn.disabled=false; btn.innerHTML='💾 저장';
 }
 // ── History 메모 저장 ──────────────────────────────────────────────
 async function saveHistoryMemo(target){
-const dateId={'kr':'kr-memo-date','us':'us-memo-date','us_watch':'us-watch-memo-date'}[target];
-const textId={'kr':'kr-memo-text','us':'us-memo-text','us_watch':'us-watch-memo-text'}[target];
-const msgId ={'kr':'kr-memo-msg', 'us':'us-memo-msg', 'us_watch':'us-watch-memo-msg'}[target];
-const actionMap={'kr':'kr_save_memo','us':'us_save_memo','us_watch':'us_watch_save_memo'};
+const dateId={'kr':'kr-memo-date','us_watch':'us-watch-memo-date'}[target];
+const textId={'kr':'kr-memo-text','us_watch':'us-watch-memo-text'}[target];
+const msgId ={'kr':'kr-memo-msg','us_watch':'us-watch-memo-msg'}[target];
+const btnId ={'kr':'kr-memo-save-btn','us_watch':'us-watch-memo-save-btn'}[target];
+const actionMap={'kr':'kr_save_memo','us_watch':'us_watch_save_memo'};
 const dateEl=document.getElementById(dateId);
 const textEl=document.getElementById(textId);
 const msgEl =document.getElementById(msgId);
+const btnEl =document.getElementById(btnId);
 if(!dateEl||!textEl||!msgEl) return;
 const dateVal=dateEl.value;
 const memoVal=textEl.value.trim();
-if(!dateVal){msgEl.textContent='날짜를 선택해주세요.';msgEl.className='admin-msg err';msgEl.style.display='';return;}
-msgEl.textContent='저장 중...';msgEl.className='admin-msg';msgEl.style.display='';
+if(!dateVal){
+  msgEl.textContent='날짜를 선택해주세요.';
+  msgEl.className='admin-msg err';
+  msgEl.style.display='';
+  return;
+}
+if(btnEl){btnEl.disabled=true;btnEl.innerHTML='<span class="admin-spinner"></span>저장 중...';}
+msgEl.style.display='none';
 try{
-// 관리자 비밀번호 해시 획득 (기존 ADMIN_CONFIG 활용)
 const pw_hash=ADMIN_CONFIG.PW_HASH||'';
-if(!pw_hash||!ADM.loggedIn){msgEl.textContent='❌ 관리자 로그인이 필요합니다.';msgEl.className='admin-msg err';msgEl.style.display='';return;}
+if(!pw_hash||!ADM.loggedIn){
+  msgEl.textContent='❌ 관리자 로그인이 필요합니다.';
+  msgEl.className='admin-msg err';
+  msgEl.style.display='';
+  if(btnEl){btnEl.disabled=false;btnEl.innerHTML='💾 저장';}
+  return;
+}
 const action=actionMap[target];
 const url=`${GAS_WEBAPP_URL}?type=admin&action=${encodeURIComponent(action)}&pw_hash=${encodeURIComponent(pw_hash)}&date=${encodeURIComponent(dateVal)}&memo=${encodeURIComponent(memoVal)}&_t=${Date.now()}`;
 const r=await fetch(url,{cache:'no-store'});
 if(!r.ok) throw new Error(`HTTP ${r.status}`);
 const j=await r.json();
 if(!j.ok) throw new Error(j.error||'저장 실패');
-msgEl.textContent=`✅ ${dateVal} 메모 저장 완료`;msgEl.className='admin-msg ok';msgEl.style.display='';
-// 캐시 강제 갱신
+msgEl.textContent=`✅ ${dateVal} 메모 저장 완료!`;
+msgEl.className='admin-msg ok';
+msgEl.style.display='';
 if(target==='kr'){S.krD=null;S.krOk=false;loadKr();}
-else if(target==='us'){S.usD=null;S.usOk=false;loadUs();}
 else{S.usWatchD=null;S.usOk=false;loadUs();}
 }catch(e){
-msgEl.textContent='❌ '+e.message;msgEl.className='admin-msg err';msgEl.style.display='';
+msgEl.textContent='❌ '+e.message;
+msgEl.className='admin-msg err';
+msgEl.style.display='';
 }
+if(btnEl){btnEl.disabled=false;btnEl.innerHTML='💾 저장';}
 }
 async function loadVisitorStats(){
 document.getElementById('admin-visit-today').textContent='…';
