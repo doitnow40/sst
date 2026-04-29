@@ -604,6 +604,7 @@ style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;b
 <div class="admin-tab" onclick="switchAdminTab('watch',this)">⭐ KR 주목 섹터</div>
 <div class="admin-tab" onclick="switchAdminTab('us-mgmt',this)">🇺🇸 US 섹터/종목 관리</div>
 <div class="admin-tab" onclick="switchAdminTab('us-watch',this)">🇺🇸 US 주목 섹터</div>
+<div class="admin-tab" onclick="switchAdminTab('memo',this)">📝 History 메모</div>
 <div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
 </div>
 <div id="admin-tab-stats">
@@ -735,6 +736,68 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 </div>
 </div>
 
+<div id="admin-tab-memo" style="display:none">
+<div style="max-width:560px">
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8">
+    각 히스토리 표의 <strong style="color:var(--text-primary)">메모</strong> 컬럼에 날짜별 메모를 입력합니다.<br>
+    저장하면 구글 스프레드시트 해당 시트의 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px">📝 메모</code> 열에 기록됩니다.
+  </div>
+  <!-- KR -->
+  <div class="about-section" style="margin-bottom:14px">
+    <div class="about-section-title">🇰🇷 한국 섹터 History 메모</div>
+    <div class="about-section-body" style="padding:14px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
+        <input type="date" id="kr-memo-date" class="admin-input" style="max-width:160px">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
+        <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button class="admin-add-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
+        <span id="kr-memo-msg" class="admin-msg"></span>
+      </div>
+    </div>
+  </div>
+  <!-- US Sector Tracker -->
+  <div class="about-section" style="margin-bottom:14px">
+    <div class="about-section-title">🇺🇸 미국 섹터 History 메모 (US Sector Tracker)</div>
+    <div class="about-section-body" style="padding:14px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
+        <input type="date" id="us-memo-date" class="admin-input" style="max-width:160px">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
+        <textarea id="us-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) CPI 발표, 나스닥 -2% 급락"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button class="admin-add-btn" onclick="saveHistoryMemo('us')" style="background:var(--accent-us);color:#fff">💾 저장</button>
+        <span id="us-memo-msg" class="admin-msg"></span>
+      </div>
+    </div>
+  </div>
+  <!-- US 관심종목 섹터등락률 -->
+  <div class="about-section" style="margin-bottom:14px">
+    <div class="about-section-title">🇺🇸 미국 섹터 History 메모 (US관심종목 섹터등락률)</div>
+    <div class="about-section-body" style="padding:14px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
+        <input type="date" id="us-watch-memo-date" class="admin-input" style="max-width:160px">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
+        <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+        <button class="admin-add-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
+        <span id="us-watch-memo-msg" class="admin-msg"></span>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /#admin-tab-memo -->
 <div id="admin-tab-techref" style="display:none">
 <div class="stats-embed-wrap" style="max-width:820px">
 
@@ -1727,11 +1790,13 @@ if(isFnG){
 const _dispName=(name==='FnG'?'F&G':name);
 t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${_dispName}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}${isFnG?'<div style="font-size:8px;margin-top:2px">🧭</div>':''}</th>`;
 });
+// ★ 메모 헤더 컬럼 추가
+t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;font-size:9px;font-weight:700;white-space:nowrap;text-align:left;padding:4px 8px">📝 메모</th>`;
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
 +sparkline5row(sectorHdrs,f)
-+separatorRow(sectorHdrs.length)
++separatorRow(sectorHdrs.length+1)
 +'</thead><tbody>';
 if(S.krToday&&S.krToday.sectors){
 const todayMap=S.krToday.sectors;
@@ -1767,6 +1832,7 @@ const _isBdrT=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT));
 const _bdrT=_isBdrT?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrT}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
 });
+t+=`<td style="color:var(--text-muted);font-size:9px;text-align:left;padding:3px 8px">-</td>`;
 t+=`</tr>`;
 }else if(todayDate&&!alreadyExists&&!isWeekend&&_krPreMarket){
 // 장 전: 안내 행 표시
@@ -1775,7 +1841,7 @@ t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${d
 t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`⏰ 현재 ${kstTimeStr} — 한국 정규장 개장 전입니다 (개장: 09:00 KST). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
+t+=`<td></td></tr>`;
 }else if(isWeekend){
 // 주말: 안내 행 표시
 const dayNames=['일','월','화','수','목','금','토'];
@@ -1783,9 +1849,10 @@ t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,
 t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`🏖️ 오늘은 주말(${dayNames[kstDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
+t+=`<td></td></tr>`;
 }
 }
+const krMemoIdx=sectorHdrs.length+1;
 f.forEach(row=>{
 t+=`<tr><td>${dateCell(row[0]||'',true)}</td>`;
 sectorHdrs.forEach((name,ci)=>{
@@ -1799,6 +1866,8 @@ const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd=_isBdrTd?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrTd}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
 });
+const krMemo=row[krMemoIdx]||'';
+t+=`<td style="min-width:100px;max-width:180px;font-size:9px;color:${krMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:pre-wrap;word-break:break-all;font-family:var(--font-body)">${krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -3122,11 +3191,12 @@ t+=`<th class="${isW?'watched-col':''} sector-clickable"
   style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
   onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:1px">⭐</div>':''}</th>`;
 });
+t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;font-size:9px;font-weight:700;white-space:nowrap;text-align:left;padding:4px 8px">📝 Memo</th>`;
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
 +sparkline5row(sh,f)
-+separatorRow(sh.length)
++separatorRow(sh.length+1)
 +'</thead><tbody>';
 if(S.usToday&&S.usToday.sectors){
 const todayMap=S.usToday.sectors;
@@ -3156,6 +3226,7 @@ if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;
 const c=usCell(name,val);
 t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
+t+=`<td style="color:var(--text-muted);font-size:9px;text-align:left;padding:3px 8px">-</td>`;
 t+=`</tr>`;
 } else if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usPreMarket){
 // 장 전 시간대: 오늘 행 대신 이유 안내 행 표시
@@ -3166,7 +3237,7 @@ t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${d
 t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
+t+=`<td></td></tr>`;
 } else if(_usWeekend){
 const latestDate=baseRows.length?baseRows[0][0]:'';
 const dayNames=['일','월','화','수','목','금','토'];
@@ -3174,17 +3245,20 @@ t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,
 t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
+t+=`<td></td></tr>`;
 }
 }
+const usMemoIdx=sh.length+1;
 f.forEach(row=>{
-if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
+if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td><td></td></tr>`;return;}
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
 const v=row[ci+1],c=usCell(name,v);
 const isW=US_WATCHED_SECTORS.has(name);
 t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
 });
+const usMemo=row[usMemoIdx]||'';
+t+=`<td style="min-width:100px;max-width:180px;font-size:9px;color:${usMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:pre-wrap;word-break:break-all;font-family:var(--font-body)">${usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -3910,6 +3984,15 @@ document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none'
 document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
 document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
 document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none';
+document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none';
+// 메모 탭 열 때 날짜 기본값 세팅 (최근 영업일)
+if(tab==='memo'){
+  const today=new Date().toISOString().slice(0,10);
+  ['kr-memo-date','us-memo-date','us-watch-memo-date'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.value) el.value=today;
+  });
+}
 if(tab==='watch'){
 if(!ADM.sectors.length) loadAdminSectors().then(renderWatchSectorList);
 else renderWatchSectorList();
@@ -4147,6 +4230,39 @@ onUsWatchChange();
 alert('저장 실패: '+e.message);
 }
 btn.disabled=false; btn.innerHTML='💾 저장';
+}
+// ── History 메모 저장 ──────────────────────────────────────────────
+async function saveHistoryMemo(target){
+const dateId={'kr':'kr-memo-date','us':'us-memo-date','us_watch':'us-watch-memo-date'}[target];
+const textId={'kr':'kr-memo-text','us':'us-memo-text','us_watch':'us-watch-memo-text'}[target];
+const msgId ={'kr':'kr-memo-msg', 'us':'us-memo-msg', 'us_watch':'us-watch-memo-msg'}[target];
+const actionMap={'kr':'kr_save_memo','us':'us_save_memo','us_watch':'us_watch_save_memo'};
+const dateEl=document.getElementById(dateId);
+const textEl=document.getElementById(textId);
+const msgEl =document.getElementById(msgId);
+if(!dateEl||!textEl||!msgEl) return;
+const dateVal=dateEl.value;
+const memoVal=textEl.value.trim();
+if(!dateVal){msgEl.textContent='날짜를 선택해주세요.';msgEl.className='admin-msg err';msgEl.style.display='';return;}
+msgEl.textContent='저장 중...';msgEl.className='admin-msg';msgEl.style.display='';
+try{
+// 관리자 비밀번호 해시 획득 (기존 ADMIN_CONFIG 활용)
+const pw_hash=ADMIN_CONFIG.PW_HASH||'';
+if(!pw_hash||!ADM.loggedIn){msgEl.textContent='❌ 관리자 로그인이 필요합니다.';msgEl.className='admin-msg err';msgEl.style.display='';return;}
+const action=actionMap[target];
+const url=`${GAS_WEBAPP_URL}?type=admin&action=${encodeURIComponent(action)}&pw_hash=${encodeURIComponent(pw_hash)}&date=${encodeURIComponent(dateVal)}&memo=${encodeURIComponent(memoVal)}&_t=${Date.now()}`;
+const r=await fetch(url,{cache:'no-store'});
+if(!r.ok) throw new Error(`HTTP ${r.status}`);
+const j=await r.json();
+if(!j.ok) throw new Error(j.error||'저장 실패');
+msgEl.textContent=`✅ ${dateVal} 메모 저장 완료`;msgEl.className='admin-msg ok';msgEl.style.display='';
+// 캐시 강제 갱신
+if(target==='kr'){S.krD=null;S.krOk=false;loadKr();}
+else if(target==='us'){S.usD=null;S.usOk=false;loadUs();}
+else{S.usWatchD=null;S.usOk=false;loadUs();}
+}catch(e){
+msgEl.textContent='❌ '+e.message;msgEl.className='admin-msg err';msgEl.style.display='';
+}
 }
 async function loadVisitorStats(){
 document.getElementById('admin-visit-today').textContent='…';
