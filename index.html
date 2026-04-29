@@ -3259,6 +3259,8 @@ H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usL
 const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
 if(hasWatchList){
 let sectors=[...S.usWatchL.sectors];
+// ★ US_META에 없는 섹터(안내문구 등 노이즈)는 카드로 표시하지 않음
+sectors=sectors.filter(s=>US_META.hasOwnProperty(s.sector));
 // ★ 주목 섹터 필터
 if(watchedOnly) sectors=sectors.filter(s=>US_WATCHED_SECTORS.has(s.sector));
 // 정렬
