@@ -437,7 +437,7 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 /* ── Adfit 광고 컨테이너 ── */
 .adfit-wrap{width:100%;display:flex;justify-content:center;margin:12px 0 0;min-height:0;overflow:hidden}
 .adfit-wrap:empty{display:none !important;margin:0 !important}
-#sidebar-adfit-wrap{display:none !important}
+/* sidebar-adfit: JS의 reinitAdfit에서 동적으로 노출됨 */
 </style>
 </head>
 <body>
@@ -569,7 +569,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div class="nav-item" id="nav-admin" onclick="go('admin',this)" style="display:none">
 <span class="nav-icon">⚙️</span><span>관리자 페이지</span>
 </div>
-<div id="sidebar-adfit-wrap" style="display:none"></div>
+<div id="sidebar-adfit-wrap"></div>
 </nav>
 <main class="main">
 <div id="page-kr-history" style="display:none">
@@ -1581,9 +1581,44 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       }
     }
 
+    // ★ chg 값이 없는 종목이 있으면 캐시 무시하고 kr_list 재로드 (팝업용)
+    if (stocks && stocks.length > 0) {
+      const hasNoChg = stocks.every(st => st.chg === null || st.chg === undefined || isNaN(st.chg));
+      if (hasNoChg) {
+        try {
+          const fresh = await api('kr_list', 0, true); // forceRefresh=true
+          if (fresh && fresh.sectors) {
+            S.krSectors = fresh.sectors;
+            const freshSec = fresh.sectors.find(s => s.sector === sectorName);
+            if (freshSec && freshSec.stocks && freshSec.stocks.length > 0) {
+              stocks = freshSec.stocks;
+            }
+          }
+        } catch(e) { /* 실패해도 기존 stocks 유지 */ }
+      }
+    }
+
     if (!stocks || stocks.length === 0) {
       body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">종목 정보가 없습니다.</div>';
       return;
+    }
+
+    // ★ 오늘 실시간 등락률 보완: kr_today의 개별 종목 chg가 없을 경우
+    // S.krToday.stocks (종목별 chg)가 있으면 merge, 없으면 kr_list API의 chg 사용
+    if (isKr) {
+      const todayStocks = (S.krToday && S.krToday.stocks) ? S.krToday.stocks : {};
+      stocks = stocks.map(st => {
+        // chg가 이미 있으면 유지, 없으면 todayStocks에서 보완
+        if (st.chg !== null && st.chg !== undefined && !isNaN(st.chg)) return st;
+        const ticker = st.ticker || '';
+        const code = ticker.replace(/^KRX:/,'').replace(/^KOSPI:/,'').replace(/^KOSDAQ:/,'').replace(/\D/g,'');
+        const todayChg = todayStocks[st.name] !== undefined ? todayStocks[st.name]
+                       : (todayStocks[code] !== undefined ? todayStocks[code] : null);
+        if (todayChg !== null && !isNaN(parseFloat(todayChg))) {
+          return Object.assign({}, st, { chg: parseFloat(todayChg) });
+        }
+        return st;
+      });
     }
 
     // 오늘 등락률 기준 정렬 (높은 순)
@@ -3969,6 +4004,8 @@ function reinitAdfit(pageId){
   document.head.appendChild(sc);
 }
 function go(page,el){
+// floating 사이드바일 때 nav 클릭 시 닫기 (overlay가 main을 막는 문제 방지)
+if(typeof closeSidebarIfFloating === 'function') closeSidebarIfFloating();
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
 setTimeout(function(){reinitAdfit(page);},150);
@@ -5073,6 +5110,22 @@ applyState(true);
 }
 };
 applyState(false);
+// 사이드바 세로 광고 초기화 (DAN-URl434E25F4mNMKM, 160x600 또는 작은 사이즈 사용)
+(function(){
+  var sw = document.getElementById('sidebar-adfit-wrap');
+  if (!sw || sw.querySelector('ins')) return;
+  var ins = document.createElement('ins');
+  ins.className = 'kakao_ad_area';
+  ins.setAttribute('data-ad-unit', 'DAN-URl434E25F4mNMKM');
+  ins.setAttribute('data-ad-width', '160');
+  ins.setAttribute('data-ad-height', '600');
+  sw.appendChild(ins);
+  var sc = document.createElement('script');
+  sc.setAttribute('data-adfit', '1');
+  sc.async = true; sc.type = 'text/javascript';
+  sc.src = '//t1.daumcdn.net/kas/static/ba.min.js';
+  document.head.appendChild(sc);
+})();
 })();
 
 // ── 통합 floating tooltip ──
