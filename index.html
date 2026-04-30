@@ -3983,11 +3983,23 @@ function reinitAdfit(pageId){
     var w=document.getElementById('adfit-'+id);
     if(w) w.innerHTML='';
   });
+  // 사이드바 광고도 초기화
+  var sw=document.getElementById('sidebar-adfit-wrap');
+  if(sw) sw.innerHTML='';
   // 이전 ba.min.js 제거
   document.querySelectorAll('script[data-adfit="1"]').forEach(function(s){s.remove();});
+  // 사이드바 광고 삽입 (세로형 160x600)
+  if(sw && window.innerWidth > 900){
+    var sins=document.createElement('ins');
+    sins.className='kakao_ad_area';
+    sins.setAttribute('data-ad-unit','DAN-URl434E25F4mNMKM');
+    sins.setAttribute('data-ad-width','160');
+    sins.setAttribute('data-ad-height','600');
+    sw.appendChild(sins);
+  }
   // 현재 페이지 컨테이너에만 ins 삽입
   var wrap=document.getElementById('adfit-'+pageId);
-  if(!wrap) return;
+  if(!wrap){ if(sw&&sw.querySelector('ins')){ var sc2=document.createElement('script'); sc2.setAttribute('data-adfit','1'); sc2.async=true; sc2.type='text/javascript'; sc2.src='//t1.daumcdn.net/kas/static/ba.min.js'; document.head.appendChild(sc2); } return; }
   var unit=wrap.getAttribute('data-adunit');
   if(!unit) return;
   var ins=document.createElement('ins');
@@ -4004,8 +4016,6 @@ function reinitAdfit(pageId){
   document.head.appendChild(sc);
 }
 function go(page,el){
-// floating 사이드바일 때 nav 클릭 시 닫기 (overlay가 main을 막는 문제 방지)
-if(typeof closeSidebarIfFloating === 'function') closeSidebarIfFloating();
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
 setTimeout(function(){reinitAdfit(page);},150);
@@ -5043,8 +5053,11 @@ const sidebar  = document.getElementById('main-sidebar');
 const overlay  = document.getElementById('sidebar-overlay');
 const pinBtn   = document.getElementById('sidebar-pin-btn');
 const pinLabel = document.getElementById('pin-label');
-let pinned = localStorage.getItem(STORAGE_KEY) !== 'false';
-let open   = localStorage.getItem(SIDEBAR_KEY) !== 'false';
+// PC에서는 항상 pinned=true(고정)로 시작, floating 모드 비활성화
+const isMobileView = window.innerWidth <= 900;
+let pinned = isMobileView ? false : true;
+let open   = isMobileView ? false : (localStorage.getItem('sidebarOpen') !== 'false');
+// 기존 localStorage 값이 pinned=false로 저장됐어도 PC에서는 무시
 function applyState(animate) {
 if (!animate) {
 sidebar.style.transition = 'none';
@@ -5091,6 +5104,13 @@ localStorage.setItem(SIDEBAR_KEY, open);
 applyState(true);
 };
 window.toggleSidebarPin = function() {
+// PC(>900px)에서는 항상 pinned 유지
+if (window.innerWidth > 900) {
+  open = !open;
+  localStorage.setItem(SIDEBAR_KEY, open);
+  applyState(true);
+  return;
+}
 if (!pinned) {
 pinned = true;
 open   = true;
@@ -5110,22 +5130,6 @@ applyState(true);
 }
 };
 applyState(false);
-// 사이드바 세로 광고 초기화 (DAN-URl434E25F4mNMKM, 160x600 또는 작은 사이즈 사용)
-(function(){
-  var sw = document.getElementById('sidebar-adfit-wrap');
-  if (!sw || sw.querySelector('ins')) return;
-  var ins = document.createElement('ins');
-  ins.className = 'kakao_ad_area';
-  ins.setAttribute('data-ad-unit', 'DAN-URl434E25F4mNMKM');
-  ins.setAttribute('data-ad-width', '160');
-  ins.setAttribute('data-ad-height', '600');
-  sw.appendChild(ins);
-  var sc = document.createElement('script');
-  sc.setAttribute('data-adfit', '1');
-  sc.async = true; sc.type = 'text/javascript';
-  sc.src = '//t1.daumcdn.net/kas/static/ba.min.js';
-  document.head.appendChild(sc);
-})();
 })();
 
 // ── 통합 floating tooltip ──
