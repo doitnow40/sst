@@ -437,7 +437,7 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 /* ── Adfit 광고 컨테이너 ── */
 .adfit-wrap{width:100%;display:flex;justify-content:center;margin:12px 0 0;min-height:0;overflow:hidden}
 .adfit-wrap:empty{display:none !important;margin:0 !important}
-#sidebar-adfit-wrap{display:flex;justify-content:center;padding:8px 0}
+#sidebar-adfit-wrap{display:flex;justify-content:center;padding:8px 4px;min-height:0}
 </style>
 </head>
 <body>
@@ -569,7 +569,12 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div class="nav-item" id="nav-admin" onclick="go('admin',this)" style="display:none">
 <span class="nav-icon">⚙️</span><span>관리자 페이지</span>
 </div>
-<div id="sidebar-adfit-wrap"><ins class="kakao_ad_area" style="display:none" data-ad-unit="DAN-URl434E25F4mNMKM" data-ad-width="160" data-ad-height="600"></ins></div>
+<div id="sidebar-adfit-wrap">
+<ins class="kakao_ad_area" style="display:none"
+  data-ad-unit="DAN-URl434E25F4mNMKM"
+  data-ad-width="160"
+  data-ad-height="600"></ins>
+</div>
 </nav>
 <main class="main">
 <div id="page-kr-history" style="display:none">
@@ -1866,9 +1871,8 @@ updateRealtimeTime();
 if(listData&&listData.sectors){
 S.krLOk=true;
 S.krSectors=listData.sectors;
-S.krListAt=Date.now(); // ← 선취득 시각 기록 → kr-list 페이지에서 재요청 스킵
+S.krListAt=Date.now();
 }
-// ★ kr_list chg 로 todayMap 누락 섹터 보완 (ESS·연료전지 등 Live Summary 미등록 섹터)
 _supplementTodayMapFromKrSectors();
 }
 updateSheetReadTime(d.sheetReadAt);
@@ -1880,22 +1884,22 @@ document.getElementById('kr-table').innerHTML=
 `<div class="loading-state"><div style="color:#ef9a9a">⚠️ 로드 실패: ${e.message}<br><small style="color:var(--text-muted)">GAS 웹앱 배포 및 URL 설정을 확인하세요</small></div></div>`;
 }
 }
-// ── krSectors(kr_list) chg 로 todayMap 누락 섹터 보완 ──
+
+// ── krSectors(kr_list) chg 로 todayMap 누락 섹터 보완 (ESS·연료전지 등) ──
 function _supplementTodayMapFromKrSectors() {
   if (!S.krToday || !S.krSectors || !S.krSectors.length) return;
-  const todayMap = S.krToday.sectors;
+  var todayMap = S.krToday.sectors;
   if (!todayMap) return;
   S.krSectors.forEach(function(sec) {
     if (todayMap[sec.sector] !== undefined && !isNaN(parseFloat(todayMap[sec.sector]))) return;
-    const vals = (sec.stocks || []).map(function(s){ return s.chg; })
+    var vals = (sec.stocks || []).map(function(s){ return s.chg; })
       .filter(function(v){ return v !== null && v !== undefined && !isNaN(v); });
     if (vals.length > 0) {
-      const avg = vals.reduce(function(a,b){return a+b;},0) / vals.length;
+      var avg = vals.reduce(function(a,b){return a+b;},0) / vals.length;
       todayMap[sec.sector] = Math.round(avg * 100) / 100;
     }
   });
 }
-
 async function loadKrToday(){
 try{
 const d=await api('kr_today',0);
@@ -3269,7 +3273,6 @@ html+='<div data-sector="'+b.name.replace(/"/g,'&quot;')+'" title="'+b.name+' '+
 });
 html+='</div>';
 wrap.innerHTML=html;
-// ★ 트리맵 셀 클릭 → 섹터 팝업
 wrap.querySelectorAll('.tm-cell[data-sector]').forEach(function(cell){
   cell.addEventListener('click',function(e){
     var sec=cell.getAttribute('data-sector');
@@ -3987,7 +3990,8 @@ function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
 setTimeout(function(){reinitAdfit(page);},150);
-if(typeof _ensureSidebarOpen==='function') _ensureSidebarOpen();
+// ★ floating(비고정) 사이드바: nav 클릭 시 항상 열린 채 유지
+if(typeof _sidebarEnsureOpen==='function') _sidebarEnsureOpen();
 if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
@@ -5069,14 +5073,6 @@ open = !open;
 localStorage.setItem(SIDEBAR_KEY, open);
 applyState(true);
 };
-// ★ 메뉴 클릭 시 floating 사이드바가 열린 채 유지
-window._ensureSidebarOpen = function() {
-  if (!pinned && !open) {
-    open = true;
-    localStorage.setItem(SIDEBAR_KEY, open);
-    applyState(true);
-  }
-};
 window.toggleSidebarPin = function() {
 if (!pinned) {
 pinned = true;
@@ -5096,7 +5092,25 @@ localStorage.setItem(SIDEBAR_KEY, open);
 applyState(true);
 }
 };
+// ★ nav 클릭 시 floating 사이드바 열기 (pinned 모드는 무시)
+window._sidebarEnsureOpen = function() {
+  if (!pinned && !open) {
+    open = true;
+    localStorage.setItem(SIDEBAR_KEY, open);
+    applyState(true);
+  }
+};
 applyState(false);
+// ── 사이드바 세로 광고 로드 (reinitAdfit과 독립) ──
+(function(){
+  var sba=document.querySelector('#sidebar-adfit-wrap ins');
+  if(!sba) return;
+  var sc=document.createElement('script');
+  sc.setAttribute('data-adfit-sidebar','1');
+  sc.async=true; sc.type='text/javascript';
+  sc.src='//t1.daumcdn.net/kas/static/ba.min.js';
+  document.head.appendChild(sc);
+})();
 })();
 
 // ── 통합 floating tooltip ──
