@@ -67,7 +67,7 @@ gtag('config','G-3PTKMRYZZ3');</script>
 button[title]:hover::after{
   display:none; /* JS 통합 툴팁으로 대체 */
 }
-/* ── FnG 전용 팝업 ── */
+/* ── F&G 전용 팝업 ── */
 #fng-popup{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
   width:320px;max-height:82vh;overflow-y:auto;
@@ -1027,7 +1027,7 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 //  섹터 종목 팝업
 // ══════════════════════════════════════════════════
 function openSectorPopup(sectorName, isKr) {
-  // FnG 컬럼은 전용 팝업으로 분기
+  // F&G 컬럼은 전용 팝업으로 분기
   if (sectorName === 'FnG') { openFnGPopup(); return; }
 
   const popup    = document.getElementById('sector-popup');
@@ -1059,11 +1059,11 @@ function closeSectorPopup() {
 }
 
 // ══════════════════════════════════════════════════
-//  공포탐욕지수 (FnG) 전용 팝업
+//  공포탐욕지수 (F&G) 전용 팝업
 // ══════════════════════════════════════════════════
 function openFnGPopup() {
-  // FnG 값 소스: krD.rows 에서 FnG 헤더 인덱스로 직접 추출
-  // (krToday.sectors 에는 FnG가 포함되지 않음 — majorIndex/sector가 아닌 별도 컬럼)
+  // F&G 값 소스: krD.rows 에서 F&G 헤더 인덱스로 직접 추출
+  // (krToday.sectors 에는 F&G가 포함되지 않음 — majorIndex/sector가 아닌 별도 컬럼)
   let history = [];
   let fngIdx = -1;
 
@@ -1440,7 +1440,7 @@ else{const t=dev/R,c1=t<.5?W:MR,c2=t<.5?MR:DR,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],
 return{bg:hex(bg[0],bg[1],bg[2]),fg:(dev<=-7||dev>=7)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:Math.abs(dev)>=5,t:n.toFixed(2)};
 }
 function fngCell(v){
-// FnG: 0~100 점수 → 구간별 색상
+// F&G: 0~100 점수 → 구간별 색상
 // 0-20 극공포: 어두운파랑, 20-40 공포: 하늘색, 40-60 중립: 흰색
 // 60-80 탐욕: 밝은빨강, 80-100 극탐욕: 어두운빨강
 const n=parseFloat(v);
@@ -1989,7 +1989,7 @@ var kospiV=majorMap['코스피']!==undefined?majorMap['코스피']:null;
 var kosdaqV=majorMap['코스닥']!==undefined?majorMap['코스닥']:null;
 var adrpiV=majorMap['ADR피']!==undefined?majorMap['ADR피']:null;
 var adrdakV=majorMap['ADR닥']!==undefined?majorMap['ADR닥']:null;
-// FnG from history
+// F&G from history
 var fngTodayScore=null;
 if(S.krD&&S.krD.headers&&S.krD.rows){
   var fIdx=S.krD.headers.indexOf('FnG');
@@ -2311,7 +2311,7 @@ const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
 const latestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
 const addToday=hasTodayData&&todayDate!==latestDate;
 const labels=[...chartRows.map(r=>r[0]),...(addToday?[todayDate+'★']:[] )];
-const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
 const avgForTop=pureSecNames.map(name=>{
 const ci=H.indexOf(name);
 const vs=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));
@@ -2606,7 +2606,7 @@ const usTodayDate=S.usToday?S.usToday.date:'';
 const usLatestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
 const addUsToday=usTodayDate&&usTodayDate!==usLatestDate&&Object.keys(usTodayMap).length>0;
 const labels=[...chartRows.map(r=>r[0]),...(addUsToday?[usTodayDate+'★']:[])];
-const rankableNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+const rankableNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX'&&h!=='FnG';});
 const avgForTop=rankableNames.map(name=>{
 const ci=H.indexOf(name);
 const vs=chartRows.map(r=>{if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(v=>!isNaN(v));
@@ -2991,7 +2991,7 @@ if(toggleBtn)toggleBtn.style.display='';
 if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
-var aFT=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
+var aFT=sn.filter(function(n){return n!=='FnG';}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); top5.add('코스피'); top5.add('코스닥');
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
@@ -3072,7 +3072,7 @@ var vals=rk.map(function(n){var v=um[n];return{name:n,val:v!==undefined&&!isNaN(
 usChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(function(d){return d.name;}),datasets:[{data:vals.map(function(d){return d.val;}),backgroundColor:vals.map(function(d){return d.val>=0?'rgba(239,83,80,.75)':'rgba(66,165,245,.75)';}),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label:function(c){return ' '+c.parsed.x.toFixed(2)+'%';}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:function(v){return v+'%';}},grid:{color:'rgba(46,58,80,.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}}); return;
 }
 var ah=H.slice(1);
-var aFT=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
+var aFT=rk.filter(function(n){return n!=='FnG';}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['SP500','Nasdaq'].forEach(function(n){top5.add(n);});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
@@ -5074,7 +5074,7 @@ tooltip.style.top=Math.round(y-h)+'px';
 <!-- 섹터 종목 팝업 -->
 <div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
 
-<!-- FnG 전용 팝업 -->
+<!-- F&G 전용 팝업 -->
 <div id="fng-popup">
   <div id="fng-popup-header">
     <span style="font-size:16px">😱🤑</span>
