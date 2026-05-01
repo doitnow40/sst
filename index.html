@@ -3110,15 +3110,13 @@ if(IS_DEMO){
 d=demoUs();
 document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
-const [watchHistData, todayData, watchListData, legacyHistData] = await Promise.all([
+const [watchHistData, todayData, watchListData] = await Promise.all([
 api('us_watch_history', 365),
 api('us_today', 0).catch(()=>null),
-api('us_watch_list', 0).catch(()=>null),
-api('us_history', 365).catch(()=>null)
+api('us_watch_list', 0).catch(()=>null)
 ]);
-// ★ US섹터등락률(관심종목 기반) 데이터가 있으면 메인으로, 없으면 기존 Sector Tracker 로 fallback
-const hasWatchHist = watchHistData && watchHistData.rows && watchHistData.rows.length > 0;
-d = hasWatchHist ? watchHistData : (legacyHistData || watchHistData);
+// ★ 항상 US섹터등락률(관심종목 기반) 데이터만 사용 (US Sector Tracker fallback 제거)
+d = watchHistData;
 document.getElementById('us-status').textContent=d.count+'일 데이터';
 if(todayData){
 S.usToday = todayData;
