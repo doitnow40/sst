@@ -1019,6 +1019,7 @@ INDEX:   {label:'▶ 주요 지수·지표',          bg:'#F9A825',fg:'#000'},
 SECTOR:  {label:'▶ GICS 11 섹터 (SPDR ETF)',bg:'#1565C0',fg:'#fff'},
 THEMATIC:{label:'▶ 테마 ETF',               bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'▶ 채권 & 달러',            bg:'#37474F',fg:'#fff'},
+CUSTOM:  {label:'▶ 관심 섹터',              bg:'#2E7D32',fg:'#fff'},
 };
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0};
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
@@ -3160,7 +3161,7 @@ _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.
 }
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{
-const g=(US_META[h]?.group)||'INDEX';
+const g=US_META[h]?US_META[h].group:'CUSTOM';
 if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
@@ -3317,8 +3318,6 @@ H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usL
 const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
 if(hasWatchList){
 let sectors=[...S.usWatchL.sectors];
-// ★ US_META에 없는 섹터(안내문구 등 노이즈)는 카드로 표시하지 않음
-sectors=sectors.filter(s=>US_META.hasOwnProperty(s.sector));
 // ★ 주목 섹터 필터
 if(watchedOnly) sectors=sectors.filter(s=>US_WATCHED_SECTORS.has(s.sector));
 // 정렬
@@ -3616,7 +3615,7 @@ const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?pars
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
 }
 const spans=[];let pg=null,gs=0;
-sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
+sh.forEach((h,i)=>{const g=US_META[h]?US_META[h].group:'CUSTOM';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
