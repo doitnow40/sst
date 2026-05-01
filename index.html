@@ -3159,18 +3159,28 @@ const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX
 const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
 }
+const gMap=S.usD.groupMap||{};
+// 대분류 색상 팔레트 — US_GROUPS 우선, 없으면 자동 배색
+const GROUP_COLORS=['#1565C0','#4A148C','#2E7D32','#37474F','#6A1B9A','#00695C','#BF360C','#4E342E','#1B5E20','#0D47A1'];
+const _gcUsed={};let _gcIdx=0;
+function _groupStyle(g){
+  const gg=US_GROUPS[g];if(gg)return gg;
+  if(!_gcUsed[g]){_gcUsed[g]={bg:GROUP_COLORS[_gcIdx%GROUP_COLORS.length],fg:'#fff'};_gcIdx++;}
+  return _gcUsed[g];
+}
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{
-const g=US_META[h]?US_META[h].group:'CUSTOM';
+const g=gMap[h]||'INDEX';
 if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
+spans.forEach(({g,n})=>{const gg=_groupStyle(g);t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;});
 t+=`<th style="background:#1a2535;"></th>`;
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach(h=>{
-const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};
+const gn=gMap[h]||'INDEX';const gs2=_groupStyle(gn);
+const m=US_META[h]||{bg:gs2.bg,fg:gs2.fg};
 const isW=US_WATCHED_SECTORS.has(h);
 t+=`<th class="${isW?'watched-col':''} sector-clickable"
   style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
@@ -3615,12 +3625,14 @@ const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?pars
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
 }
 const spans=[];let pg=null,gs=0;
-sh.forEach((h,i)=>{const g=US_META[h]?US_META[h].group:'CUSTOM';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
+const gMap2=S.usD.groupMap||{};
+sh.forEach((h,i)=>{const g=gMap2[h]||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">${gg.label}</th>`;});
+spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{bg:GROUP_COLORS[Object.keys(gMap2).indexOf(g)%GROUP_COLORS.length]||'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;});
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach(h=>{
-const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};
+const gn=gMap2[h]||'INDEX';const gs3=US_GROUPS[gn]||{bg:'#2e3a50',fg:'#e2e8f0'};
+const m=US_META[h]||{bg:gs3.bg,fg:gs3.fg};
 const isW=US_WATCHED_SECTORS.has(h);
 t+=`<th class="${isW?'watched-col':''} sector-clickable"
   style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
