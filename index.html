@@ -3065,12 +3065,81 @@ _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].
 function _renderUsTrendChart(cr,H,rk,today){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
-if(!wrap.querySelector('#us-chart-canvas'))wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
-var canvas=document.getElementById('us-chart-canvas'); if(!canvas)return;
 if(today){
+// ── US 오늘: Finviz 스타일 트리맵 ──────────────────────────────
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
-var vals=rk.map(function(n){var v=um[n];return{name:n,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.val!==null;}).sort(function(a,b){return b.val-a.val;});
-usChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(function(d){return d.name;}),datasets:[{data:vals.map(function(d){return d.val;}),backgroundColor:vals.map(function(d){return d.val>=0?'rgba(239,83,80,.75)':'rgba(66,165,245,.75)';}),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label:function(c){return ' '+c.parsed.x.toFixed(2)+'%';}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:function(v){return v+'%';}},grid:{color:'rgba(46,58,80,.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}}); return;
+var allVals=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;});
+if(!allVals.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
+
+// 시가총액 매핑 (US관심종목 시총 데이터)
+var mcapMap={};
+if(S.usWatchL&&S.usWatchL.sectors){
+  S.usWatchL.sectors.forEach(function(sec){
+    var sum=0;
+    (sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});
+    if(sum>0)mcapMap[sec.sector]=sum;
+  });
+}
+var dataWithCap=allVals.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
+var upList=dataWithCap.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
+var dnList=dataWithCap.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
+
+// 색상: 상승=빨강, 하락=파랑 (한국식 Finviz)
+function tmColorUs(v){var MAX=3,t=Math.min(1,Math.abs(v)/MAX);if(v>0){return'rgb('+Math.round(255-77*t)+','+Math.round(255-255*t)+','+Math.round(255-255*t)+')';}else if(v<0){return'rgb('+Math.round(255-255*t)+','+Math.round(255-184*t)+','+Math.round(255-84*t)+')';}return'rgb(255,255,255)';}
+
+// rowLayout (KR과 동일)
+function rowLayoutUs(items,W0,H0){var result=[];if(!items.length)return result;var totalA=items.reduce(function(s,d){return s+d.abs;},0);if(totalA<=0)return result;var N=items.length,numRows=Math.max(1,Math.round(Math.sqrt(N*H0/W0)));numRows=Math.min(numRows,N);var targetRowA=totalA/numRows,rows=[],curRow=[],curA=0;items.forEach(function(d,idx){curRow.push(d);curA+=d.abs;var remaining=items.length-idx-1,rowsLeft=numRows-rows.length-1;if(curA>=targetRowA&&rowsLeft>0&&remaining>=rowsLeft){rows.push(curRow);curRow=[];curA=0;}});if(curRow.length)rows.push(curRow);var yPos=0;rows.forEach(function(row){var rowA=row.reduce(function(s,d){return s+d.abs;},0),rowFrac=rowA/totalA,rowH=Math.round(H0*rowFrac);if(yPos+rowH>H0)rowH=H0-yPos;if(rowH<=0)return;var xPos=0;row.forEach(function(d,ci){var cellFrac=d.abs/rowA,cellW=(ci===row.length-1)?(W0-xPos):Math.round(W0*cellFrac);result.push({name:d.name,orig:d.orig,x:xPos,y:yPos,w:cellW,h:rowH});xPos+=cellW;});yPos+=rowH;});return result;}
+
+var W=wrap.clientWidth||800,H2=Math.round(W*0.6);
+wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
+
+var hasCap=dataWithCap.some(function(d){return d.marketCap&&d.marketCap>0;});
+var allBoxes=[];
+if(hasCap){
+  var capItems=dataWithCap.filter(function(d){return d.marketCap&&d.marketCap>0;}).sort(function(a,b){return b.marketCap-a.marketCap;});
+  var tmItems=capItems.map(function(d){return{name:d.name,abs:Math.pow(d.marketCap,0.6),orig:d.avg};});
+  allBoxes=rowLayoutUs(tmItems,W,H2);
+}else{
+  var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
+  var dnSum=dnList.reduce(function(s,d){return s+Math.abs(d.avg);},0);
+  var tot=upSum+dnSum||1,gap=upList.length>0&&dnList.length>0?2:0;
+  var upW=upList.length===0?0:dnList.length===0?W:Math.max(60,Math.round((W-gap)*upSum/tot));
+  var dnW=W-upW-gap;
+  function squarifyUs(items,x0,y0,W0,H0){var result2=[];if(!items.length||W0<1||H0<1)return result2;var total=items.reduce(function(s,d){return s+d.abs;},0);if(total<=0)return result2;var area=W0*H0,scaled=items.map(function(d){return{name:d.name,orig:d.orig,a:d.abs/total*area};});function wAR(row,rA,len){var mx=row.reduce(function(m,d){return Math.max(m,d.a);},0),mn=row.reduce(function(m,d){return Math.min(m,d.a);},9e99);return Math.max(len*len*mx/(rA*rA),rA*rA/(len*len*mn));}function lRow(row,rA,rx,ry,rw,rh,hz){var pos=hz?rx:ry;row.forEach(function(d){var ratio=d.a/rA;if(hz){result2.push({name:d.name,orig:d.orig,x:pos,y:ry,w:rw*ratio,h:rh});pos+=rw*ratio;}else{result2.push({name:d.name,orig:d.orig,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}});}function sq2(it,x2,y2,w2,h2){if(!it.length||w2<1||h2<1)return;if(it.length===1){result2.push({name:it[0].name,orig:it[0].orig,x:x2,y:y2,w:w2,h:h2});return;}var hz=w2>=h2,len=hz?h2:w2,row=[it[0]],rA=it[0].a;for(var i=1;i<it.length;i++){var nA=rA+it[i].a;if(wAR(row.concat([it[i]]),nA,len)<=wAR(row,rA,len)){row.push(it[i]);rA=nA;}else{var fr=rA/(w2*h2);if(hz){lRow(row,rA,x2,y2,w2,fr*h2,true);sq2(it.slice(i),x2,y2+fr*h2,w2,h2*(1-fr));}else{lRow(row,rA,x2,y2,fr*w2,h2,false);sq2(it.slice(i),x2+fr*w2,y2,w2*(1-fr),h2);}return;}}var fr=rA/(w2*h2);if(hz)lRow(row,rA,x2,y2,w2,fr*h2,true);else lRow(row,rA,x2,y2,fr*w2,h2,false);}sq2(scaled,x0,y0,W0,H0);return result2;}
+  var upItems2=upList.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg};});
+  var dnItems2=dnList.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg};});
+  allBoxes=squarifyUs(upItems2,0,0,upW,H2).concat(squarifyUs(dnItems2,upW+gap,0,dnW,H2));
+}
+
+var PAD=1.5;
+var html='<div style="position:relative;width:100%;height:'+H2+'px;background:#0f1117;">';
+allBoxes.forEach(function(b){
+  var col=tmColorUs(b.orig);
+  var bw=Math.max(0,b.w-PAD*2),bh=Math.max(0,b.h-PAD*2);
+  if(bw<8||bh<8)return;
+  var fs=0;
+  if(bh>=90&&bw>=80)fs=Math.min(18,Math.floor(bh*0.14));
+  else if(bh>=60&&bw>=60)fs=Math.min(16,Math.floor(bh*0.16));
+  else if(bh>=44&&bw>=44)fs=Math.min(13,Math.floor(bh*0.19));
+  else if(bh>=32&&bw>=32)fs=Math.min(11,Math.floor(bh*0.22));
+  else if(bh>=20&&bw>=24)fs=Math.min(9,Math.floor(bh*0.28));
+  if(fs>0)fs=Math.max(10,fs);
+  var pct=(b.orig>0?'+':'')+b.orig.toFixed(2)+'%';
+  var label='';
+  if(fs>0){
+    var tval=Math.min(1,Math.abs(b.orig)/3);
+    var tcol=tval<0.35?'rgba(0,0,0,.88)':'rgba(255,255,255,.97)';
+    var tsh=tval<0.35?'none':'0 1px 5px rgba(0,0,0,.85)';
+    var showPct=bh>=(fs*2+10);
+    if(showPct){label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tcol+';line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(bw-6)+'px;text-shadow:'+tsh+'">'+b.name+'</div><div style="font-size:'+(fs-1)+'px;color:'+tcol+';opacity:.93;text-align:center;font-family:monospace;letter-spacing:.3px;text-shadow:'+tsh+';margin-top:2px;white-space:nowrap">'+pct+'</div>';}
+    else{label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tcol+';line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(bw-6)+'px;text-shadow:'+tsh+'">'+b.name+' <span style="opacity:.85;font-size:'+(fs-1)+'px">'+pct+'</span></div>';}
+  }
+  var _esc=b.name.replace(/'/g,"\\'");
+  html+='<div title="'+b.name+' '+pct+'" class="tm-cell" onclick="openSectorPopup(\''+_esc+'\',false)" style="position:absolute;left:'+(b.x+PAD)+'px;top:'+(b.y+PAD)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+label+'</div>';
+});
+html+='</div>';
+wrap.innerHTML=html;
+return;
 }
 var ah=H.slice(1);
 var aFT=rk.filter(function(n){return n!=='FnG';}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
