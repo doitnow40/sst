@@ -1675,7 +1675,7 @@ await loadUs();
 }else if(currentPage==='us-list'){
 S.usLOk=false;
 try{
-const d=await api('us_today',0,true);  // ← forceRefresh=true
+const d=await api('us_watch_today',0,true);  // ← forceRefresh=true
 S.usToday=d;
 renderUsList(listSorted);
 }catch(e){
@@ -3113,7 +3113,7 @@ document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
 const [watchHistData, todayData, watchListData] = await Promise.all([
 api('us_watch_history', 365),
-api('us_today', 0).catch(()=>null),
+api('us_watch_today', 0).catch(()=>null),
 api('us_watch_list', 0).catch(()=>null)
 ]);
 // ★ 항상 US섹터등락률(관심종목 기반) 데이터만 사용 (US Sector Tracker fallback 제거)
@@ -3140,7 +3140,7 @@ document.getElementById('us-table').innerHTML=
 }
 async function loadUsToday(){
 try{
-const d=await api('us_today',0);
+const d=await api('us_watch_today',0);
 S.usToday=d;
 const n=document.getElementById('us-today-notice');
 if(n&&d.date) n.style.display='';
@@ -3673,7 +3673,7 @@ async function refreshUsToday(btn){
 if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
 S.usToday=null;
 try{
-const d=await api('us_today',0);
+const d=await api('us_watch_today',0);
 S.usToday=d;
 const n=document.getElementById('us-today-notice');
 if(n&&d.date) n.style.display='';
@@ -3691,7 +3691,7 @@ async function refreshUsListData(btn){
 if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
 S.usToday=null;
 try{
-const d=await api('us_today',0);
+const d=await api('us_watch_today',0);
 S.usToday=d;
 renderUsList(listSorted);
 }catch(e){}
@@ -3714,7 +3714,7 @@ if(krList){await loadKrList(false);}
 }
 if(usHist||usList){
 try{
-const d=await api('us_today',0);
+const d=await api('us_watch_today',0);
 S.usToday=d;
 if(usHist) renderUs();
 if(usList) renderUsList(listSorted);
@@ -4733,7 +4733,7 @@ await loadKrList(true); // forceRefresh=true
 }
 else if(usListPage){
 try{
-const d=await api('us_today',0);
+const d=await api('us_watch_today',0);
 S.usToday=d;
 renderUsList(listSorted);
 }catch(e){console.error('메모 반영 오류:',e);}
