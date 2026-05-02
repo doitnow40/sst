@@ -5243,7 +5243,7 @@ document.addEventListener('click', function(e) {
   const sector = el.getAttribute('data-sector');
   if (!sector) return;
   // US 페이지에서는 isKr=false, KR 페이지에서는 isKr=true
-  const isUsPage = document.getElementById('page-us-hist') && document.getElementById('page-us-hist').style.display !== 'none';
+  const isUsPage = document.getElementById('page-us-history') && document.getElementById('page-us-history').style.display !== 'none';
   openSectorPopup(sector, !isUsPage);
 });
 </script>
