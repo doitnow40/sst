@@ -1275,6 +1275,10 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
 
     // US 섹터 팝업: 관심종목 리스트 + 최근 5일 추이 표시
     if (!isKr) {
+      // usWatchL이 아직 없으면 즉시 로드
+      if (!S.usWatchL) {
+        try { S.usWatchL = await api('us_watch_list', 0); } catch(e) { S.usWatchL = null; }
+      }
       const meta = US_META[sectorName] || {};
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
       // 관심종목 리스트 (S.usWatchL 기반)
@@ -3136,17 +3140,24 @@ var hasCap=dataWithCap.some(function(d){return d.marketCap&&d.marketCap>0;});
 var allBoxes=[];
 if(hasCap){
   var capItems=dataWithCap.filter(function(d){return d.marketCap&&d.marketCap>0;}).sort(function(a,b){return b.marketCap-a.marketCap;});
-  var tmItems=capItems.map(function(d){return{name:d.name,abs:Math.pow(d.marketCap,0.6),orig:d.avg};});
+  // ★ Top20 모드: 시총 상위 20개, 주목 모드: 전체
+  var displayItems=usTreemapMode==='watch'?capItems:capItems.slice(0,20);
+  var tmItems=displayItems.map(function(d){return{name:d.name,abs:Math.pow(d.marketCap,0.6),orig:d.avg};});
   allBoxes=rowLayoutUs(tmItems,W,H2);
 }else{
-  var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
-  var dnSum=dnList.reduce(function(s,d){return s+Math.abs(d.avg);},0);
-  var tot=upSum+dnSum||1,gap=upList.length>0&&dnList.length>0?2:0;
-  var upW=upList.length===0?0:dnList.length===0?W:Math.max(60,Math.round((W-gap)*upSum/tot));
+  // 시총 없으면 등락률 기준 — Top20 적용
+  var sortedAll=dataWithCap.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);});
+  var top20=usTreemapMode==='watch'?sortedAll:sortedAll.slice(0,20);
+  var upList2=top20.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
+  var dnList2=top20.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
+  var upSum=upList2.reduce(function(s,d){return s+d.avg;},0);
+  var dnSum=dnList2.reduce(function(s,d){return s+Math.abs(d.avg);},0);
+  var tot=upSum+dnSum||1,gap=upList2.length>0&&dnList2.length>0?2:0;
+  var upW=upList2.length===0?0:dnList2.length===0?W:Math.max(60,Math.round((W-gap)*upSum/tot));
   var dnW=W-upW-gap;
   function squarifyUs(items,x0,y0,W0,H0){var result2=[];if(!items.length||W0<1||H0<1)return result2;var total=items.reduce(function(s,d){return s+d.abs;},0);if(total<=0)return result2;var area=W0*H0,scaled=items.map(function(d){return{name:d.name,orig:d.orig,a:d.abs/total*area};});function wAR(row,rA,len){var mx=row.reduce(function(m,d){return Math.max(m,d.a);},0),mn=row.reduce(function(m,d){return Math.min(m,d.a);},9e99);return Math.max(len*len*mx/(rA*rA),rA*rA/(len*len*mn));}function lRow(row,rA,rx,ry,rw,rh,hz){var pos=hz?rx:ry;row.forEach(function(d){var ratio=d.a/rA;if(hz){result2.push({name:d.name,orig:d.orig,x:pos,y:ry,w:rw*ratio,h:rh});pos+=rw*ratio;}else{result2.push({name:d.name,orig:d.orig,x:rx,y:pos,w:rw,h:rh*ratio});pos+=rh*ratio;}});}function sq2(it,x2,y2,w2,h2){if(!it.length||w2<1||h2<1)return;if(it.length===1){result2.push({name:it[0].name,orig:it[0].orig,x:x2,y:y2,w:w2,h:h2});return;}var hz=w2>=h2,len=hz?h2:w2,row=[it[0]],rA=it[0].a;for(var i=1;i<it.length;i++){var nA=rA+it[i].a;if(wAR(row.concat([it[i]]),nA,len)<=wAR(row,rA,len)){row.push(it[i]);rA=nA;}else{var fr=rA/(w2*h2);if(hz){lRow(row,rA,x2,y2,w2,fr*h2,true);sq2(it.slice(i),x2,y2+fr*h2,w2,h2*(1-fr));}else{lRow(row,rA,x2,y2,fr*w2,h2,false);sq2(it.slice(i),x2+fr*w2,y2,w2*(1-fr),h2);}return;}}var fr=rA/(w2*h2);if(hz)lRow(row,rA,x2,y2,w2,fr*h2,true);else lRow(row,rA,x2,y2,fr*w2,h2,false);}sq2(scaled,x0,y0,W0,H0);return result2;}
-  var upItems2=upList.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg};});
-  var dnItems2=dnList.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg};});
+  var upItems2=upList2.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg};});
+  var dnItems2=dnList2.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg};});
   allBoxes=squarifyUs(upItems2,0,0,upW,H2).concat(squarifyUs(dnItems2,upW+gap,0,dnW,H2));
 }
 
@@ -3174,6 +3185,7 @@ allBoxes.forEach(function(b){
     else{label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tcol+';line-height:1.25;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(bw-6)+'px;text-shadow:'+tsh+'">'+b.name+' <span style="opacity:.85;font-size:'+(fs-1)+'px">'+pct+'</span></div>';}
   }
   var _esc=b.name.replace(/'/g,"\\'");
+  // ★ US 섹터 팝업: isKr=false (US)
   html+='<div title="'+b.name+' '+pct+'" class="tm-cell" onclick="openSectorPopup(\''+_esc+'\',false)" style="position:absolute;left:'+(b.x+PAD)+'px;top:'+(b.y+PAD)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden">'+label+'</div>';
 });
 html+='</div>';
@@ -5229,7 +5241,10 @@ document.addEventListener('click', function(e) {
   const el = e.target.closest('.rank-bar-row[data-sector]');
   if (!el) return;
   const sector = el.getAttribute('data-sector');
-  if (sector) openSectorPopup(sector, true);
+  if (!sector) return;
+  // US 페이지에서는 isKr=false, KR 페이지에서는 isKr=true
+  const isUsPage = document.getElementById('page-us-hist') && document.getElementById('page-us-hist').style.display !== 'none';
+  openSectorPopup(sector, !isUsPage);
 });
 </script>
 </body>
