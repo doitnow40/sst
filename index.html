@@ -418,7 +418,11 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div class="chart-header" style="padding:8px 12px 6px">
 <div><div class="chart-title" style="font-size:11px" id="us-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
 <div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 전체 섹터 포함</div></div>
-<button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
+<div id="us-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
+<button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
+<button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목섹터</button>
+</div>
+<button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
 </div>
 <div class="chart-body" id="us-chart-body" style="padding:8px">
 <div id="us-chart-wrap" class="chart-canvas-wrap" style="height:240px"><canvas id="us-chart-canvas"></canvas></div>
@@ -3022,6 +3026,13 @@ html+='</tr>';});
 wrap.innerHTML=html+'</tbody></table>';
 }
 var usAnalyticsPeriod=0, usAnalyticsVisible=true, usAllChartsVisible=true;
+var usTreemapMode="top20"; // "top20" | "watch"
+function setUsTreemapMode(mode){
+  usTreemapMode=mode;
+  document.getElementById('us-tm-btn-top20').className='tm-mode-btn'+(mode==='top20'?' active-us':'');
+  document.getElementById('us-tm-btn-watch').className='tm-mode-btn'+(mode==='watch'?' active-us':'');
+  renderUsAnalytics();
+}
 function toggleUsAnalytics(){
 usAnalyticsVisible=!usAnalyticsVisible;
 var p=document.getElementById('us-analytics-panels');
@@ -3047,29 +3058,57 @@ if(!S.usD)return;
 var H=S.usD.headers, rows=S.usD.rows;
 var rk=H.slice(1).filter(function(h){var m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
 var pLabel=periodText(usAnalyticsPeriod);
-var el=document.getElementById('us-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
-var el2=document.getElementById('us-chart-title'); if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
+var modeBtns=document.getElementById('us-treemap-mode-btns');
+var toggleBtn=document.getElementById('us-chart-toggleall-btn');
+var el2=document.getElementById('us-chart-title');
 if(usAnalyticsPeriod===0){
-var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
-var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true); _renderUsHeatmap([],H,H.slice(1),true); var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
+  // 오늘 모드: 트리맵 + 모드 버튼 표시
+  if(modeBtns)modeBtns.style.display='flex';
+  if(toggleBtn)toggleBtn.style.display='none';
+  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
+  // S.usD에서 가장 최근 유효 행으로 오늘 값 구성 (커스텀 섹터 포함)
+  var latestRow=null;
+  for(var ri=0;ri<rows.length;ri++){var r=rows[ri];var hasVal=rk.some(function(n){var ci=H.indexOf(n);return!isNaN(parseFloat(r[ci]));});if(hasVal){latestRow=r;break;}}
+  var um={};
+  if(latestRow){rk.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(latestRow[ci]);if(!isNaN(v))um[n]=v;});}
+  var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+  _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg); _renderUsHeatmap([],H,H.slice(1),true);
+  var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
+// 기간 모드: 추이 차트 + 히트맵
+if(modeBtns)modeBtns.style.display='none';
+if(toggleBtn)toggleBtn.style.display='';
+if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
 var allAvg=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display=''; _renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
+var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display=''; _renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false,allAvg); _renderUsHeatmap(cr,H,H.slice(1),false);
 }
 function _renderUsRiseFall(allAvg){
 _renderHtmlBars('us-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
 _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].reverse(),false);
 }
-function _renderUsTrendChart(cr,H,rk,today){
+function _renderUsTrendChart(cr,H,rk,today,allAvgIn){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
 if(today){
 // ── US 오늘: Finviz 스타일 트리맵 ──────────────────────────────
-var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
-var allVals=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;});
-if(!allVals.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
+var allData=allAvgIn||[];
+if(!allData.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
+
+// ── 모드에 따라 데이터 결정 (KR과 동일 구조)
+var data;
+var el2=document.getElementById('us-chart-title');
+if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size>0){
+  data=allData.filter(function(d){return US_WATCHED_SECTORS.has(d.name);});
+  if(!data.length){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';return;}
+  if(el2)el2.textContent='■ ⭐ 주목섹터 트리맵 (실시간 · '+data.length+'개)';
+}else{
+  if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size===0){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span></div>';return;}
+  data=allData;
+  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
+}
+
+var um={}; data.forEach(function(d){um[d.name]=d.avg;});
 
 // 시가총액 매핑 (US관심종목 시총 데이터)
 var mcapMap={};
@@ -3080,7 +3119,7 @@ if(S.usWatchL&&S.usWatchL.sectors){
     if(sum>0)mcapMap[sec.sector]=sum;
   });
 }
-var dataWithCap=allVals.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
+var dataWithCap=data.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
 var upList=dataWithCap.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
 var dnList=dataWithCap.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
 
