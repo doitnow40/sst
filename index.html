@@ -2725,7 +2725,7 @@ renderKrAnalytics();
 function renderKrAnalytics(){
 if(!S.krD)return;
 var H=S.krD.headers, rows=S.krD.rows;
-var ex=new Set(['날짜','ADR피','ADR닥','코스피','코스닥']);
+var ex=new Set(['날짜','ADR피','ADR닥','코스피','코스닥','FnG']);
 var sn=H.slice(1).filter(function(h){return!ex.has(h);});
 var pLabel=periodText(krAnalyticsPeriod);
 var el=document.getElementById('kr-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
