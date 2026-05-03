@@ -3471,6 +3471,9 @@ return rateSort===1?(vb-va):(va-vb);
 const C=KR_SEC_COLORS; // KR과 동일 팔레트
 let h='<div class="sector-grid">';
 sectors.forEach((sec,i)=>{
+// 노이즈 행 및 종목 없는 섹터 제외
+if(!sec.sector||sec.sector.startsWith('💡')||sec.sector.startsWith('※')||sec.sector.length>30)return;
+if(!sec.stocks||sec.stocks.length===0)return;
 const meta=US_META[sec.sector]||{};
 const c=C[i%C.length];
 const isWatched=US_WATCHED_SECTORS&&US_WATCHED_SECTORS.has(sec.sector);
