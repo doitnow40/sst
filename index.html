@@ -1303,7 +1303,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
             const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : '';
             const isEtf = idx === 0;
             stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
-              <span style="color:var(--text-primary)">${isEtf?'⭐ ':''}${st.name}${memoHtml}</span>
+              <span style="color:var(--text-primary)">${st.name}${memoHtml}</span>
               <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${tkrShort}</span>
               ${mcap}
               ${chgHtml}
@@ -3544,7 +3544,7 @@ const memo=st.memo||'';
 const memoHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const isEtf=idx===0;
 h+=`<div class="stock-item">`;
-h+=`<span class="stock-name">${isEtf?'⭐ ':''}${st.name}</span>`;
+h+=`<span class="stock-name">${st.name}</span>`;
 h+=`<span class="stock-ticker" style="font-size:9px">${tkrShort||'US'}</span>`;
 if(mcap) h+=mcap;
 h+=`${chgHtml}${memoHtml}</div>`;
@@ -4197,7 +4197,7 @@ let chgSpan='';
 if(sv!==null&&sv!==undefined&&!isNaN(sv)){const sc=sv>0?'#ef5350':'#42a5f5';chgSpan=`<span style="font-size:10px;color:${sc};font-family:var(--font-mono)">${sv>0?'+':''}${sv.toFixed(2)}%</span>`;}
 const memoTip=st.memo?`<span class="memo-icon" data-memo="${st.memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 h+=`<div class="admin-stock-item">
-<span class="admin-stock-name">${isEtf?'⭐ ':''}${st.name}${memoTip}</span>
+<span class="admin-stock-name">${st.name}${memoTip}</span>
 ${st.ticker?`<span class="admin-stock-ticker">${st.ticker.split(':').pop()}</span>`:''}
 ${chgSpan}
 ${isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':`<button class="admin-del-btn" onclick="usAdminDelStock('${sector.replace(/'/g,"\\'")}','${st.name.replace(/'/g,"\\'")}')">삭제</button>`}
