@@ -1372,7 +1372,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
         <span class="sp-stock-name">${st.name}</span>
         <span class="sp-stock-ticker">${ticker}</span>
         <span class="sp-stock-chg" style="color:${chgColor}">${chgStr}${prevStr}</span>
-        ${memo ? `<span class="sp-stock-memo">📝 ${memo}</span>` : ''}
+        ${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : ''}
       </div>`;
     });
 
