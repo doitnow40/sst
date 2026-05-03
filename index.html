@@ -1287,7 +1287,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
         const sec = S.usWatchL.sectors.find(s => s.sector === sectorName);
         if (sec && sec.stocks && sec.stocks.length > 0) {
           stocksHtml = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
-          stocksHtml += `<div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">— 종목 목록 (${sec.stocks.length}개) —</div>`;
+          
           sec.stocks.forEach((st, idx) => {
             if (!st.name) return;
             const chg = st.chg;
@@ -1322,7 +1322,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
             ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
             ${grpLabel?`<span>그룹: <span style="color:var(--accent-gold)">${grpLabel}</span></span>`:''}
           </div>
-          ${todayVal !== undefined && !isNaN(todayVal) ? `<div style="font-size:13px;margin-bottom:4px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(todayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(todayVal)>=0?'+':''}${parseFloat(todayVal).toFixed(2)}%</span></div>` : ''}
+          ${''/* 오늘 실시간 제거 - 타이틀에 이미 표시됨 */}
           ${stocksHtml}
         </div>`;
       return;
