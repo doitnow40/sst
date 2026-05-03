@@ -1300,7 +1300,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
             const mcap = st.marketCap !== null && st.marketCap !== undefined
               ? `<span style="font-size:9px;color:var(--text-muted);margin-left:4px">$${st.marketCap.toFixed(1)}B</span>` : '';
             const memo = st.memo || '';
-            const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" title="${memo}">ℹ</span>` : '';
+            const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : '';
             const isEtf = idx === 0;
             stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
               <span style="color:var(--text-primary)">${isEtf?'⭐ ':''}${st.name}${memoHtml}</span>
@@ -4193,7 +4193,7 @@ const isEtf=idx===0;
 const sv=st.chg;
 let chgSpan='';
 if(sv!==null&&sv!==undefined&&!isNaN(sv)){const sc=sv>0?'#ef5350':'#42a5f5';chgSpan=`<span style="font-size:10px;color:${sc};font-family:var(--font-mono)">${sv>0?'+':''}${sv.toFixed(2)}%</span>`;}
-const memoTip=st.memo?`<span style="font-size:9px;color:var(--text-muted);margin-left:4px" title="${st.memo}">📝</span>`:'';
+const memoTip=st.memo?`<span class="memo-icon" data-memo="${st.memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 h+=`<div class="admin-stock-item">
 <span class="admin-stock-name">${isEtf?'⭐ ':''}${st.name}${memoTip}</span>
 ${st.ticker?`<span class="admin-stock-ticker">${st.ticker.split(':').pop()}</span>`:''}
