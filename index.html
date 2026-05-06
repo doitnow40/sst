@@ -4244,25 +4244,148 @@ title.textContent=`🇺🇸 ${sector} — 종목 관리`;
 if(!S.usWatchL)return;
 const sec=S.usWatchL.sectors.find(s=>s.sector===sector);
 if(!sec){body.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px">섹터 없음</div>';return;}
-let h='';
 if(!sec.stocks.length){
-h='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">아직 종목이 없습니다.<br>아래에서 종목을 추가하세요.</div>';
-} else {
+body.innerHTML='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">아직 종목이 없습니다.<br>아래에서 종목을 추가하세요.</div>';
+return;
+}
+const ctrlBar=`<div id="us-stock-ctrl-bar" style="display:flex;gap:5px;align-items:center;padding:6px 8px;background:var(--bg-card2);border-radius:6px;margin-bottom:8px;flex-wrap:wrap">
+<span style="font-size:9px;color:var(--text-muted);margin-right:4px">선택 종목 이동:</span>
+<button onclick="usAdminBatchMove('top')" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">⇈ 최상위</button>
+<button onclick="usAdminBatchMove('up')" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">↑ 위로</button>
+<button onclick="usAdminBatchMove('down')" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">↓ 아래로</button>
+<button onclick="usAdminBatchMove('bottom')" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">⇊ 최하위</button>
+<button onclick="usAdminSelectAll()" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:#4fc3f7;cursor:pointer;margin-left:4px">전체 선택</button>
+<button onclick="usAdminDeselectAll()" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">해제</button>
+</div>`;
+let h=ctrlBar;
 sec.stocks.forEach((st,idx)=>{
-const isEtf=idx===0;
+const esc=st.name.replace(/'/g,"\\'" ).replace(/"/g,'&quot;');
+const escSec=sector.replace(/'/g,"\\'");
+const memo=st.memo||'';
 const sv=st.chg;
 let chgSpan='';
-if(sv!==null&&sv!==undefined&&!isNaN(sv)){const sc=sv>0?'#ef5350':'#42a5f5';chgSpan=`<span style="font-size:10px;color:${sc};font-family:var(--font-mono)">${sv>0?'+':''}${sv.toFixed(2)}%</span>`;}
-const memoTip=st.memo?`<span class="memo-icon" data-memo="${st.memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
-h+=`<div class="admin-stock-item">
-<span class="admin-stock-name">${st.name}${memoTip}</span>
-${st.ticker?`<span class="admin-stock-ticker">${st.ticker.split(':').pop()}</span>`:''}
-${chgSpan}
-${isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':`<button class="admin-del-btn" onclick="usAdminDelStock('${sector.replace(/'/g,"\\'")}','${st.name.replace(/'/g,"\\'")}')">삭제</button>`}
+if(sv!==null&&sv!==undefined&&!isNaN(sv)){const sc=sv>0?'#ef5350':'#42a5f5';chgSpan=`<span style="font-size:10px;color:\${sc};font-family:var(--font-mono)">\${sv>0?'+':''}\${sv.toFixed(2)}%</span>`;}
+const isEtf=idx===0;
+h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px" id="us-stock-item-\${idx}">
+<div style="display:flex;align-items:center;gap:6px">
+<input type="checkbox" id="us-chk-\${idx}" style="flex-shrink:0;cursor:pointer" title="이 종목 선택">
+<span class="admin-stock-name">\${st.name}</span>
+\${st.ticker?`<span class="admin-stock-ticker">\${st.ticker.split(':').pop()}</span>`:''}
+\${chgSpan}
+\${isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':''}
+<div style="display:flex;gap:2px;margin-left:auto;flex-shrink:0">
+<button onclick="usAdminMoveStock(\${idx},'top')" title="최상위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">⇈</button>
+<button onclick="usAdminMoveStock(\${idx},'up')" title="한칸 위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">↑</button>
+<button onclick="usAdminMoveStock(\${idx},'down')" title="한칸 아래로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">↓</button>
+<button onclick="usAdminMoveStock(\${idx},'bottom')" title="최하위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">⇊</button>
+\${isEtf?'':`<button class="admin-del-btn" onclick="usAdminDelStock('\${escSec}','\${esc}')">삭제</button>`}
+</div>
+</div>
+<div style="display:flex;gap:5px;align-items:center">
+<input class="admin-input" style="flex:1;font-size:10px;padding:3px 7px"
+id="us-memo-\${esc}" value="\${memo.replace(/"/g,'&quot;')}" placeholder="📝 주석 메모 (비워도 됨)">
+<button class="admin-add-btn" style="font-size:10px;padding:3px 10px;white-space:nowrap"
+onclick="usAdminSaveMemo('\${escSec}','\${esc}')">저장</button>
+</div>
 </div>`;
 });
-}
 body.innerHTML=h;
+}
+function usAdminSelectAll(){
+document.querySelectorAll('#us-admin-panel-body input[type=checkbox]').forEach(c=>c.checked=true);
+}
+function usAdminDeselectAll(){
+document.querySelectorAll('#us-admin-panel-body input[type=checkbox]').forEach(c=>c.checked=false);
+}
+function _usSyncMemoFromDOM(sec){
+if(!sec||!sec.stocks)return;
+sec.stocks.forEach(function(st){
+const el=document.getElementById('us-memo-'+st.name.replace(/'/g,"\\'").replace(/"/g,'&quot;'));
+if(el) st.memo=el.value;
+});
+}
+async function usAdminMoveStock(idx,dir){
+const sec=S.usWatchL&&S.usWatchL.sectors.find(s=>s.sector===_usAdminSelSector);
+if(!sec)return;
+const stocks=sec.stocks;
+const n=stocks.length;
+if(n<2)return;
+let newIdx=idx;
+if(dir==='top') newIdx=0;
+else if(dir==='up') newIdx=Math.max(0,idx-1);
+else if(dir==='down') newIdx=Math.min(n-1,idx+1);
+else if(dir==='bottom') newIdx=n-1;
+if(newIdx===idx)return;
+_usSyncMemoFromDOM(sec);
+const [item]=stocks.splice(idx,1);
+stocks.splice(newIdx,0,item);
+const orderedNames=stocks.map(s=>s.name).join(',');
+showUsAdminMsg('ok','저장 중...');
+try{
+await _usAdminApi('us_reorder_stocks',{sector:_usAdminSelSector,order:orderedNames});
+showUsAdminMsg('ok','✅ 순서 저장 완료');
+}catch(e){showUsAdminMsg('err','❌ 저장 실패: '+e.message);}
+title.textContent=`🇺🇸 \${_usAdminSelSector} — 종목 관리`;
+usAdminRenderStockPanel(_usAdminSelSector);
+}
+async function usAdminBatchMove(dir){
+const sec=S.usWatchL&&S.usWatchL.sectors.find(s=>s.sector===_usAdminSelSector);
+if(!sec)return;
+const stocks=sec.stocks;
+const n=stocks.length;
+const checkboxes=[...document.querySelectorAll('#us-admin-panel-body input[type=checkbox]')];
+const checkedSet=new Set(checkboxes.map((c,i)=>c.checked?i:-1).filter(i=>i>=0));
+if(!checkedSet.size){showUsAdminMsg('err','⚠️ 이동할 종목을 선택하세요');return;}
+const tags=stocks.map((_,i)=>checkedSet.has(i));
+let newTags,newStocks;
+if(dir==='top'){
+newStocks=[...stocks.filter((_,i)=>tags[i]),...stocks.filter((_,i)=>!tags[i])];
+newTags=newStocks.map((_,i)=>i<checkedSet.size);
+}else if(dir==='bottom'){
+newStocks=[...stocks.filter((_,i)=>!tags[i]),...stocks.filter((_,i)=>tags[i])];
+newTags=newStocks.map((_,i)=>i>=n-checkedSet.size);
+}else if(dir==='up'){
+newTags=[...tags];newStocks=[...stocks];
+let i=0;
+while(i<n){
+if(newTags[i]){const bs=i;while(i<n&&newTags[i])i++;const be=i;
+if(bs>0&&!newTags[bs-1]){const item=newStocks.splice(bs-1,1)[0];newTags.splice(bs-1,1);newStocks.splice(be-1,0,item);newTags.splice(be-1,0,false);}
+}else{i++;}
+}
+}else if(dir==='down'){
+newTags=[...tags];newStocks=[...stocks];
+let i=n-1;
+while(i>=0){
+if(newTags[i]){const be=i;while(i>=0&&newTags[i])i--;const bs=i+1;
+if(be<n-1&&!newTags[be+1]){const item=newStocks.splice(be+1,1)[0];newTags.splice(be+1,1);newStocks.splice(bs,0,item);newTags.splice(bs,0,false);}
+}else{i--;}
+}
+}
+_usSyncMemoFromDOM(sec);
+sec.stocks=newStocks;
+const orderedNames=newStocks.map(s=>s.name).join(',');
+showUsAdminMsg('ok','저장 중...');
+try{
+await _usAdminApi('us_reorder_stocks',{sector:_usAdminSelSector,order:orderedNames});
+showUsAdminMsg('ok','✅ 순서 저장 완료 ('+checkedSet.size+'개 종목)');
+}catch(e){showUsAdminMsg('err','❌ 저장 실패: '+e.message);}
+usAdminRenderStockPanel(_usAdminSelSector);
+newTags.forEach((sel,i)=>{const cb=document.getElementById('us-chk-'+i);if(cb)cb.checked=sel;});
+}
+async function usAdminSaveMemo(sectorName,stockName){
+const el=document.getElementById('us-memo-'+stockName);
+if(!el)return;
+const memo=el.value.trim();
+const btn=el.nextElementSibling;
+if(btn){btn.disabled=true;btn.innerHTML='<span class="admin-spinner"></span>';}
+try{
+const r=await _usAdminApi('us_update_memo',{sector:sectorName,stock_name:stockName,memo});
+if(!r.ok)throw new Error(r.error||'실패');
+showUsAdminMsg('ok','✅ "'+stockName+'" 메모 저장 완료');
+const _sec=S.usWatchL&&S.usWatchL.sectors.find(s=>s.sector===sectorName);
+if(_sec){const _st=_sec.stocks.find(s=>s.name===stockName);if(_st)_st.memo=memo;}
+}catch(e){showUsAdminMsg('err','❌ 메모 저장 실패: '+e.message);}
+if(btn){btn.disabled=false;btn.textContent='저장';}
 }
 function showUsAdminMsg(type,txt){
 const el=document.getElementById('us-admin-msg');
