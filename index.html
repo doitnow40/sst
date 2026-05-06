@@ -2036,7 +2036,7 @@ document.getElementById('kr-stats').innerHTML=
 +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMxN+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
-// ── 종목 상승·하락 카운트 (KOSPI / KOSDAQ 분리) ──────────────────
+// ── 종목 상승·하락 카운트 (KOSPI / KOSDAQ 분리) ──
 var _adCnt={kospi:{up:0,dn:0,neu:0},kosdaq:{up:0,dn:0,neu:0}};
 if(S.krSectors){
   S.krSectors.forEach(function(sec){
@@ -2055,8 +2055,46 @@ var _kospiTot=_adCnt.kospi.up+_adCnt.kospi.dn+_adCnt.kospi.neu;
 var _kosdaqTot=_adCnt.kosdaq.up+_adCnt.kosdaq.dn+_adCnt.kosdaq.neu;
 var _kospiUpR=_kospiTot>0?Math.round(_adCnt.kospi.up/_kospiTot*100):0;
 var _kosdaqUpR=_kosdaqTot>0?Math.round(_adCnt.kosdaq.up/_kosdaqTot*100):0;
-var _b3='border-color:rgba(129,199,132,.35);background:rgba(129,199,132,.04)';
-+((_kospiTot>0||_kosdaqTot>0)?'<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'+'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 ('+todayDate+')</div>'+'<div style="display:flex;gap:8px">'+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'+'<div class="stat-label">KOSPI</div>'+'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'+'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kospi.up+'</span>'+'<span style="font-size:9px;color:var(--text-muted)">상승</span>'+'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kospi.dn+'</span>'+'<span style="font-size:9px;color:var(--text-muted)">하락</span>'+(_adCnt.kospi.neu>0?'<span style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kospi.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'+'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'+'<div style="height:100%;width:'+_kospiUpR+'%;background:#ef5350;border-radius:3px;transition:width .4s"></div></div>'+'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kospiUpR+'% / 하락 '+(100-_kospiUpR-(_kospiTot>0?Math.round(_adCnt.kospi.neu/_kospiTot*100):0))+'%</div>'+'</div>'+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'+'<div class="stat-label">KOSDAQ</div>'+'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'+'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kosdaq.up+'</span>'+'<span style="font-size:9px;color:var(--text-muted)">상승</span>'+'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kosdaq.dn+'</span>'+'<span style="font-size:9px;color:var(--text-muted)">하락</span>'+(_adCnt.kosdaq.neu>0?'<span style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kosdaq.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'+'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'+'<div style="height:100%;width:'+_kosdaqUpR+'%;background:#ef5350;border-radius:3px;transition:width .4s"></div></div>'+'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kosdaqUpR+'% / 하락 '+(100-_kosdaqUpR-(_kosdaqTot>0?Math.round(_adCnt.kosdaq.neu/_kosdaqTot*100):0))+'%</div>'+'</div>'+'</div></div>':'')++'<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+var _adBox='';
+if(_kospiTot>0||_kosdaqTot>0){
+  var _kospiDnR=100-_kospiUpR-(_kospiTot>0?Math.round(_adCnt.kospi.neu/_kospiTot*100):0);
+  var _kosdaqDnR=100-_kosdaqUpR-(_kosdaqTot>0?Math.round(_adCnt.kosdaq.neu/_kosdaqTot*100):0);
+  _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+    +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 ('+todayDate+')</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
+    +'<div class="stat-label">KOSPI</div>'
+    +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
+    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kospi.up+'</span>'
+    +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
+    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kospi.dn+'</span>'
+    +'<span style="font-size:9px;color:var(--text-muted)">하락</span>'
+    +(_adCnt.kospi.neu>0?'<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kospi.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'
+    +'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'
+    +'<div style="height:100%;width:'+_kospiUpR+'%;background:#ef5350;border-radius:3px"></div></div>'
+    +'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kospiUpR+'% / 하락 '+_kospiDnR+'%</div>'
+    +'</div>'
+    +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
+    +'<div class="stat-label">KOSDAQ</div>'
+    +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
+    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kosdaq.up+'</span>'
+    +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
+    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kosdaq.dn+'</span>'
+    +'<span style="font-size:9px;color:var(--text-muted)">하락</span>'
+    +(_adCnt.kosdaq.neu>0?'<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kosdaq.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'
+    +'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'
+    +'<div style="height:100%;width:'+_kosdaqUpR+'%;background:#ef5350;border-radius:3px"></div></div>'
+    +'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kosdaqUpR+'% / 하락 '+_kosdaqDnR+'%</div>'
+    +'</div>'
+    +'</div></div>';
+}
+// ── 종목 등락 박스 + 등록 정보 박스 추가 ──
+var _regBox='<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+  +'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
+  +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
+  +'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
+  +'</div>';
+document.getElementById('kr-stats').innerHTML+=_adBox+_regBox;+'<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
 +'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
