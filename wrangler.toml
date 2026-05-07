@@ -12,7 +12,7 @@
 #   - KV_NAMESPACE_ID        (아래 id 값과 동일)
 #   → 위 3개를 GitHub Secrets에 등록
 
-name = "realtime-proxy"
+name = "stock-sector-tracker"
 main = "workers/realtime-proxy.js"
 compatibility_date = "2024-01-01"
 
