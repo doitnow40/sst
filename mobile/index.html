@@ -1284,6 +1284,8 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
+const REALTIME_WORKER_URL = 'https://realtime-proxy.YOUR_SUBDOMAIN.workers.dev';
+const REALTIME_TYPES = new Set(['kr_today', 'us_watch_today']);
 const IS_DEMO = false;
 const US_META = {
 'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1730,6 +1732,13 @@ if(m.type==='VIX')   return vixCell(val);
 return pctCell(val,6);
 }
 async function api(type,range,forceRefresh){
+if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes('YOUR_SUBDOMAIN')){
+  try{
+    const workerUrl=`${REALTIME_WORKER_URL}?type=${type}&_t=${Date.now()}`;
+    const wr=await fetch(workerUrl,{cache:'no-store'});
+    if(wr.ok){const wj=await wr.json();if(wj.ok)return wj.data;}
+  }catch(e){console.warn('[api] Worker fallback to GAS:',e.message);}
+}
 // forceRefresh=true면 GAS 웹앱에 강제 새로고침 신호 전달
 const freshId=forceRefresh?'&fresh='+Date.now():'&_t='+Date.now();
 const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}${freshId}`;
