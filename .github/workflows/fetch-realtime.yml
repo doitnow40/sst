@@ -69,6 +69,7 @@ jobs:
           echo "should_run=$(cat /tmp/market_check.txt | cut -d= -f2)" >> $GITHUB_OUTPUT
 
       - name: Fetch Naver & Write to KV
+        if: steps.market_check.outputs.should_run == 'true'
         env:
           GAS_WEBAPP_URL:       ${{ secrets.GAS_WEBAPP_URL }}
           CF_ACCOUNT_ID:        ${{ secrets.CF_ACCOUNT_ID }}
