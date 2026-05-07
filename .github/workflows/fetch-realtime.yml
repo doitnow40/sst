@@ -1,0 +1,83 @@
+# .github/workflows/fetch-realtime.yml
+#
+# 역할: 한국 주식 장중(KST 09:00~15:35) 5분 주기로
+#       네이버 API에서 실시간 데이터를 수집해 Cloudflare KV에 저장
+#
+# KST = UTC+9  →  KST 09:00 = UTC 00:00
+#                  KST 15:35 = UTC 06:35
+#
+# GitHub Secrets 등록 필요:
+#   GAS_WEBAPP_URL       : GAS 웹앱 URL (기존 그대로)
+#   CF_ACCOUNT_ID        : Cloudflare Account ID
+#   CF_API_TOKEN         : KV Storage 편집 권한 토큰
+#   CF_KV_NAMESPACE_ID   : REALTIME_KV namespace ID
+
+name: Fetch Realtime KR Data
+
+on:
+  schedule:
+    # UTC 기준, KST 09:00~15:35 (평일)
+    # cron: 분 시 일 월 요일
+    # */5 = 5분 간격
+    - cron: '*/5 0-6 * * 1-5'    # UTC 00:00~06:55 (KST 09:00~15:55)
+
+  # 수동 실행 (테스트용)
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5           # 5분 초과 시 강제 종료
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install aiohttp requests
+
+      - name: Check if Korean market is open
+        id: market_check
+        run: |
+          python3 - <<'EOF'
+          import datetime, sys
+          now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+          weekday = now.weekday()  # 0=월 ~ 4=금, 5=토, 6=일
+          hour = now.hour
+          minute = now.minute
+          total_min = hour * 60 + minute
+
+          # 주말 제외
+          if weekday >= 5:
+              print("SKIP: 주말")
+              print("should_run=false", file=open("/tmp/market_check.txt", "w"))
+              sys.exit(0)
+
+          # 장중 09:00 ~ 15:35
+          if 540 <= total_min <= 935:
+              print(f"RUN: {now.strftime('%H:%M')} KST - 장중")
+              print("should_run=true", file=open("/tmp/market_check.txt", "w"))
+          else:
+              print(f"SKIP: {now.strftime('%H:%M')} KST - 장외 시간")
+              print("should_run=false", file=open("/tmp/market_check.txt", "w"))
+          EOF
+          echo "should_run=$(cat /tmp/market_check.txt | cut -d= -f2)" >> $GITHUB_OUTPUT
+
+      - name: Fetch Naver & Write to KV
+        if: steps.market_check.outputs.should_run == 'true'
+        env:
+          GAS_WEBAPP_URL:       ${{ secrets.GAS_WEBAPP_URL }}
+          CF_ACCOUNT_ID:        ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN:         ${{ secrets.CF_API_TOKEN }}
+          CF_KV_NAMESPACE_ID:   ${{ secrets.CF_KV_NAMESPACE_ID }}
+        run: python3 scripts/fetch_naver.py
+
+      - name: Skip message
+        if: steps.market_check.outputs.should_run != 'true'
+        run: echo "장외 시간 또는 주말 - 수집 스킵"
