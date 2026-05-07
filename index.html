@@ -896,14 +896,10 @@ oninput="filterUsAdminSectors(this.value)">
 </div>
 <div style="margin-top:10px">
 <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 새 섹터 추가</div>
-<div class="admin-input-row" style="margin-bottom:5px">
-<input class="admin-input" id="us-new-sector-name" placeholder="섹터명 (예: 우주항공)" maxlength="20" style="flex:3">
-</div>
 <div class="admin-input-row">
-<input class="admin-input" id="us-new-sector-group" placeholder="대분류 (예: 테마ETF / 주요지수 / GICS섹터)" maxlength="30" style="flex:3">
+<input class="admin-input" id="us-new-sector-name" placeholder="섹터명 (예: 우주항공)" maxlength="20">
 <button class="admin-add-btn" onclick="usAdminAddSectorPrompt()">추가</button>
 </div>
-<div style="font-size:9px;color:var(--text-muted);margin-top:3px">💡 대분류: US섹터등락률 1행 그룹명. 동일 대분류는 히트맵에서 묶여 표시됩니다.</div>
 <div class="admin-msg" id="us-sector-msg"></div>
 </div>
 </div>
@@ -920,7 +916,7 @@ oninput="filterUsAdminSectors(this.value)">
 <input class="admin-input" id="us-add-stock-name" placeholder="종목명 (예: NVIDIA)" style="flex:2">
 <input class="admin-input" id="us-add-stock-ticker" placeholder="티커 (예: NASDAQ:NVDA)" style="flex:2">
 </div>
-<div class="admin-input-row" style="margin-bottom:5px">
+<div class="admin-input-row" style="margin-top:2px">
 <input class="admin-input" id="us-add-stock-memo" placeholder="📝 메모 (선택사항)" style="flex:1">
 <button class="admin-add-btn" onclick="usAdminDoAddStock()">추가</button>
 </div>
@@ -1355,35 +1351,69 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // 오늘 등락률 기준 정렬 (높은 순)
+    // ── 오늘 실시간 chg 신뢰도 판정 ─────────────────────────────────
+    // D열은 GOOGLEFINANCE price/closeyest 계산값 (20분 지연 실시간)
+    // 장 중 OR 장 마감 직후에는 신뢰 가능, 그 외엔 prevChg(확정값)가 더 정확
+    const nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+    const hhmm = nowKst.getHours()*100 + nowKst.getMinutes();
+    const dow = nowKst.getDay(); // 0=일,6=토
+    const isWeekday = dow >= 1 && dow <= 5;
+    const isMarketOpen = isWeekday && hhmm >= 900 && hhmm <= 1540; // 9:00~15:40
+    const isAfterClose = isWeekday && hhmm > 1540 && hhmm <= 2300;
+    const chgIsLive = isMarketOpen || isAfterClose; // 장 중 or 마감 후 → D열 신뢰
+
+    // 정렬: chgIsLive면 오늘 chg 기준, 아니면 prevChg(전일 확정) 기준
     const sorted = [...stocks].sort((a, b) => {
-      const av = (a.chg !== null && !isNaN(a.chg)) ? a.chg : -9999;
-      const bv = (b.chg !== null && !isNaN(b.chg)) ? b.chg : -9999;
+      const av = chgIsLive
+        ? ((a.chg !== null && !isNaN(a.chg)) ? a.chg : -9999)
+        : ((a.prevChg !== null && !isNaN(a.prevChg)) ? a.prevChg : -9999);
+      const bv = chgIsLive
+        ? ((b.chg !== null && !isNaN(b.chg)) ? b.chg : -9999)
+        : ((b.prevChg !== null && !isNaN(b.prevChg)) ? b.prevChg : -9999);
       return bv - av;
     });
 
     let html = '';
     sorted.forEach(st => {
-      const chg = (st.chg !== null && st.chg !== undefined && !isNaN(st.chg)) ? parseFloat(st.chg) : null;
+      const chg     = (st.chg     !== null && st.chg     !== undefined && !isNaN(st.chg))     ? parseFloat(st.chg)     : null;
       const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
-      const chgStr = chg !== null ? (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' : '-';
-      const chgColor = chg > 0 ? '#ef5350' : chg < 0 ? '#42a5f5' : 'var(--text-muted)';
-      const ticker = st.ticker || '';
-      const memo = st.memo || '';
-      const prevStr = prevChg !== null ? ' <span style="font-size:8px;color:var(--text-muted)">전일 ' + (prevChg>=0?'+':'') + prevChg.toFixed(2) + '%</span>' : '';
+      const ticker  = st.ticker || '';
+      const memo    = st.memo || '';
 
-      html += `<div class="sp-stock-row">
-        <span class="sp-stock-name">${st.name}${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" style="margin-left:4px">ℹ</span>` : ''}</span>
-        <span class="sp-stock-ticker">${ticker}</span>
-        <span class="sp-stock-chg" style="color:${chgColor}">${chgStr}${prevStr}</span>
-      </div>`;
+      // ── 표시값 결정 ───────────────────────────────────────────────
+      // 장중/마감후: 오늘 실시간(chg) 메인 + 전일확정(prevChg) 보조
+      // 장전/주말:   전일확정(prevChg) 메인 + 실시간(chg) 는 숨김 (신뢰불가)
+      let mainVal, mainLabel, subHtml='';
+      if (chgIsLive) {
+        mainVal   = chg;
+        mainLabel = '오늘';
+        if (prevChg !== null) {
+          const pc = prevChg >= 0 ? '+' : '';
+          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
+        }
+      } else {
+        // 장 전: prevChg(확정 전일값)만 표시, chg는 신뢰불가 숨김
+        mainVal   = prevChg;
+        mainLabel = '전일';
+        subHtml = '<span style="font-size:8px;color:rgba(255,183,77,.6);margin-left:3px">(장전·실시간 미반영)</span>';
+      }
+
+      const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
+      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
+
+      html += '<div class="sp-stock-row">'
+        + '<span class="sp-stock-name">'+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
+        + '<span class="sp-stock-ticker">'+ticker+'</span>'
+        + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
+        + '</div>';
     });
 
-    // 헤더: 종목수 + 등락률 있는 종목수
+    // 헤더: 종목수 + 신뢰도 안내
     const validCount = sorted.filter(s => s.chg !== null && !isNaN(s.chg)).length;
-    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">
-      총 ${sorted.length}개 종목${validCount > 0 ? ' · 오늘 등락률 ' + validCount + '개' : ''} · 등락률 높은 순
-    </div>`;
+    const modeLabel  = chgIsLive
+      ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
+      : ('총 '+sorted.length+'개 종목 · 전일 확정 등락률 기준 · 장전/주말');
+    const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
     body.innerHTML = header + html;
   } catch(e) {
@@ -4222,12 +4252,9 @@ let h='';
 sectors.forEach(sec=>{
 const sel=_usAdminSelSector===sec.sector;
 const esc=sec.sector.replace(/'/g,"\\'");
-const grp=sec.group||'';
-const grpBadge=grp?`<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(74,20,140,.3);color:#ce93d8;border:1px solid rgba(74,20,140,.5);white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis" title="${grp}">${grp}</span>`:'';
 h+=`<div class="admin-sector-item${sel?' selected':''}" onclick="usAdminSelectSector('${esc}')">
 <span>${sec.sector}</span>
-${grpBadge}
-<span style="font-size:9px;color:var(--text-muted);margin-left:auto;flex-shrink:0">${sec.stocks.length}개</span>
+<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length}개</span>
 <button class="admin-del-btn" onclick="event.stopPropagation();usAdminDelSector('${esc}')">삭제</button>
 </div>`;
 });
@@ -4251,19 +4278,8 @@ title.textContent='🇺🇸 '+sector+' — 종목 관리';
 if(!S.usWatchL)return;
 const sec=S.usWatchL.sectors.find(s=>s.sector===sector);
 if(!sec){body.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:20px">섹터 없음</div>';return;}
-
-// ── 대분류 수정 바 ──
-const curGroup=sec.group||'';
-const escSectorForGroup=sector.replace(/'/g,"\\'").replace(/"/g,'&quot;');
-const groupBar=`<div id="us-group-edit-bar" style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(74,20,140,.12);border:1px solid rgba(74,20,140,.4);border-radius:7px;margin-bottom:10px;flex-wrap:wrap">
-<span style="font-size:10px;font-weight:700;color:#ce93d8;white-space:nowrap">📂 대분류</span>
-<input id="us-group-input" class="admin-input" style="flex:1;min-width:120px;font-size:11px;padding:4px 8px;border-color:rgba(74,20,140,.5)" value="${curGroup.replace(/"/g,'&quot;')}" placeholder="예: 테마ETF / 주요지수 / GICS섹터">
-<button onclick="usAdminSaveGroup('${escSectorForGroup}')" style="padding:4px 12px;border-radius:5px;border:none;background:#6a1b9a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">저장</button>
-<span style="font-size:9px;color:var(--text-muted)">US섹터등락률 1행 그룹 · 히트맵 묶음에 반영</span>
-</div>`;
-
 if(!sec.stocks.length){
-body.innerHTML=groupBar+'<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">아직 종목이 없습니다.<br>아래에서 종목을 추가하세요.</div>';
+body.innerHTML='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">아직 종목이 없습니다.<br>아래에서 종목을 추가하세요.</div>';
 return;
 }
 const ctrlBar='<div id="us-stock-ctrl-bar" style="display:flex;gap:5px;align-items:center;padding:6px 8px;background:var(--bg-card2);border-radius:6px;margin-bottom:8px;flex-wrap:wrap">'
@@ -4275,7 +4291,7 @@ const ctrlBar='<div id="us-stock-ctrl-bar" style="display:flex;gap:5px;align-ite
 +'<button onclick="usAdminSelectAll()" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:#4fc3f7;cursor:pointer;margin-left:4px">전체 선택</button>'
 +'<button onclick="usAdminDeselectAll()" style="font-size:10px;padding:2px 8px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer">해제</button>'
 +'</div>';
-let h=groupBar+ctrlBar;
+let h=ctrlBar;
 sec.stocks.forEach(function(st,idx){
 const esc=st.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
 const escSec=sector.replace(/'/g,"\\'");
@@ -4440,16 +4456,13 @@ catch(e){console.error('US관심종목 새로고침 실패:',e);}
 async function usAdminAddSectorPrompt(){
 // input 필드 우선, 없으면 prompt() fallback
 const inp=document.getElementById('us-new-sector-name');
-const grpInp=document.getElementById('us-new-sector-group');
 const name=(inp?inp.value:prompt('추가할 US 섹터명을 입력하세요\n예: 우주항공, 핀테크')||'').trim();
 if(!name){showUsSectorMsg('err','섹터명을 입력하세요');return;}
-const group=(grpInp?grpInp.value:'').trim();
 try{
-const r=await _usAdminApi('us_add_sector',{sector:name,group:group||''});
+const r=await _usAdminApi('us_add_sector',{sector:name});
 if(!r.ok)throw new Error(r.error||'실패');
-showUsSectorMsg('ok',`"${name}" 섹터 추가 완료${group?' (대분류: '+group+')':''}`);
+showUsSectorMsg('ok',`"${name}" 섹터 추가 완료`);
 if(inp) inp.value='';
-if(grpInp) grpInp.value='';
 await _usRefreshWatchList();
 }catch(e){showUsSectorMsg('err',e.message);}
 }
@@ -4466,24 +4479,6 @@ if(addSec) addSec.style.display='none';
 showUsSectorMsg('ok',`"${sector}" 섹터 삭제 완료`);
 await _usRefreshWatchList();
 }catch(e){showUsSectorMsg('err',e.message);}
-}
-async function usAdminSaveGroup(sectorName){
-const el=document.getElementById('us-group-input');
-if(!el)return;
-const group=el.value.trim();
-const btn=el.nextElementSibling;
-if(btn){btn.disabled=true;btn.textContent='저장 중...';}
-try{
-const r=await _usAdminApi('us_update_group',{sector:sectorName,group:group});
-if(!r.ok)throw new Error(r.error||'실패');
-// 로컬 state 업데이트
-const sec=S.usWatchL&&S.usWatchL.sectors.find(function(s){return s.sector===sectorName;});
-if(sec) sec.group=group;
-if(S.usWatchL&&S.usWatchL.groupMap) S.usWatchL.groupMap[sectorName]=group;
-showUsAdminMsg('ok','✅ "'+sectorName+'" 대분류 저장 완료'+(group?' → '+group:' (초기화)'));
-usAdminRenderSectorList(); // 목록 배지 갱신
-}catch(e){showUsAdminMsg('err','❌ 대분류 저장 실패: '+e.message);}
-if(btn){btn.disabled=false;btn.textContent='저장';}
 }
 async function usAdminDelStock(sector,stockName){
 if(!confirm(`"${stockName}" 종목을 삭제하시겠습니까?`))return;
