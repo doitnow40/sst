@@ -1,0 +1,28 @@
+# wrangler.toml
+# Cloudflare Worker + KV 설정
+#
+# 사용법:
+#   1. npx wrangler kv:namespace create "REALTIME_KV" 실행
+#   2. 출력된 id 값을 아래 [[kv_namespaces]] id에 붙여넣기
+#   3. npx wrangler deploy 로 배포
+#
+# GitHub Actions에서 KV write 시 필요한 값:
+#   - CLOUDFLARE_ACCOUNT_ID  (Cloudflare 대시보드 → 우측 하단)
+#   - CLOUDFLARE_API_TOKEN   (My Profile → API Tokens → Edit Workers KV Storage)
+#   - KV_NAMESPACE_ID        (아래 id 값과 동일)
+#   → 위 3개를 GitHub Secrets에 등록
+
+name = "realtime-proxy"
+main = "workers/realtime-proxy.js"
+compatibility_date = "2024-01-01"
+
+# ── KV 바인딩 ─────────────────────────────────────────────
+# "npx wrangler kv:namespace create REALTIME_KV" 실행 후 id 교체
+[[kv_namespaces]]
+binding = "REALTIME_KV"
+id = "YOUR_KV_NAMESPACE_ID"          # ← 교체 필요
+
+# ── 라우팅: Workers & Pages 통합 시 사용 (선택사항) ─────────
+# Cloudflare Pages 프로젝트와 동일 도메인에서 /api/* 경로로 서빙할 경우
+# [env.production]
+# routes = [{ pattern = "your-domain.pages.dev/api/*", zone_name = "your-domain.com" }]
