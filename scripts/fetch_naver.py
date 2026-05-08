@@ -38,25 +38,31 @@ def calc_kv_ttl():
     """
     KV TTL 동적 계산:
       장중 (09:00~15:35): 10분 (5분 주기 갱신에 맞춤)
-      장마감 후~자정    : 익일 09:00까지 유지 (마지막 종가 보존)
-      자정~장전         : 익일 09:00까지 유지
+      장마감 후 / 야간 / 장전: 다음 영업일 10:00까지 유지
+        - 익일 09:00 기준이 아닌 10:00 기준으로 설정하여
+          첫 번째 cron(09:00~09:05) 실행 전 TTL 만료로 인한
+          데이터 공백 구간을 방지
+        - 주말(토/일) 포함 장마감 후에는 다음 월요일 10:00까지 유지
     """
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
     hhmm = now.hour * 100 + now.minute
+    weekday = now.weekday()  # 0=월 ~ 6=일
+
     # 장중: 10분
-    if 900 <= hhmm <= 1535:
+    if 900 <= hhmm <= 1535 and weekday < 5:
         return 600
-    # 장마감 후 or 야간: 익일 09:00까지 남은 초 계산
-    if hhmm > 1535:
-        # 오늘 23:59 → 내일 09:00 = 약 9시간 + 오늘 남은 시간
-        next_open = now.replace(hour=9, minute=0, second=0, microsecond=0)
-        next_open += datetime.timedelta(days=1)
-    else:
-        # 자정~09:00: 오늘 09:00까지
-        next_open = now.replace(hour=9, minute=0, second=0, microsecond=0)
-        if now >= next_open:
-            next_open += datetime.timedelta(days=1)
-    ttl = int((next_open - now).total_seconds())
+
+    # 장마감 후 / 야간 / 장전 / 주말:
+    # → 다음 영업일(월~금) 10:00까지 TTL 설정
+    candidate = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    # 아직 오늘 10:00 이전이면 오늘을 후보로, 이미 지났으면 내일부터 탐색
+    if now >= candidate:
+        candidate += datetime.timedelta(days=1)
+    # 주말이면 다음 월요일로 이동
+    while candidate.weekday() >= 5:
+        candidate += datetime.timedelta(days=1)
+
+    ttl = int((candidate - now).total_seconds())
     return max(ttl, 600)  # 최소 10분
 
 KV_WRITE_URL = (
