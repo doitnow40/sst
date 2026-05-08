@@ -1285,7 +1285,7 @@ Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
-const REALTIME_TYPES = new Set(['kr_today', 'us_watch_today']);
+const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today']);
 const IS_DEMO = false;
 const US_META = {
 'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1565,21 +1565,39 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // 종목 목록: S.krSectors 에서 우선 조회 (이미 로드됐으면 즉시 렌더)
+    // ★ 종목 목록: kr_stocks(네이버 실시간/최근확정) 우선, 없으면 kr_list(GAS) fallback
     let stocks = null;
-    if (S.krSectors && S.krSectors.length) {
-      const sec = S.krSectors.find(s => s.sector === sectorName);
-      if (sec) stocks = sec.stocks;
+
+    // ① Worker KV의 kr_stocks 시도
+    try {
+      if (!S.krStocks || S.krStocks._date !== new Date().toLocaleDateString('ko-KR')) {
+        const sd = await api('kr_stocks', 0);
+        if (sd && sd.stocks) {
+          S.krStocks = sd.stocks;
+          S.krStocks._date = new Date().toLocaleDateString('ko-KR');
+        }
+      }
+      if (S.krStocks && S.krStocks[sectorName]) {
+        stocks = S.krStocks[sectorName];
+      }
+    } catch(e) {
+      console.warn('[popup] kr_stocks 로드 실패, kr_list fallback:', e.message);
     }
 
-    // 없으면 API 호출
+    // ② kr_stocks 없으면 kr_list(GAS) fallback
     if (!stocks) {
-      const d = await api('kr_list', 0);
-      if (d && d.sectors) {
-        S.krLOk = true;
-        S.krSectors = d.sectors;
-        const sec = d.sectors.find(s => s.sector === sectorName);
+      if (S.krSectors && S.krSectors.length) {
+        const sec = S.krSectors.find(s => s.sector === sectorName);
         if (sec) stocks = sec.stocks;
+      }
+      if (!stocks) {
+        const d = await api('kr_list', 0);
+        if (d && d.sectors) {
+          S.krLOk = true;
+          S.krSectors = d.sectors;
+          const sec = d.sectors.find(s => s.sector === sectorName);
+          if (sec) stocks = sec.stocks;
+        }
       }
     }
 
@@ -1588,10 +1606,21 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // 오늘 등락률 기준 정렬 (높은 순)
+    // ── 표시 기준 판정 ────────────────────────────────────────────────
+    // ★ 항상 chg(최신 확정 or 실시간)를 메인으로 표시
+    //   장중: 실시간(20분 지연) / 그 외: Cron 마지막 저장 확정값 (테이블과 동일)
+    const nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+    const hhmm = nowKst.getHours()*100 + nowKst.getMinutes();
+    const dow = nowKst.getDay();
+    const isWeekday = dow >= 1 && dow <= 5;
+    const isMarketOpen = isWeekday && hhmm >= 900 && hhmm <= 1540;
+
+    // 정렬: chg(최신값) 우선, 없으면 prevChg
     const sorted = [...stocks].sort((a, b) => {
-      const av = (a.chg !== null && !isNaN(a.chg)) ? a.chg : -9999;
-      const bv = (b.chg !== null && !isNaN(b.chg)) ? b.chg : -9999;
+      const av = (a.chg !== null && !isNaN(a.chg)) ? a.chg
+               : (a.prevChg !== null && !isNaN(a.prevChg)) ? a.prevChg : -9999;
+      const bv = (b.chg !== null && !isNaN(b.chg)) ? b.chg
+               : (b.prevChg !== null && !isNaN(b.prevChg)) ? b.prevChg : -9999;
       return bv - av;
     });
 
@@ -1599,25 +1628,36 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     sorted.forEach(st => {
       const chg = (st.chg !== null && st.chg !== undefined && !isNaN(st.chg)) ? parseFloat(st.chg) : null;
       const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
-      const chgStr = chg !== null ? (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' : '-';
-      const chgColor = chg > 0 ? '#ef5350' : chg < 0 ? '#42a5f5' : 'var(--text-muted)';
       const ticker = st.ticker || '';
       const memo = st.memo || '';
-      const prevStr = prevChg !== null ? ' <span style="font-size:8px;color:var(--text-muted)">전일 ' + (prevChg>=0?'+':'') + prevChg.toFixed(2) + '%</span>' : '';
+
+      // chg(최신확정/실시간) 메인, 없으면 prevChg fallback
+      let mainVal, subHtml = '';
+      if (chg !== null) {
+        mainVal = chg;
+        if (isMarketOpen && prevChg !== null) {
+          subHtml = ' <span style="font-size:8px;color:var(--text-muted)">전일 ' + (prevChg>=0?'+':'') + prevChg.toFixed(2) + '%</span>';
+        }
+      } else {
+        mainVal = prevChg;
+      }
+
+      const mainStr = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
+      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
       html += `<div class="sp-stock-row">
-        <span class="sp-stock-name">${st.name}</span>
+        <span class="sp-stock-name">${st.name}${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" style="margin-left:4px">ℹ</span>` : ''}</span>
         <span class="sp-stock-ticker">${ticker}</span>
-        <span class="sp-stock-chg" style="color:${chgColor}">${chgStr}${prevStr}</span>
-        ${memo ? `<span class="sp-stock-memo">📝 ${memo}</span>` : ''}
+        <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}${subHtml}</span>
       </div>`;
     });
 
-    // 헤더: 종목수 + 등락률 있는 종목수
+    // 헤더
     const validCount = sorted.filter(s => s.chg !== null && !isNaN(s.chg)).length;
-    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">
-      총 ${sorted.length}개 종목${validCount > 0 ? ' · 오늘 등락률 ' + validCount + '개' : ''} · 등락률 높은 순
-    </div>`;
+    const modeLabel = isMarketOpen
+      ? ('총 '+sorted.length+'개 종목 · 오늘 실시간 '+validCount+'개 · 등락률 높은 순')
+      : ('총 '+sorted.length+'개 종목 · 최근 확정 등락률 기준 · 등락률 높은 순');
+    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel}</div>`;
 
     body.innerHTML = header + html;
   } catch(e) {
