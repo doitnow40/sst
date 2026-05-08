@@ -1,28 +1,40 @@
 # wrangler.toml
-# Cloudflare Worker + KV 설정
+# Cloudflare Worker + KV + Cron 설정
 #
-# 사용법:
-#   1. npx wrangler kv:namespace create "REALTIME_KV" 실행
-#   2. 출력된 id 값을 아래 [[kv_namespaces]] id에 붙여넣기
-#   3. npx wrangler deploy 로 배포
+# ── 배포 순서 ────────────────────────────────────────────────
+#   1. KV namespace가 없다면:
+#      npx wrangler kv:namespace create "REALTIME_KV"
+#      → 출력된 id를 아래 [[kv_namespaces]] id에 붙여넣기
+#      (기존에 이미 생성한 경우 현재 id 그대로 사용)
 #
-# GitHub Actions에서 KV write 시 필요한 값:
-#   - CLOUDFLARE_ACCOUNT_ID  (Cloudflare 대시보드 → 우측 하단)
-#   - CLOUDFLARE_API_TOKEN   (My Profile → API Tokens → Edit Workers KV Storage)
-#   - KV_NAMESPACE_ID        (아래 id 값과 동일)
-#   → 위 3개를 GitHub Secrets에 등록
+#   2. GAS_WEBAPP_URL을 Worker Secret으로 등록:
+#      npx wrangler secret put GAS_WEBAPP_URL
+#      → 프롬프트에 GAS 웹앱 URL 입력
+#
+#   3. 배포:
+#      npx wrangler deploy
+#
+#   4. GitHub Actions fetch-realtime.yml 비활성화 (선택):
+#      .github/workflows/fetch-realtime.yml 파일 삭제 또는
+#      on.schedule 블록 제거
+#
+# ── GitHub Actions Secrets 정리 ──────────────────────────────
+#   CF_ACCOUNT_ID, CF_API_TOKEN, CF_KV_NAMESPACE_ID 는
+#   Cloudflare Cron 전환 후 더 이상 필요 없음
+#   (GAS_WEBAPP_URL도 Worker Secret으로 이전됨)
 
 name = "realtime-proxy"
 main = "workers/realtime-proxy.js"
 compatibility_date = "2024-01-01"
 
-# ── KV 바인딩 ─────────────────────────────────────────────
-# "npx wrangler kv:namespace create REALTIME_KV" 실행 후 id 교체
+# ── KV 바인딩 ────────────────────────────────────────────────
 [[kv_namespaces]]
 binding = "REALTIME_KV"
-id = "1fc0b0b7b18049e3b057ed56442d5404"          # ← 교체 필요
+id = "1fc0b0b7b18049e3b057ed56442d5404"   # ← 실제 KV namespace ID로 교체
 
-# ── 라우팅: Workers & Pages 통합 시 사용 (선택사항) ─────────
-# Cloudflare Pages 프로젝트와 동일 도메인에서 /api/* 경로로 서빙할 경우
-# [env.production]
-# routes = [{ pattern = "your-domain.pages.dev/api/*", zone_name = "your-domain.com" }]
+# ── Cron 트리거 ──────────────────────────────────────────────
+# UTC 기준: 00:00~06:55, 평일(월~금), 5분 간격
+# KST 환산: 09:00~15:55 (장중 전체 커버)
+# Cloudflare Cron은 GitHub Actions와 달리 지연/누락 없이 정확히 실행됨
+[triggers]
+crons = ["*/5 0-6 * * 1-5"]
