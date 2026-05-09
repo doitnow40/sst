@@ -1285,7 +1285,7 @@ Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
-const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today']);
+const REALTIME_TYPES = new Set(['kr_today', 'us_watch_today']);
 const IS_DEMO = false;
 const US_META = {
 'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1506,17 +1506,39 @@ function _renderFnGPopup(score, history, latestDate) {
 
 async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
   try {
-    // 오늘 등락률 맵 구성
-    const todayMap = isKr
-      ? (S.krToday && S.krToday.sectors ? S.krToday.sectors : {})
-      : (S.usToday && S.usToday.sectors ? S.usToday.sectors : {});
+    // ── KRX 장 상태 판정 (15:30 기준) ────────────────────────────────
+    const _nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+    const _dow    = _nowKst.getDay();
+    const _hhmm   = _nowKst.getHours()*100 + _nowKst.getMinutes();
+    const _isWeekend  = _dow === 0 || _dow === 6;
+    const _isKrTradingDay = !_isWeekend && _hhmm >= 900; // 장중(09:00~15:30)+마감후(평일)
 
-    // 섹터 평균 등락률 표시
-    const sectorAvg = todayMap[sectorName];
-    if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) {
-      const v = parseFloat(sectorAvg);
-      avgEl.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-      avgEl.style.color = v > 0 ? '#ef5350' : v < 0 ? '#42a5f5' : 'var(--text-muted)';
+    // ── 팝업 헤더 섹터 평균 표시 ──────────────────────────────────────
+    // 오늘 데이터 유효(장중/마감후 평일): kr_today KV
+    // 장전·주말·공휴일: S.krD.rows[0] = GAS 히스토리 최근 영업일 확정값
+    if (isKr) {
+      let dispAvg = null;
+      if (_isKrTradingDay) {
+        const todayMap = S.krToday && S.krToday.sectors ? S.krToday.sectors : {};
+        const v = todayMap[sectorName];
+        if (v !== undefined && v !== null && !isNaN(v)) dispAvg = parseFloat(v);
+      }
+      if (dispAvg === null && S.krD && S.krD.headers && S.krD.rows && S.krD.rows.length > 0) {
+        const hIdx = S.krD.headers.indexOf(sectorName);
+        if (hIdx > 0) { const v = parseFloat(S.krD.rows[0][hIdx]); if (!isNaN(v)) dispAvg = v; }
+      }
+      if (dispAvg !== null) {
+        avgEl.textContent = (dispAvg >= 0 ? '+' : '') + dispAvg.toFixed(2) + '%';
+        avgEl.style.color = dispAvg > 0 ? '#ef5350' : dispAvg < 0 ? '#42a5f5' : 'var(--text-muted)';
+      }
+    } else {
+      const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+      const sectorAvg = todayMap[sectorName];
+      if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) {
+        const v = parseFloat(sectorAvg);
+        avgEl.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+        avgEl.style.color = v > 0 ? '#ef5350' : v < 0 ? '#42a5f5' : 'var(--text-muted)';
+      }
     }
 
     // US 섹터: 종목 리스트 없음 → US_META 정보 표시
@@ -1565,26 +1587,16 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // ★ 종목 목록: kr_stocks(네이버 실시간/최근확정) 우선, 없으면 kr_list(GAS) fallback
+    // 종목 목록: kr_stocks(네이버) 우선, 없으면 kr_list fallback
     let stocks = null;
-
-    // ① Worker KV의 kr_stocks 시도
     try {
       if (!S.krStocks || S.krStocks._date !== new Date().toLocaleDateString('ko-KR')) {
         const sd = await api('kr_stocks', 0);
-        if (sd && sd.stocks) {
-          S.krStocks = sd.stocks;
-          S.krStocks._date = new Date().toLocaleDateString('ko-KR');
-        }
+        if (sd && sd.stocks) { S.krStocks = sd.stocks; S.krStocks._date = new Date().toLocaleDateString('ko-KR'); }
       }
-      if (S.krStocks && S.krStocks[sectorName]) {
-        stocks = S.krStocks[sectorName];
-      }
-    } catch(e) {
-      console.warn('[popup] kr_stocks 로드 실패, kr_list fallback:', e.message);
-    }
+      if (S.krStocks && S.krStocks[sectorName]) stocks = S.krStocks[sectorName];
+    } catch(e) { console.warn('[popup] kr_stocks fallback:', e.message); }
 
-    // ② kr_stocks 없으면 kr_list(GAS) fallback
     if (!stocks) {
       if (S.krSectors && S.krSectors.length) {
         const sec = S.krSectors.find(s => s.sector === sectorName);
@@ -1593,8 +1605,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       if (!stocks) {
         const d = await api('kr_list', 0);
         if (d && d.sectors) {
-          S.krLOk = true;
-          S.krSectors = d.sectors;
+          S.krLOk = true; S.krSectors = d.sectors;
           const sec = d.sectors.find(s => s.sector === sectorName);
           if (sec) stocks = sec.stocks;
         }
@@ -1606,22 +1617,15 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // ── 표시 기준 판정 ────────────────────────────────────────────────
-    // ★ 항상 chg(최신 확정 or 실시간)를 메인으로 표시
-    //   장중: 실시간(20분 지연) / 그 외: Cron 마지막 저장 확정값 (테이블과 동일)
-    const nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
-    const hhmm = nowKst.getHours()*100 + nowKst.getMinutes();
-    const dow = nowKst.getDay();
-    const isWeekday = dow >= 1 && dow <= 5;
-    const isMarketOpen = isWeekday && hhmm >= 900 && hhmm <= 1540;
+    // ── KRX 장 상태 (15:30 기준) ─────────────────────────────────────
+    // _isKrTradingDay는 함수 상단에서 이미 계산됨 (재사용)
 
-    // 정렬: chg(최신값) 우선, 없으면 prevChg
+    // 정렬
     const sorted = [...stocks].sort((a, b) => {
-      const av = (a.chg !== null && !isNaN(a.chg)) ? a.chg
-               : (a.prevChg !== null && !isNaN(a.prevChg)) ? a.prevChg : -9999;
-      const bv = (b.chg !== null && !isNaN(b.chg)) ? b.chg
-               : (b.prevChg !== null && !isNaN(b.prevChg)) ? b.prevChg : -9999;
-      return bv - av;
+      const getV = st => _isKrTradingDay
+        ? ((st.chg !== null && !isNaN(st.chg)) ? st.chg : (st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : -9999)
+        : ((st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : (st.chg !== null && !isNaN(st.chg)) ? st.chg : -9999);
+      return getV(b) - getV(a);
     });
 
     let html = '';
@@ -1631,15 +1635,14 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       const ticker = st.ticker || '';
       const memo = st.memo || '';
 
-      // chg(최신확정/실시간) 메인, 없으면 prevChg fallback
       let mainVal, subHtml = '';
-      if (chg !== null) {
-        mainVal = chg;
-        if (isMarketOpen && prevChg !== null) {
+      if (_isKrTradingDay) {
+        mainVal = chg !== null ? chg : prevChg;
+        if (chg !== null && prevChg !== null) {
           subHtml = ' <span style="font-size:8px;color:var(--text-muted)">전일 ' + (prevChg>=0?'+':'') + prevChg.toFixed(2) + '%</span>';
         }
       } else {
-        mainVal = prevChg;
+        mainVal = prevChg !== null ? prevChg : chg;
       }
 
       const mainStr = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
@@ -1653,11 +1656,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     });
 
     // 헤더
-    const validCount = sorted.filter(s => s.chg !== null && !isNaN(s.chg)).length;
-    const modeLabel = isMarketOpen
-      ? ('총 '+sorted.length+'개 종목 · 오늘 실시간 '+validCount+'개 · 등락률 높은 순')
-      : ('총 '+sorted.length+'개 종목 · 최근 확정 등락률 기준 · 등락률 높은 순');
-    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel}</div>`;
+    const validCount2 = sorted.filter(s => (_isKrTradingDay ? s.chg : s.prevChg) !== null).length;
+    const modeLabel2 = _isKrTradingDay
+      ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount2+'개 · 등락률 높은 순')
+      : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률');
+    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel2}</div>`;
 
     body.innerHTML = header + html;
   } catch(e) {
@@ -1907,10 +1910,14 @@ S.krLOk ? Promise.resolve(null) : api('kr_list', 0).catch(()=>null)
 d = histData;
 document.getElementById('kr-status').textContent=d.count+'일 데이터';
 if(todayData){
+if(!todayData.noTrading && Object.keys(todayData.sectors||{}).length > 0){
 S.krToday = todayData;
 const n=document.getElementById('kr-today-notice');
 if(n&&todayData.date) n.style.display='';
 updateRealtimeTime();
+} else {
+S.krToday = null;
+}
 }
 if(listData&&listData.sectors){
 S.krLOk=true;
@@ -1930,10 +1937,14 @@ document.getElementById('kr-table').innerHTML=
 async function loadKrToday(){
 try{
 const d=await api('kr_today',0);
+if(!d.noTrading && Object.keys(d.sectors||{}).length > 0){
 S.krToday=d;
 const n=document.getElementById('kr-today-notice');
 if(n&&d.date) n.style.display='';
 updateRealtimeTime();
+} else {
+S.krToday=null;
+}
 renderKr();
 }catch(e){ S.krToday=null; }
 }
@@ -2089,7 +2100,7 @@ const hasRealData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNa
 const kstTimeStr=(nowKST.getHours()<10?'0':'')+nowKST.getHours()+':'+(nowKST.getMinutes()<10?'0':'')+nowKST.getMinutes()+' KST';
 const latestDate=baseRows.length?baseRows[0][0]:'';
 if(todayDate&&!alreadyExists&&!isWeekend&&hasRealData&&(_krMarketOpen||_krAfterClose)){
-// 장 중 또는 장 마감 후: 실시간 행 표시
+// 장중 또는 장마감 후 평일: 오늘 행 표시
 t+=`<tr style="background:rgba(79,195,247,.07);border-bottom:1px solid rgba(79,195,247,.3)">`;
 t+=`<td style="color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:var(--accent-kr);font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 sectorHdrs.forEach((name,_siT)=>{
@@ -2104,23 +2115,8 @@ const _bdrT=_isBdrT?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrT}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
 });
 t+=`</tr>`;
-}else if(todayDate&&!alreadyExists&&!isWeekend&&_krPreMarket){
-// 장 전: 안내 행 표시
-t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
-t+=`⏰ 현재 ${kstTimeStr} — 한국 정규장 개장 전입니다 (개장: 09:00 KST). `;
-t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
-}else if(isWeekend){
-// 주말: 안내 행 표시
-const dayNames=['일','월','화','수','목','금','토'];
-t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,true,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-t+=`<td colspan="${sectorHdrs.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
-t+=`🏖️ 오늘은 주말(${dayNames[kstDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`</tr>`;
 }
+// 장전·주말·공휴일: 오늘 행 없음 → 최근 영업일 행이 자연스럽게 최상단에 위치
 }
 f.forEach(row=>{
 t+=`<tr><td>${dateCell(row[0]||'',true)}</td>`;
