@@ -1,21 +1,30 @@
 """
-fetch_naver.py
-==============
+fetch_naver.py  v2
+==================
 GitHub Actions에서 실행 (장중 5분 주기 cron)
 
 역할:
   1. GAS API에서 관심종목 티커 목록 수신 (kr_list)
   2. 네이버 m.stock API로 종목별 실시간 등락률 수집
   3. 섹터별 평균 + 종목별 개별 등락률 계산
-  4. Cloudflare KV에 저장:
-     - kr_today  : 섹터 평균 + majorIndex (히트맵용)
+  4. Cloudflare KV에 저장 (단일 진실 공급원 → 웹사이트 전용):
+     - kr_today  : 섹터 평균 + majorIndex (히트맵/랭킹/트리맵용)
      - kr_stocks : 종목별 개별 등락률 (팝업용)
+  5. GAS 시트 동기화 (스프레드시트 반영):
+     - KR 관심종목 D열 업데이트
+     - KR 섹터등락률 오늘 행 갱신
+     - KR Live Summary 갱신시각 기록
+
+장마감/휴일/연휴:
+  - KV TTL: 다음 영업일 10:00까지 유지 → 웹사이트 빈칸 없음
+  - 시트: 마지막 갱신값 그대로 유지 → 최근 종가 반영
 
 필요한 GitHub Secrets:
   GAS_WEBAPP_URL       : GAS 웹앱 URL
   CF_ACCOUNT_ID        : Cloudflare Account ID
   CF_API_TOKEN         : KV Storage 편집 권한 토큰
   CF_KV_NAMESPACE_ID   : REALTIME_KV namespace ID
+  UPDATE_TOKEN         : GAS 시트 갱신 인증 토큰 (선택, GAS Script Properties와 동일값)
 """
 
 import os, json, time, datetime, asyncio
@@ -25,6 +34,7 @@ GAS_URL        = os.environ['GAS_WEBAPP_URL']
 CF_ACCOUNT_ID  = os.environ['CF_ACCOUNT_ID']
 CF_API_TOKEN   = os.environ['CF_API_TOKEN']
 CF_KV_NS_ID    = os.environ['CF_KV_NAMESPACE_ID']
+UPDATE_TOKEN   = os.environ.get('UPDATE_TOKEN', '')  # GAS 시트 갱신용 토큰 (선택)
 
 NAVER_STOCK_URL = 'https://m.stock.naver.com/api/stock/{code}/basic'
 NAVER_INDEX_URL = 'https://m.stock.naver.com/api/index/{index}/basic'
@@ -206,6 +216,38 @@ def write_to_kv(key, value):
         raise RuntimeError(f'KV 저장 실패: {resp.status_code} {resp.text}')
     print(f'  → 완료')
 
+# ── 6. GAS 시트 갱신 호출 ──────────────────────────────
+def update_gas_sheet(chg_map, sector_avg, major_index, updated_at):
+    """
+    GitHub Actions → GAS 웹앱 → 시트 직접 갱신
+    - KR 관심종목 D열 (종목별 실시간 등락률)
+    - KR 섹터등락률 오늘 행
+    - KR Live Summary 갱신시각
+    """
+    print('[6/6] GAS 시트 갱신 중...')
+    try:
+        params = {
+            'type':         'update_kr_today',
+            'chg_map':      json.dumps(chg_map, ensure_ascii=False),
+            'sector_avg':   json.dumps(sector_avg, ensure_ascii=False),
+            'major_index':  json.dumps(major_index, ensure_ascii=False),
+            'updated_at':   updated_at,
+            'token':        UPDATE_TOKEN,
+            '_t':           str(int(time.time())),
+        }
+        resp = requests.get(GAS_URL, params=params, timeout=30)
+        if resp.ok:
+            body = resp.json()
+            if body.get('ok'):
+                d = body.get('data', {})
+                print(f'  → GAS 시트 갱신 완료: 섹터 {d.get("sectors","?")}개, {d.get("updatedAt","")}')
+            else:
+                print(f'  → GAS 응답 오류: {body.get("error")}')
+        else:
+            print(f'  → GAS HTTP 오류: {resp.status_code}')
+    except Exception as e:
+        print(f'  → GAS 시트 갱신 실패 (비중요, KV는 정상): {e}')
+
 # ── 메인 ─────────────────────────────────────────────────
 async def main():
     start = time.time()
@@ -246,6 +288,10 @@ async def main():
         'updatedAt': updated_at,
         'source':    'naver_api_github_actions',
     })
+
+    # ── 6. GAS 시트 갱신 (KV 저장 후 시트도 동기화) ────────────
+    sector_avg = calc_sector_avg(code_to_sectors, chg_map)
+    update_gas_sheet(chg_map, sector_avg, major_index, updated_at)
 
     elapsed = round(time.time()-start, 1)
     ok_rate = round(sum(1 for v in chg_map.values() if v is not None)/max(len(all_codes),1)*100, 1)
