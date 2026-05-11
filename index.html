@@ -965,7 +965,7 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCv
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
 
 // Worker로 라우팅할 type 목록
-const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today', 'us_watch_stocks']);
+const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_stocks']);
 
 const IS_DEMO = false;
 const US_META = {
@@ -1785,8 +1785,9 @@ await loadUs();
 }else if(currentPage==='us-list'){
 S.usLOk=false;
 try{
-const d=await api('us_watch_today',0,true);  // ← forceRefresh=true
-S.usToday=d;
+// ★ us_watch_history 재로드로 오늘 행 갱신
+S.usOk=false; S.usWatchAt=0;
+await loadUs();
 renderUsList(listSorted);
 }catch(e){
 console.error('us-list 로드 실패:',e);
@@ -3381,19 +3382,26 @@ if(IS_DEMO){
 d=demoUs();
 document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
-const [watchHistData, todayData, watchListData] = await Promise.all([
+// ★ 단일 소스: us_watch_history만 사용 (오늘 행 포함)
+// updateUsSheetToday()가 5분마다 시트 7행을 갱신 + 캐시 무효화
+// → 히스토리가 단일 진실 공급원
+const [watchHistData, watchListData] = await Promise.all([
 api('us_watch_history', 365),
-api('us_watch_today', 0).catch(()=>null),
 api('us_watch_list', 0).catch(()=>null)
 ]);
-// ★ 항상 US섹터등락률(관심종목 기반) 데이터만 사용 (US Sector Tracker fallback 제거)
 d = watchHistData;
 document.getElementById('us-status').textContent=d.count+'일 데이터';
-if(todayData){
-S.usToday = todayData;
-const n=document.getElementById('us-today-notice');
-if(n&&todayData.date) n.style.display='';
-updateRealtimeTime();
+// us_watch_history의 첫 행(rows[0])이 오늘 데이터
+// S.usToday는 히스토리 첫 행에서 추출
+if(d.rows && d.rows.length > 0){
+  const todayRow = d.rows[0];
+  const todayDate = todayRow[0];
+  const sectorMap = {};
+  d.headers.slice(1).forEach(function(h,i){ if(todayRow[i+1]!==null) sectorMap[h]=todayRow[i+1]; });
+  S.usToday = { sectors: sectorMap, date: todayDate, source: 'us_watch_history' };
+  const n=document.getElementById('us-today-notice');
+  if(n&&todayDate) n.style.display='';
+  updateRealtimeTime();
 }
 if(watchListData){ S.usWatchL=watchListData; }
 if(watchHistData){ S.usWatchD=watchHistData; }
@@ -3409,14 +3417,12 @@ document.getElementById('us-table').innerHTML=
 }
 }
 async function loadUsToday(){
+// ★ us_watch_today KV 대신 us_watch_history 재로드
+// updateUsSheetToday()가 캐시 무효화하므로 최신 오늘 행을 즉시 반영
 try{
-const d=await api('us_watch_today',0);
-S.usToday=d;
-const n=document.getElementById('us-today-notice');
-if(n&&d.date) n.style.display='';
-updateRealtimeTime();
-renderUs();
-}catch(e){ S.usToday=null; }
+S.usOk=false; S.usWatchAt=0; // 캐시 무효화
+await loadUs();
+}catch(e){ console.warn('[loadUsToday] 실패:', e.message); }
 }
 function renderUs(){
 if(!S.usD)return;
