@@ -228,6 +228,14 @@ US_YAHOO_HEADERS = {
     'Referer': 'https://finance.yahoo.com',
 }
 
+def is_kr_market_open():
+    """KST 기준 장중 여부 (09:00~15:35 평일)"""
+    now_kst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    if now_kst.weekday() >= 5:
+        return False
+    hhmm = now_kst.hour * 100 + now_kst.minute
+    return 900 <= hhmm <= 1535
+
 def is_us_market_open():
     """미국 ET 기준 장중 여부 (09:30~16:00)"""
     now_utc = datetime.datetime.now(datetime.timezone.utc)
@@ -437,108 +445,107 @@ async def main():
     updated_at = now_kst.strftime('%Y-%m-%d %H:%M')
     print(f'=== fetch_naver.py 시작: {updated_at} KST ===')
 
-    sectors = fetch_kr_list()
-    code_to_sectors, sector_stocks = extract_stock_info(sectors)
-    all_codes = list(code_to_sectors.keys())
-    print(f'  → 고유 종목코드: {len(all_codes)}개')
+    kr_open = is_kr_market_open()
+    us_open = is_us_market_open()
+    print(f'  KR장중: {kr_open}, US장중: {us_open}')
 
-    chg_map = await fetch_all_stocks(all_codes)
+    if not kr_open and not us_open:
+        print('=== KR/US 모두 장외 — 스킵 ===')
+        return
 
-    stock_data = build_stock_data(sector_stocks, chg_map)
+    # ── KR 수집 (장중일 때만) ─────────────────────────────────────
+    chg_map = {}
+    code_to_sectors = {}
+    sector_stocks = {}
+    major_index = {}
+    stock_data = {}
+    sector_avg = {}
 
-    print('[4/5] 지수 조회 중...')
-    major_index = await fetch_index_live()
-    print(f'  → {major_index}')
+    if kr_open:
+        sectors = fetch_kr_list()
+        code_to_sectors, sector_stocks = extract_stock_info(sectors)
+        all_codes = list(code_to_sectors.keys())
+        print(f'  → 고유 종목코드: {len(all_codes)}개')
+        chg_map = await fetch_all_stocks(all_codes)
 
-    print('[5/5] KV 저장 중...')
+    if kr_open:
+        stock_data = build_stock_data(sector_stocks, chg_map)
 
-    # kr_today: 섹터 평균 (히트맵용)
-    write_to_kv('kr_today', {
-        'sectors':    calc_sector_avg(code_to_sectors, chg_map),
-        'majorIndex': major_index,
-        'date':       today_str,
-        'delayed':    False,
-        'updatedAt':  updated_at,
-        'source':     'naver_api_github_actions',
-    })
+        print('[4/5] 지수 조회 중...')
+        major_index = await fetch_index_live()
+        print(f'  → {major_index}')
 
-    # kr_stocks: 종목별 등락률 (팝업용) ← 신규
-    write_to_kv('kr_stocks', {
-        'stocks':    stock_data,
-        'date':      today_str,
-        'updatedAt': updated_at,
-        'source':    'naver_api_github_actions',
-    })
+        print('[5/5] KV 저장 중...')
+        sector_avg = calc_sector_avg(code_to_sectors, chg_map)
 
-    # ── 6. GAS 시트 갱신 (KR) ───────────────────────────────────
-    sector_avg = calc_sector_avg(code_to_sectors, chg_map)
-    update_gas_sheet(chg_map, sector_avg, major_index, updated_at)
+        write_to_kv('kr_today', {
+            'sectors':    sector_avg,
+            'majorIndex': major_index,
+            'date':       today_str,
+            'delayed':    False,
+            'updatedAt':  updated_at,
+            'source':     'naver_api_github_actions',
+        })
+        write_to_kv('kr_stocks', {
+            'stocks':    stock_data,
+            'date':      today_str,
+            'updatedAt': updated_at,
+            'source':    'naver_api_github_actions',
+        })
 
-    # ── 7. US 섹터 수집 및 KV/GAS 갱신 ──────────────────────────
-    print('[7] US 섹터 수집 중...')
-    try:
-        us_list_resp = requests.get(GAS_URL, params={'type': 'us_watch_list', 'range': '0'}, timeout=30)
-        us_list_resp.raise_for_status()
-        us_body = us_list_resp.json()
-        if us_body.get('ok'):
-            us_sectors = us_body['data']['sectors']
-            print(f'  → US 섹터 {len(us_sectors)}개 수신')
+        # ── 6. GAS 시트 갱신 (KR) ────────────────────────────────
+        update_gas_sheet(chg_map, sector_avg, major_index, updated_at)
 
-            us_chg_map, us_sector_avg, us_stocks_map = await collect_us_sectors(us_sectors)
-
-            now_et = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
-            us_date_str = now_et.strftime('%Y-%m-%d')
-            us_updated_at = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
-            us_ttl = calc_us_kv_ttl()
-
-            # KV us_watch_today (섹터 평균 — 히트맵/랭킹용)
-            if us_sector_avg:
-                us_today_payload = {
-                    'sectors':   us_sector_avg,
-                    'date':      us_date_str,
-                    'updatedAt': us_updated_at,
-                    'source':    'yahoo_github_actions',
-                }
-                resp_kv = requests.put(
-                    KV_WRITE_URL.format(key='us_watch_today'),
-                    headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
-                    params={'expiration_ttl': us_ttl},
-                    data=json.dumps(us_today_payload, ensure_ascii=False),
-                    timeout=15,
-                )
-                if resp_kv.ok:
-                    print(f'  → KV us_watch_today ✓ (섹터 {len(us_sector_avg)}개, TTL {us_ttl}s)')
-                else:
-                    print(f'  → KV us_watch_today 실패: {resp_kv.status_code}')
-
-            # KV us_watch_stocks (종목별 — 팝업용)
-            if us_stocks_map:
-                us_stocks_payload = {
-                    'stocks':    us_stocks_map,
-                    'date':      us_date_str,
-                    'updatedAt': us_updated_at,
-                    'source':    'yahoo_github_actions',
-                }
-                resp_kv2 = requests.put(
-                    KV_WRITE_URL.format(key='us_watch_stocks'),
-                    headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
-                    params={'expiration_ttl': us_ttl},
-                    data=json.dumps(us_stocks_payload, ensure_ascii=False),
-                    timeout=15,
-                )
-                if resp_kv2.ok:
-                    print(f'  → KV us_watch_stocks ✓ (종목 포함)')
-
-            # GAS 시트 갱신 (US섹터등락률 오늘행 + US관심종목 D열)
-            # Yahoo 0개여도 날짜행 삽입은 항상 수행 (값은 장중에 채워짐)
-            update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
-        else:
-            print(f'  → US 목록 조회 실패: {us_body.get("error")}')
-    except Exception as e:
-        print(f'  → US 수집 실패 (비중요): {e}')
+    # ── 7. US 섹터 수집 및 KV/GAS 갱신 (US 장중일 때만) ───────────
+    if us_open:
+        print('[7] US 섹터 수집 중...')
+        try:
+            us_list_resp = requests.get(GAS_URL, params={'type': 'us_watch_list', 'range': '0'}, timeout=30)
+            us_list_resp.raise_for_status()
+            us_body = us_list_resp.json()
+            if us_body.get('ok'):
+                us_sectors = us_body['data']['sectors']
+                print(f'  → US 섹터 {len(us_sectors)}개 수신')
+                us_chg_map, us_sector_avg, us_stocks_map = await collect_us_sectors(us_sectors)
+                now_et = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
+                us_date_str = now_et.strftime('%Y-%m-%d')
+                us_updated_at = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
+                us_ttl = calc_us_kv_ttl()
+                # KV us_watch_today
+                if us_sector_avg:
+                    requests.put(
+                        KV_WRITE_URL.format(key='us_watch_today'),
+                        headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
+                        params={'expiration_ttl': us_ttl},
+                        data=json.dumps({'sectors': us_sector_avg, 'date': us_date_str,
+                                         'updatedAt': us_updated_at, 'source': 'yahoo_github_actions'},
+                                        ensure_ascii=False),
+                        timeout=15,
+                    )
+                    print(f'  → KV us_watch_today ✓ (섹터 {len(us_sector_avg)}개)')
+                # KV us_watch_stocks
+                if us_stocks_map:
+                    requests.put(
+                        KV_WRITE_URL.format(key='us_watch_stocks'),
+                        headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
+                        params={'expiration_ttl': us_ttl},
+                        data=json.dumps({'stocks': us_stocks_map, 'date': us_date_str,
+                                         'updatedAt': us_updated_at, 'source': 'yahoo_github_actions'},
+                                        ensure_ascii=False),
+                        timeout=15,
+                    )
+                    print(f'  → KV us_watch_stocks ✓')
+                # GAS 시트 갱신 (Yahoo 0개여도 날짜행 확보)
+                update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
+            else:
+                print(f'  → US 목록 조회 실패: {us_body.get("error")}')
+        except Exception as e:
+            print(f'  → US 수집 실패 (비중요): {e}')
 
     elapsed = round(time.time()-start, 1)
-    ok_rate = round(sum(1 for v in chg_map.values() if v is not None)/max(len(all_codes),1)*100, 1)
+    kr_ok = sum(1 for v in chg_map.values() if v is not None) if chg_map else 0
+    kr_total = len(chg_map) if chg_map else 0
+    ok_rate = round(kr_ok / max(kr_total, 1) * 100, 1)
     print(f'=== 완료: {elapsed}초, KR성공률 {ok_rate}% ===')
 
 if __name__ == '__main__':
