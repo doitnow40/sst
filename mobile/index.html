@@ -1285,7 +1285,7 @@ Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
-const REALTIME_TYPES = new Set(['kr_today', 'us_watch_today']);
+const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today', 'us_watch_stocks']);
 const IS_DEMO = false;
 const US_META = {
 'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1347,7 +1347,7 @@ SECTOR:  {label:'GICS 11 Sectors (SPDR)',bg:'#1565C0',fg:'#fff'},
 THEMATIC:{label:'Thematic ETF',          bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'Bond / USD',            bg:'#37474F',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
 const US_WATCHED_KEY_EARLY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
