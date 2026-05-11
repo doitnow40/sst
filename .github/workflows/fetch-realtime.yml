@@ -1,29 +1,33 @@
 # .github/workflows/fetch-realtime.yml
 #
-# 한국 주식 장중 5분 주기로 네이버 API 데이터 수집
-# → Cloudflare KV 저장 (웹사이트 히트맵/팝업/랭킹/트리맵 — 단일 진실 공급원)
-# → GAS 시트 동기화 (관심종목 D열, 섹터등락률 오늘행, Live Summary)
+# KR + US 섹터 데이터 수집 → Cloudflare KV + GAS 시트 동기화
+#
+# ── KR 수집 ────────────────────────────────────────────────────────
+#   KST 09:00~15:55 (UTC 00:00~06:55) 평일 5분마다
+#   네이버 API → KV kr_today / kr_stocks → GAS KR 시트
+#
+# ── US 수집 ────────────────────────────────────────────────────────
+#   ET 09:30~16:00 (UTC 13:30~21:00) 평일 5분마다
+#   Yahoo Finance → KV us_watch_today / us_watch_stocks → GAS US 시트
 #
 # ── 장마감/휴일/연휴 ─────────────────────────────────────────────────
-#   KV TTL: 다음 영업일 10:00까지 유지 → 웹사이트 항상 최근 종가 표시
-#   시트: 마지막 갱신값 그대로 유지 (장마감 확정값)
+#   KV TTL: 다음 영업일까지 유지 → 웹사이트 항상 최근 종가 표시
 #
-# ── 필요한 GitHub Secrets ───────────────────────────────────────────
-#   GAS_WEBAPP_URL      : GAS 웹앱 URL
-#   CF_ACCOUNT_ID       : Cloudflare Account ID
-#   CF_API_TOKEN        : KV Storage 편집 권한 토큰
-#   CF_KV_NAMESPACE_ID  : REALTIME_KV namespace ID
-#   UPDATE_TOKEN        : GAS 시트 갱신 인증 토큰 (GAS Script Properties 동일값)
+# ── GitHub Secrets ──────────────────────────────────────────────────
+#   GAS_WEBAPP_URL      CF_ACCOUNT_ID  CF_API_TOKEN
+#   CF_KV_NAMESPACE_ID  UPDATE_TOKEN
 
-name: Fetch Realtime KR Data
+name: Fetch Realtime KR+US Data
 
 on:
   schedule:
-    # UTC 기준: 00:00~06:55, 평일(월~금), 5분 간격
-    # KST 환산: 09:00~15:55 (장중 전체 커버)
+    # ── KR 장중: UTC 00:00~06:55 평일 5분 ──
     - cron: '*/5 0-6 * * 1-5'
+    # ── US 장중: UTC 13:30~21:00 평일 5분 ──
+    - cron: '*/5 13-20 * * 1-5'
+    - cron: '30-59/5 13 * * 1-5'   # 13:30부터 시작
+    - cron: '0-0/5 21 * * 1-5'     # 21:00까지 (16:00 ET)
 
-  # 수동 실행 (긴급 디버깅/테스트)
   workflow_dispatch:
 
 jobs:
