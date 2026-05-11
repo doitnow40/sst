@@ -1587,12 +1587,19 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // 종목 목록: kr_stocks(네이버) 우선, 없으면 kr_list fallback
+    // 종목 목록: kr_stocks(Worker KV 캐시) 우선, 없으면 kr_list fallback
     let stocks = null;
+    const KR_STOCKS_TTL_M = 5 * 60 * 1000; // 5분
     try {
-      if (!S.krStocks || S.krStocks._date !== new Date().toLocaleDateString('ko-KR')) {
+      const now_ms_m = Date.now();
+      const needRefresh_m = !S.krStocks || !S.krStocks._ts || (now_ms_m - S.krStocks._ts) > KR_STOCKS_TTL_M;
+      if (needRefresh_m) {
         const sd = await api('kr_stocks', 0);
-        if (sd && sd.stocks) { S.krStocks = sd.stocks; S.krStocks._date = new Date().toLocaleDateString('ko-KR'); }
+        if (sd && sd.stocks) {
+          S.krStocks = sd.stocks;
+          S.krStocks._ts = now_ms_m;
+          S.krStocks._cachedAt = sd.dColUpdatedAt || sd.sheetReadAt || sd.updatedAt || sd.workerCachedAt || '';
+        }
       }
       if (S.krStocks && S.krStocks[sectorName]) stocks = S.krStocks[sectorName];
     } catch(e) { console.warn('[popup] kr_stocks fallback:', e.message); }
@@ -1660,7 +1667,9 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     const modeLabel2 = _isKrTradingDay
       ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount2+'개 · 등락률 높은 순')
       : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률');
-    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel2}</div>`;
+    const _cachedAt2 = (S.krStocks && S.krStocks._cachedAt) ? S.krStocks._cachedAt : '';
+    const _cachedHtml2 = _cachedAt2 ? ' <span style="color:#4fc3f7">· 📡 D열 수집: '+_cachedAt2+'</span>' : '';
+    const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel2}${_cachedHtml2}</div>`;
 
     body.innerHTML = header + html;
   } catch(e) {
