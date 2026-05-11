@@ -1,32 +1,53 @@
 # .github/workflows/fetch-realtime.yml
 #
-# ⚠️  이 워크플로우는 Cloudflare Workers Cron으로 대체되어 비활성화됨
+# 한국 주식 장중 5분 주기로 네이버 API 데이터 수집
+# → Cloudflare KV 저장 (웹사이트 히트맵/팝업/랭킹/트리맵 — 단일 진실 공급원)
+# → GAS 시트 동기화 (관심종목 D열, 섹터등락률 오늘행, Live Summary)
 #
-# 이전 역할: 한국 주식 장중 5분 주기로 네이버 API 데이터 수집 → Cloudflare KV 저장
-# 현재 역할: workers/realtime-proxy.js 의 scheduled 핸들러가 동일 작업 수행
+# ── 장마감/휴일/연휴 ─────────────────────────────────────────────────
+#   KV TTL: 다음 영업일 10:00까지 유지 → 웹사이트 항상 최근 종가 표시
+#   시트: 마지막 갱신값 그대로 유지 (장마감 확정값)
 #
-# Cloudflare Cron 장점:
-#   - GitHub Actions cron 대비 정확한 실행 보장 (지연/누락 없음)
-#   - GitHub Secrets (CF_ACCOUNT_ID, CF_API_TOKEN, CF_KV_NAMESPACE_ID) 불필요
-#   - GAS_WEBAPP_URL은 Worker Secret으로 관리 (npx wrangler secret put GAS_WEBAPP_URL)
-#
-# 이 파일은 삭제해도 무방하나, 참고용으로 보존
+# ── 필요한 GitHub Secrets ───────────────────────────────────────────
+#   GAS_WEBAPP_URL      : GAS 웹앱 URL
+#   CF_ACCOUNT_ID       : Cloudflare Account ID
+#   CF_API_TOKEN        : KV Storage 편집 권한 토큰
+#   CF_KV_NAMESPACE_ID  : REALTIME_KV namespace ID
+#   UPDATE_TOKEN        : GAS 시트 갱신 인증 토큰 (GAS Script Properties 동일값)
 
-name: Fetch Realtime KR Data (DISABLED - replaced by CF Cron)
+name: Fetch Realtime KR Data
 
 on:
-  # schedule 비활성화 - Cloudflare Cron이 대신 실행
-  # - cron: '*/5 0-6 * * 1-5'
+  schedule:
+    # UTC 기준: 00:00~06:55, 평일(월~금), 5분 간격
+    # KST 환산: 09:00~15:55 (장중 전체 커버)
+    - cron: '*/5 0-6 * * 1-5'
 
-  # 수동 실행은 유지 (긴급 디버깅용)
+  # 수동 실행 (긴급 디버깅/테스트)
   workflow_dispatch:
 
 jobs:
-  disabled:
+  fetch:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
+
     steps:
-      - name: Notice
-        run: |
-          echo "이 워크플로우는 비활성화되었습니다."
-          echo "데이터 수집은 Cloudflare Workers Cron이 담당합니다."
-          echo "workers/realtime-proxy.js 의 scheduled 핸들러를 확인하세요."
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run fetch_naver.py
+        env:
+          GAS_WEBAPP_URL:     ${{ secrets.GAS_WEBAPP_URL }}
+          CF_ACCOUNT_ID:      ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN:       ${{ secrets.CF_API_TOKEN }}
+          CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
+          UPDATE_TOKEN:       ${{ secrets.UPDATE_TOKEN }}
+        run: python scripts/fetch_naver.py
