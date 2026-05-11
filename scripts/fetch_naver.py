@@ -219,23 +219,34 @@ def write_to_kv(key, value):
 # ── 6. GAS 시트 갱신 호출 ──────────────────────────────
 def update_gas_sheet(chg_map, sector_avg, major_index, updated_at):
     """
-    GitHub Actions → GAS 웹앱 → 시트 직접 갱신
+    GitHub Actions → GAS 웹앱 POST → 시트 직접 갱신
+    - chg_map이 628개 종목 JSON(~10KB)이라 GET URL 한계 초과
+    - POST body로 전달해야 정확히 수신됨
     - KR 관심종목 D열 (종목별 실시간 등락률)
     - KR 섹터등락률 오늘 행
     - KR Live Summary 갱신시각
     """
     print('[6/6] GAS 시트 갱신 중...')
     try:
-        params = {
-            'type':         'update_kr_today',
-            'chg_map':      json.dumps(chg_map, ensure_ascii=False),
-            'sector_avg':   json.dumps(sector_avg, ensure_ascii=False),
-            'major_index':  json.dumps(major_index, ensure_ascii=False),
-            'updated_at':   updated_at,
-            'token':        UPDATE_TOKEN,
-            '_t':           str(int(time.time())),
+        # GAS는 GET/POST 모두 doGet으로 처리하지만
+        # 대용량 데이터는 POST body로 전달
+        # GAS 웹앱 URL에 type만 쿼리파라미터로, 나머지는 body에
+        url = f'{GAS_URL}?type=update_kr_today&_t={int(time.time())}'
+        payload = {
+            'type':        'update_kr_today',
+            'chg_map':     json.dumps(chg_map, ensure_ascii=False),
+            'sector_avg':  json.dumps(sector_avg, ensure_ascii=False),
+            'major_index': json.dumps(major_index, ensure_ascii=False),
+            'updated_at':  updated_at,
+            'token':       UPDATE_TOKEN,
         }
-        resp = requests.get(GAS_URL, params=params, timeout=30)
+        resp = requests.post(
+            url,
+            data=json.dumps(payload, ensure_ascii=False),
+            headers={'Content-Type': 'application/json'},
+            timeout=45,
+            allow_redirects=True,
+        )
         if resp.ok:
             body = resp.json()
             if body.get('ok'):
@@ -244,7 +255,7 @@ def update_gas_sheet(chg_map, sector_avg, major_index, updated_at):
             else:
                 print(f'  → GAS 응답 오류: {body.get("error")}')
         else:
-            print(f'  → GAS HTTP 오류: {resp.status_code}')
+            print(f'  → GAS HTTP 오류: {resp.status_code} {resp.text[:200]}')
     except Exception as e:
         print(f'  → GAS 시트 갱신 실패 (비중요, KV는 정상): {e}')
 
