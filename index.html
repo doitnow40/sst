@@ -1364,16 +1364,27 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // ★ 종목 목록: kr_stocks(네이버 실시간) 우선, 없으면 kr_list(GAS) fallback
+    // ★ 종목 목록: kr_stocks(Worker KV 캐시) 우선, 없으면 kr_list(GAS) fallback
     let stocks = null;
 
-    // ① Worker KV의 kr_stocks에서 네이버 실시간 chg 시도
+    // ① Worker KV의 kr_stocks 시도 (5분 TTL로 캐시, 팝업 열 때마다 만료 체크)
+    const KR_STOCKS_TTL = 5 * 60 * 1000; // 5분
     try {
-      if (!S.krStocks || S.krStocks._date !== new Date().toLocaleDateString('ko-KR')) {
+      const now_ms = Date.now();
+      const needRefresh = !S.krStocks
+        || !S.krStocks._ts
+        || (now_ms - S.krStocks._ts) > KR_STOCKS_TTL;
+
+      if (needRefresh) {
+        console.log('[popup] kr_stocks 갱신 요청...');
         const sd = await api('kr_stocks', 0);
         if (sd && sd.stocks) {
           S.krStocks = sd.stocks;
-          S.krStocks._date = new Date().toLocaleDateString('ko-KR');
+          S.krStocks._ts       = now_ms;
+          // dColUpdatedAt: GAS D열(GOOGLEFINANCE) 마지막 갱신 시각 (Live Summary D1셀 기준)
+          // sheetReadAt: GAS kr_list API가 시트를 읽은 시각
+          S.krStocks._cachedAt = sd.dColUpdatedAt || sd.sheetReadAt || sd.updatedAt || sd.workerCachedAt || '';
+          console.log(`[popup] kr_stocks 갱신 완료 (source: ${sd.source}, D열갱신: ${S.krStocks._cachedAt})`);
         }
       }
       if (S.krStocks && S.krStocks[sectorName]) {
@@ -1448,12 +1459,17 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
         + '</div>';
     });
 
-    // 헤더 안내
+    // 헤더 안내 (갱신 시각 포함)
     const validCount = sorted.filter(s => (_isKrTradingDay ? s.chg : s.prevChg) !== null).length;
     const modeLabel  = _isKrTradingDay
       ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
       : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
-    const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
+    // D열(GOOGLEFINANCE) 갱신 시각 표시 (Worker가 GAS에서 가져온 시각)
+    const _cachedAt = (S.krStocks && S.krStocks._cachedAt) ? S.krStocks._cachedAt : '';
+    const _cachedHtml = _cachedAt
+      ? ' <span style="color:#4fc3f7">· 📡 D열 수집: '+_cachedAt+'</span>'
+      : '';
+    const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+_cachedHtml+'</div>';
 
     body.innerHTML = header + html;
   } catch(e) {
