@@ -457,13 +457,8 @@ async def main():
                 print(f'  → KV us_watch_stocks ✓ (종목 포함)')
 
             # GAS 시트 갱신 (US섹터등락률 오늘행 + J1셀 갱신시각)
-            # chg_map은 GAS stocks_map에서 역산 (시트 D열값 재활용)
-            us_chg_map = {}
-            for stks in us_stocks_map.values():
-                for st in stks:
-                    if st.get('ticker') and st.get('chg') is not None:
-                        us_chg_map[st['ticker']] = st['chg']
-            update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
+            # D열은 GOOGLEFINANCE 수식 전용 — chg_map 전달 불필요
+            update_gas_sheet_us({}, us_sector_avg, us_date_str, us_updated_at)
 
         except Exception as e:
             print(f'  → US 수집 실패 (비중요): {e}')
