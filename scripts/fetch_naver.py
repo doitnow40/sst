@@ -529,9 +529,9 @@ async def main():
                 if resp_kv2.ok:
                     print(f'  → KV us_watch_stocks ✓ (종목 포함)')
 
-            # GAS 시트 갱신 (US섹터등락률 + US관심종목 D열)
-            if us_sector_avg or us_chg_map:
-                update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
+            # GAS 시트 갱신 (US섹터등락률 오늘행 + US관심종목 D열)
+            # Yahoo 0개여도 날짜행 삽입은 항상 수행 (값은 장중에 채워짐)
+            update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
         else:
             print(f'  → US 목록 조회 실패: {us_body.get("error")}')
     except Exception as e:
