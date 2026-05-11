@@ -965,7 +965,7 @@ const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCv
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
 
 // Worker로 라우팅할 type 목록
-const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today']);
+const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today', 'us_watch_stocks']);
 
 const IS_DEMO = false;
 const US_META = {
@@ -1033,7 +1033,7 @@ THEMATIC:{label:'▶ 테마 ETF',               bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'▶ 채권 & 달러',            bg:'#37474F',fg:'#fff'},
 CUSTOM:  {label:'▶ 관심 섹터',              bg:'#2E7D32',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1312,7 +1312,20 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     // US 섹터 팝업: 관심종목 리스트 + 최근 5일 추이 표시
     if (!isKr) {
       // usWatchL이 아직 없으면 즉시 로드
-      if (!S.usWatchL) {
+      // ★ us_watch_stocks(KV) 우선 → us_watch_list(GAS) fallback
+      const US_STOCKS_TTL = 5 * 60 * 1000;
+      const usNeedRef = !S.usWatchStocks || !S.usWatchStocks._ts || (Date.now() - S.usWatchStocks._ts) > US_STOCKS_TTL;
+      if (usNeedRef) {
+        try {
+          const usd = await api('us_watch_stocks', 0);
+          if (usd && usd.stocks) {
+            S.usWatchStocks = usd.stocks;
+            S.usWatchStocks._ts = Date.now();
+            S.usWatchStocks._cachedAt = usd.updatedAt || '';
+          }
+        } catch(e2) { console.warn('[US popup] us_watch_stocks fallback:', e2.message); }
+      }
+      if (!S.usWatchStocks && !S.usWatchL) {
         try { S.usWatchL = await api('us_watch_list', 0); } catch(e) { S.usWatchL = null; }
       }
       const meta = US_META[sectorName] || {};
