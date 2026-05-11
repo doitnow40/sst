@@ -1911,10 +1911,9 @@ if(IS_DEMO){
 d=demoKr();
 document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
-const [histData, todayData, listData] = await Promise.all([
+const [histData, todayData] = await Promise.all([
 api('kr_history', 365),
 api('kr_today', 0).catch(()=>null),
-S.krLOk ? Promise.resolve(null) : api('kr_list', 0).catch(()=>null)
 ]);
 d = histData;
 document.getElementById('kr-status').textContent=d.count+'일 데이터';
@@ -1927,11 +1926,6 @@ updateRealtimeTime();
 } else {
 S.krToday = null;
 }
-}
-if(listData&&listData.sectors){
-S.krLOk=true;
-S.krSectors=listData.sectors;
-S.krListAt=Date.now(); // ← 선취득 시각 기록 → kr-list 페이지에서 재요청 스킵
 }
 }
 updateSheetReadTime(d.sheetReadAt);
@@ -3596,7 +3590,22 @@ const wrap=document.getElementById('kr-list');
 try{
 let sectors;
 if(IS_DEMO){sectors=KR_FALLBACK.map(s=>({sector:s.sector,stocks:s.stocks.map(n=>({name:n,ticker:'',chg:null,memo:''}))}))}
-else{const d=await api('kr_list',0);sectors=d.sectors;if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);}
+else{
+  const KR_STOCKS_TTL_M2=5*60*1000;
+  const needRef_m2=!S.krStocks||!S.krStocks._ts||(Date.now()-S.krStocks._ts)>KR_STOCKS_TTL_M2;
+  if(needRef_m2){
+    try{
+      const sd=await api('kr_stocks',0);
+      if(sd&&sd.stocks){S.krStocks=sd.stocks;S.krStocks._ts=Date.now();S.krStocks._cachedAt=sd.updatedAt||'';}
+    }catch(e2){}
+  }
+  if(S.krStocks){
+    sectors=Object.entries(S.krStocks).filter(([k])=>!k.startsWith('_')).map(([sec,stks])=>({sector:sec,stocks:stks}));
+    if(S.krStocks._cachedAt)updateSheetReadTime(S.krStocks._cachedAt);
+  } else {
+    const d=await api('kr_list',0);sectors=d.sectors;if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);
+  }
+}
 S.krLOk=true;
 S.krSectors=sectors;
 S.krListAt=Date.now();
