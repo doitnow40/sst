@@ -1285,7 +1285,7 @@ Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
-const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_today', 'us_watch_stocks']);
+const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_stocks']);
 const IS_DEMO = false;
 const US_META = {
 'SP500':    {type:'INDEX',bg:'#FFD700',fg:'#000',group:'INDEX'},
@@ -1974,8 +1974,8 @@ await loadUs();
 }else if(currentPage==='us-list'){
 S.usLOk=false;
 try{
-const d=await api('us_today',0,true);  // ← forceRefresh=true
-S.usToday=d;
+S.usOk=false; S.usWatchAt=0;
+await loadUs();
 renderUsList(listSorted);
 }catch(e){
 console.error('us-list 로드 실패:',e);
@@ -3433,21 +3433,22 @@ if(IS_DEMO){
 d=demoUs();
 document.getElementById('us-status').textContent='⚠️ 데모 모드';
 }else{
-const [watchHistData, todayData, watchListData, legacyHistData] = await Promise.all([
+// ★ 단일 소스: us_watch_history만 사용 (오늘 행 포함)
+const [watchHistData, watchListData] = await Promise.all([
 api('us_watch_history', 365),
-api('us_today', 0).catch(()=>null),
 api('us_watch_list', 0).catch(()=>null),
-api('us_history', 365).catch(()=>null)
 ]);
-// ★ US섹터등락률(관심종목 기반)이 있으면 메인으로, 없으면 기존 Sector Tracker로 fallback
-const hasWatchHist = watchHistData && watchHistData.rows && watchHistData.rows.length > 0;
-d = hasWatchHist ? watchHistData : (legacyHistData || watchHistData);
+d = watchHistData;
 document.getElementById('us-status').textContent=d.count+'일 데이터';
-if(todayData){
-S.usToday = todayData;
-const n=document.getElementById('us-today-notice');
-if(n&&todayData.date) n.style.display='';
-updateRealtimeTime();
+if(d.rows && d.rows.length > 0){
+  const todayRow = d.rows[0];
+  const todayDate = todayRow[0];
+  const sectorMap = {};
+  d.headers.slice(1).forEach(function(h,i){ if(todayRow[i+1]!==null) sectorMap[h]=todayRow[i+1]; });
+  S.usToday = { sectors: sectorMap, date: todayDate, source: 'us_watch_history' };
+  const n=document.getElementById('us-today-notice');
+  if(n&&todayDate) n.style.display='';
+  updateRealtimeTime();
 }
 if(watchListData){ S.usWatchL=watchListData; }
 if(watchHistData){ S.usWatchD=watchHistData; }
@@ -3464,10 +3465,10 @@ document.getElementById('us-table').innerHTML=
 }
 async function loadUsToday(){
 try{
-const d=await api('us_today',0);
-S.usToday=d;
-const n=document.getElementById('us-today-notice');
-if(n&&d.date) n.style.display='';
+S.usOk=false; S.usWatchAt=0;
+await loadUs();
+if(false){ // dummy to keep structure
+const d={};
 updateRealtimeTime();
 renderUs();
 }catch(e){ S.usToday=null; }
