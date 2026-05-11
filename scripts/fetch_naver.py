@@ -221,6 +221,14 @@ def write_to_kv(key, value):
     print(f'  → 완료')
 
 # ── US 장 시간 유틸 ──────────────────────────────────────
+def is_kr_market_open():
+    """KST 기준 장중 여부 (09:00~15:35, 평일)"""
+    now_kst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+    if now_kst.weekday() >= 5:
+        return False
+    hhmm = now_kst.hour * 100 + now_kst.minute
+    return 900 <= hhmm <= 1535
+
 def is_us_market_open():
     """미국 ET 기준 장중 여부 (09:30~16:00, 평일)"""
     now_utc = datetime.datetime.now(datetime.timezone.utc)
