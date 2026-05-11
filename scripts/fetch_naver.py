@@ -220,148 +220,59 @@ def write_to_kv(key, value):
         raise RuntimeError(f'KV 저장 실패: {resp.status_code} {resp.text}')
     print(f'  → 완료')
 
-# ── US 섹터 수집 ─────────────────────────────────────────
-US_YAHOO_URL = 'https://query1.finance.yahoo.com/v8/finance/quote'
-US_YAHOO_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Accept': 'application/json',
-    'Referer': 'https://finance.yahoo.com',
-}
-
-def is_kr_market_open():
-    """KST 기준 장중 여부 (09:00~15:35 평일)"""
-    now_kst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-    if now_kst.weekday() >= 5:
-        return False
-    hhmm = now_kst.hour * 100 + now_kst.minute
-    return 900 <= hhmm <= 1535
-
+# ── US 장 시간 유틸 ──────────────────────────────────────
 def is_us_market_open():
-    """미국 ET 기준 장중 여부 (09:30~16:00)"""
+    """미국 ET 기준 장중 여부 (09:30~16:00, 평일)"""
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    # ET = UTC-4 (EDT) / UTC-5 (EST) — 간단히 UTC-4 사용 (4월~10월)
-    et_offset = datetime.timedelta(hours=-4)
-    now_et = now_utc + et_offset
+    now_et  = now_utc + datetime.timedelta(hours=-4)  # EDT
     if now_et.weekday() >= 5:
         return False
     hhmm = now_et.hour * 100 + now_et.minute
     return 930 <= hhmm <= 1600
 
 def calc_us_kv_ttl():
-    """US KV TTL: 장중 10분 / 장외 다음 영업일 10:30 ET까지"""
+    """US KV TTL: 장중 10분 / 장외 다음 영업일 ET 10:30까지"""
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    et_offset = datetime.timedelta(hours=-4)
-    now_et = now_utc + et_offset
-    hhmm = now_et.hour * 100 + now_et.minute
-    weekday = now_et.weekday()
-    if weekday < 5 and 930 <= hhmm <= 1600:
+    now_et  = now_utc + datetime.timedelta(hours=-4)
+    hhmm    = now_et.hour * 100 + now_et.minute
+    if now_et.weekday() < 5 and 930 <= hhmm <= 1600:
         return 600
-    # 다음 영업일 10:30 ET까지
     candidate = now_et.replace(hour=10, minute=30, second=0, microsecond=0)
     if now_et >= candidate:
         candidate += datetime.timedelta(days=1)
     while candidate.weekday() >= 5:
         candidate += datetime.timedelta(days=1)
-    ttl = int((candidate - now_et).total_seconds())
-    return max(ttl, 600)
+    return max(int((candidate - now_et).total_seconds()), 600)
 
-def yahoo_symbol(ticker):
-    """NYSEARCA:XLK → XLK"""
-    parts = ticker.split(':')
-    return parts[-1] if len(parts) > 1 else ticker
+# ── US 섹터 수집: GAS GOOGLEFINANCE 기반 ──────────────────
+# Yahoo Finance 등 외부 API는 GitHub Actions IP 차단됨
+# GAS의 GOOGLEFINANCE 수식(D열)이 이미 계산한 섹터평균을 읽어 반환
+def fetch_us_sector_avg():
+    """
+    GAS getUsSectorAvg() 호출
+    → GOOGLEFINANCE 기반 섹터평균 + 종목별 등락률 반환
+    반환: (sector_avg, stocks_map, date_str, updated_at)
+    """
+    print('  [US] GAS getUsSectorAvg() 호출 중...')
+    resp = requests.get(
+        GAS_URL,
+        params={'type': 'us_sector_avg', '_t': int(time.time())},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    if not body.get('ok'):
+        raise RuntimeError(f'GAS 오류: {body.get("error")}')
+    d = body['data']
+    sector_avg = d.get('sectors', {})
+    stocks_map = d.get('stocks',  {})
+    date_str   = d.get('date',    '')
+    updated_at = d.get('updatedAt', '')
+    ok_count   = sum(1 for v in sector_avg.values() if v is not None)
+    print(f'  [US] 섹터 {ok_count}/{len(sector_avg)}개 유효 (source: {d.get("source","?")})')
+    return sector_avg, stocks_map, date_str, updated_at
 
-async def fetch_us_stocks(session, tickers):
-    """Yahoo Finance v8 API로 미국 종목 등락률 수집"""
-    result = {}
-    BATCH = 20
-    sym_to_ticker = {yahoo_symbol(t): t for t in tickers}
-    symbols_list = list(sym_to_ticker.keys())
-
-    for i in range(0, len(symbols_list), BATCH):
-        batch_syms = symbols_list[i:i+BATCH]
-        params = {
-            'symbols': ','.join(batch_syms),
-            'fields': 'regularMarketChangePercent,symbol',
-            'lang': 'en',
-            'region': 'US',
-        }
-        try:
-            async with session.get(US_YAHOO_URL, params=params,
-                                   headers=US_YAHOO_HEADERS,
-                                   timeout=aiohttp.ClientTimeout(total=15)) as r:
-                if r.status == 200:
-                    data = await r.json(content_type=None)
-                    quotes = data.get('quoteResponse', {}).get('result', [])
-                    for q in quotes:
-                        sym = q.get('symbol', '')
-                        chg = q.get('regularMarketChangePercent')
-                        orig = sym_to_ticker.get(sym)
-                        if orig and chg is not None and not (chg != chg):
-                            result[orig] = round(float(chg), 2)
-                else:
-                    print(f'  [US Yahoo] HTTP {r.status} for {batch_syms[:3]}...')
-        except Exception as e:
-            print(f'  [US Yahoo] 오류: {e}')
-        if i + BATCH < len(symbols_list):
-            await asyncio.sleep(0.3)
-
-    ok = len(result)
-    print(f'  [US Yahoo] {ok}/{len(tickers)}개 성공')
-    return result
-
-async def collect_us_sectors(sectors):
-    """US관심종목 섹터 데이터 → 섹터평균 + 종목별 등락률 계산"""
-    ticker_to_sectors = {}
-    sector_stocks = {}
-    all_tickers = []
-
-    for sec in sectors:
-        sname = sec['sector']
-        sector_stocks[sname] = []
-        for st in sec.get('stocks', []):
-            ticker = st.get('ticker', '').strip()
-            if not ticker:
-                sector_stocks[sname].append(st)
-                continue
-            sym = yahoo_symbol(ticker)
-            if sym:
-                if ticker not in ticker_to_sectors:
-                    ticker_to_sectors[ticker] = []
-                    all_tickers.append(ticker)
-                if sname not in ticker_to_sectors[ticker]:
-                    ticker_to_sectors[ticker].append(sname)
-            sector_stocks[sname].append(st)
-
-    if not all_tickers:
-        return {}, {}, {}
-
-    async with aiohttp.ClientSession() as session:
-        chg_map = await fetch_us_stocks(session, all_tickers)
-
-    # 섹터 평균
-    sv = {}
-    for ticker, secs in ticker_to_sectors.items():
-        chg = chg_map.get(ticker)
-        if chg is None:
-            continue
-        for s in secs:
-            sv.setdefault(s, []).append(chg)
-    sector_avg = {s: round(sum(v)/len(v), 2) for s, v in sv.items() if v}
-
-    # 종목별
-    stocks_map = {}
-    for sname, stocks in sector_stocks.items():
-        stocks_map[sname] = [{
-            'name':      st.get('name', ''),
-            'ticker':    st.get('ticker', ''),
-            'chg':       chg_map.get(st.get('ticker', '')) if st.get('ticker') else None,
-            'prevChg':   st.get('prevChg'),
-            'marketCap': st.get('marketCap'),
-            'memo':      st.get('memo', ''),
-        } for st in stocks]
-
-    return chg_map, sector_avg, stocks_map
-
+# ── 6. GAS 시트 갱신 호출 ──────────────────────────────
 # ── 6. GAS 시트 갱신 호출 ──────────────────────────────
 def update_gas_sheet_us(chg_map, sector_avg, date_str, updated_at):
     """GitHub Actions → GAS POST → US 시트 갱신 (US관심종목 D열 + US섹터등락률 오늘행)"""
@@ -497,48 +408,55 @@ async def main():
         update_gas_sheet(chg_map, sector_avg, major_index, updated_at)
 
     # ── 7. US 섹터 수집 및 KV/GAS 갱신 (US 장중일 때만) ───────────
+    # 진실 공급원: GAS GOOGLEFINANCE (D열 수식 → 섹터평균)
+    # Yahoo Finance 등 외부 API는 GitHub Actions IP 차단됨
     if us_open:
         print('[7] US 섹터 수집 중...')
         try:
-            us_list_resp = requests.get(GAS_URL, params={'type': 'us_watch_list', 'range': '0'}, timeout=30)
-            us_list_resp.raise_for_status()
-            us_body = us_list_resp.json()
-            if us_body.get('ok'):
-                us_sectors = us_body['data']['sectors']
-                print(f'  → US 섹터 {len(us_sectors)}개 수신')
-                us_chg_map, us_sector_avg, us_stocks_map = await collect_us_sectors(us_sectors)
-                now_et = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
-                us_date_str = now_et.strftime('%Y-%m-%d')
-                us_updated_at = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
-                us_ttl = calc_us_kv_ttl()
-                # KV us_watch_today
-                if us_sector_avg:
-                    requests.put(
-                        KV_WRITE_URL.format(key='us_watch_today'),
-                        headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
-                        params={'expiration_ttl': us_ttl},
-                        data=json.dumps({'sectors': us_sector_avg, 'date': us_date_str,
-                                         'updatedAt': us_updated_at, 'source': 'yahoo_github_actions'},
-                                        ensure_ascii=False),
-                        timeout=15,
-                    )
-                    print(f'  → KV us_watch_today ✓ (섹터 {len(us_sector_avg)}개)')
-                # KV us_watch_stocks
-                if us_stocks_map:
-                    requests.put(
-                        KV_WRITE_URL.format(key='us_watch_stocks'),
-                        headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
-                        params={'expiration_ttl': us_ttl},
-                        data=json.dumps({'stocks': us_stocks_map, 'date': us_date_str,
-                                         'updatedAt': us_updated_at, 'source': 'yahoo_github_actions'},
-                                        ensure_ascii=False),
-                        timeout=15,
-                    )
-                    print(f'  → KV us_watch_stocks ✓')
-                # GAS 시트 갱신 (Yahoo 0개여도 날짜행 확보)
-                update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
-            else:
-                print(f'  → US 목록 조회 실패: {us_body.get("error")}')
+            us_sector_avg, us_stocks_map, us_date_str, us_updated_at = fetch_us_sector_avg()
+            us_ttl = calc_us_kv_ttl()
+
+            # KV us_watch_today (섹터평균 — 히트맵/랭킹/트리맵용)
+            if us_sector_avg:
+                requests.put(
+                    KV_WRITE_URL.format(key='us_watch_today'),
+                    headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
+                    params={'expiration_ttl': us_ttl},
+                    data=json.dumps({
+                        'sectors':   us_sector_avg,
+                        'date':      us_date_str,
+                        'updatedAt': us_updated_at,
+                        'source':    'googlefinance_gas',
+                    }, ensure_ascii=False),
+                    timeout=15,
+                )
+                print(f'  → KV us_watch_today ✓ (섹터 {len(us_sector_avg)}개, TTL {us_ttl}s)')
+
+            # KV us_watch_stocks (종목별 — 팝업용)
+            if us_stocks_map:
+                requests.put(
+                    KV_WRITE_URL.format(key='us_watch_stocks'),
+                    headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
+                    params={'expiration_ttl': us_ttl},
+                    data=json.dumps({
+                        'stocks':    us_stocks_map,
+                        'date':      us_date_str,
+                        'updatedAt': us_updated_at,
+                        'source':    'googlefinance_gas',
+                    }, ensure_ascii=False),
+                    timeout=15,
+                )
+                print(f'  → KV us_watch_stocks ✓ (종목 포함)')
+
+            # GAS 시트 갱신 (US섹터등락률 오늘행 + J1셀 갱신시각)
+            # chg_map은 GAS stocks_map에서 역산 (시트 D열값 재활용)
+            us_chg_map = {}
+            for stks in us_stocks_map.values():
+                for st in stks:
+                    if st.get('ticker') and st.get('chg') is not None:
+                        us_chg_map[st['ticker']] = st['chg']
+            update_gas_sheet_us(us_chg_map, us_sector_avg, us_date_str, us_updated_at)
+
         except Exception as e:
             print(f'  → US 수집 실패 (비중요): {e}')
 
