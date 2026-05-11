@@ -1364,48 +1364,39 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       return;
     }
 
-    // ★ 종목 목록: kr_stocks(Worker KV 캐시) 우선, 없으면 kr_list(GAS) fallback
+    // ★ 종목 목록: GAS kr_list 직접 사용 (5분 TTL 캐시)
+    // KV kr_stocks는 TTL 만료 전 낡은 데이터 문제로 제거
+    // KR_LIST_TTL(5분) 기준으로 S.krSectors 캐시 관리
     let stocks = null;
+    const _popupNow = Date.now();
+    const _popupNeedRefresh = !S.krSectors
+      || !S.krSectors.length
+      || !S.krListAt
+      || (_popupNow - S.krListAt) > KR_LIST_TTL;
 
-    // ① Worker KV의 kr_stocks 시도 (5분 TTL로 캐시, 팝업 열 때마다 만료 체크)
-    const KR_STOCKS_TTL = 5 * 60 * 1000; // 5분
-    try {
-      const now_ms = Date.now();
-      const needRefresh = !S.krStocks
-        || !S.krStocks._ts
-        || (now_ms - S.krStocks._ts) > KR_STOCKS_TTL;
-
-      if (needRefresh) {
-        console.log('[popup] kr_stocks 갱신 요청...');
-        const sd = await api('kr_stocks', 0);
-        if (sd && sd.stocks) {
-          S.krStocks = sd.stocks;
-          S.krStocks._ts       = now_ms;
-          // dColUpdatedAt: GAS D열(GOOGLEFINANCE) 마지막 갱신 시각 (Live Summary D1셀 기준)
-          // sheetReadAt: GAS kr_list API가 시트를 읽은 시각
-          S.krStocks._cachedAt = sd.dColUpdatedAt || sd.sheetReadAt || sd.updatedAt || sd.workerCachedAt || '';
-          console.log(`[popup] kr_stocks 갱신 완료 (source: ${sd.source}, D열갱신: ${S.krStocks._cachedAt})`);
-        }
-      }
-      if (S.krStocks && S.krStocks[sectorName]) {
-        stocks = S.krStocks[sectorName];
-      }
-    } catch(e) {
-      console.warn('[popup] kr_stocks 로드 실패, kr_list fallback:', e.message);
+    // ① TTL 내이면 캐시 사용
+    if (!_popupNeedRefresh) {
+      const sec = S.krSectors.find(s => s.sector === sectorName);
+      if (sec) stocks = sec.stocks;
     }
 
-    // ② kr_stocks 없으면 기존 kr_list(GAS D열) fallback
+    // ② TTL 만료 또는 캐시 없으면 GAS kr_list 강제 재요청
     if (!stocks) {
-      if (S.krSectors && S.krSectors.length) {
-        const sec = S.krSectors.find(s => s.sector === sectorName);
-        if (sec) stocks = sec.stocks;
-      }
-      if (!stocks) {
+      try {
+        console.log('[popup] kr_list 강제 재요청...');
         const d = await api('kr_list', 0);
         if (d && d.sectors) {
-          S.krLOk = true;
+          S.krLOk     = true;
           S.krSectors = d.sectors;
+          S.krListAt  = _popupNow;
           const sec = d.sectors.find(s => s.sector === sectorName);
+          if (sec) stocks = sec.stocks;
+        }
+      } catch(e) {
+        console.warn('[popup] kr_list 로드 실패:', e.message);
+        // 캐시라도 사용
+        if (S.krSectors && S.krSectors.length) {
+          const sec = S.krSectors.find(s => s.sector === sectorName);
           if (sec) stocks = sec.stocks;
         }
       }
@@ -1464,12 +1455,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     const modeLabel  = _isKrTradingDay
       ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
       : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
-    // D열(GOOGLEFINANCE) 갱신 시각 표시 (Worker가 GAS에서 가져온 시각)
-    const _cachedAt = (S.krStocks && S.krStocks._cachedAt) ? S.krStocks._cachedAt : '';
-    const _cachedHtml = _cachedAt
-      ? ' <span style="color:#4fc3f7">· 📡 D열 수집: '+_cachedAt+'</span>'
-      : '';
-    const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+_cachedHtml+'</div>';
+    const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
     body.innerHTML = header + html;
   } catch(e) {
@@ -1720,10 +1706,11 @@ if(IS_DEMO){
 d=demoKr();
 document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
-const [histData, todayData, listData] = await Promise.all([
+// ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
+// kr_stocks(팝업용)는 팝업 열 때 지연 로드
+const [histData, todayData] = await Promise.all([
 api('kr_history', 365),
 api('kr_today', 0).catch(()=>null),
-S.krLOk ? Promise.resolve(null) : api('kr_list', 0).catch(()=>null)
 ]);
 d = histData;
 document.getElementById('kr-status').textContent=d.count+'일 데이터';
@@ -1737,11 +1724,6 @@ updateRealtimeTime();
 } else {
 S.krToday = null; // 오늘 행 표시 안 함
 }
-}
-if(listData&&listData.sectors){
-S.krLOk=true;
-S.krSectors=listData.sectors;
-S.krListAt=Date.now(); // ← 선취득 시각 기록 → kr-list 페이지에서 재요청 스킵
 }
 }
 updateSheetReadTime(d.sheetReadAt);
@@ -3574,7 +3556,34 @@ const wrap=document.getElementById('kr-list');
 try{
 let sectors;
 if(IS_DEMO){sectors=KR_FALLBACK.map(s=>({sector:s.sector,stocks:s.stocks.map(n=>({name:n,ticker:'',chg:null,memo:''}))}))}
-else{const d=await api('kr_list',0);sectors=d.sectors;if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);}
+else{
+  // ★ kr_stocks(KV) 우선 → GAS kr_list fallback
+  // kr_stocks는 GitHub Actions가 5분마다 네이버값으로 업데이트한 단일 진실 공급원
+  const KR_STOCKS_TTL2 = 5*60*1000;
+  const needRef2 = !S.krStocks || !S.krStocks._ts || (Date.now()-S.krStocks._ts)>KR_STOCKS_TTL2;
+  if(needRef2){
+    try{
+      const sd=await api('kr_stocks',0);
+      if(sd&&sd.stocks){
+        S.krStocks=sd.stocks;
+        S.krStocks._ts=Date.now();
+        S.krStocks._cachedAt=sd.updatedAt||sd.workerCachedAt||'';
+      }
+    }catch(e2){ console.warn('[kr-list] kr_stocks fallback to kr_list:',e2.message); }
+  }
+  if(S.krStocks){
+    // kr_stocks 구조({섹터명:[{name,ticker,chg,prevChg,...}]})를 kr_list 구조로 변환
+    sectors=Object.entries(S.krStocks)
+      .filter(([k])=>!k.startsWith('_'))
+      .map(([sec,stks])=>({sector:sec,stocks:stks}));
+    if(S.krStocks._cachedAt) updateSheetReadTime(S.krStocks._cachedAt);
+  } else {
+    // GAS kr_list fallback (kr_stocks KV 없을 때)
+    const d=await api('kr_list',0);
+    sectors=d.sectors;
+    if(d.sheetReadAt)updateSheetReadTime(d.sheetReadAt);
+  }
+}
 S.krLOk=true;
 S.krSectors=sectors;
 S.krListAt=Date.now();
@@ -4038,6 +4047,8 @@ else if(page==='us-history')loadUs();
 else if(page==='kr-list'){
 // kr_today와 kr_list 병렬 로드 (today가 이미 있으면 스킵)
 if(!S.krToday) api('kr_today',0).then(d=>{S.krToday=d;updateRealtimeTime();renderKrListFiltered();}).catch(()=>{});
+// ★ kr_stocks 캐시 만료 시 무효화 → 다음 팝업/kr-list 접근 시 자동 재로드
+if(S.krStocks&&S.krStocks._ts&&(Date.now()-S.krStocks._ts)>5*60*1000) S.krStocks=null;
 loadKrList();
 }
 else if(page==='us-list'){
