@@ -424,23 +424,8 @@ async def main():
             us_sector_avg, us_stocks_map, us_date_str, us_updated_at = fetch_us_sector_avg()
             us_ttl = calc_us_kv_ttl()
 
-            # KV us_watch_today (섹터평균 — 히트맵/랭킹/트리맵용)
-            if us_sector_avg:
-                requests.put(
-                    KV_WRITE_URL.format(key='us_watch_today'),
-                    headers={'Authorization': f'Bearer {CF_API_TOKEN}', 'Content-Type': 'application/json'},
-                    params={'expiration_ttl': us_ttl},
-                    data=json.dumps({
-                        'sectors':   us_sector_avg,
-                        'date':      us_date_str,
-                        'updatedAt': us_updated_at,
-                        'source':    'googlefinance_gas',
-                    }, ensure_ascii=False),
-                    timeout=15,
-                )
-                print(f'  → KV us_watch_today ✓ (섹터 {len(us_sector_avg)}개, TTL {us_ttl}s)')
-
             # KV us_watch_stocks (종목별 — 팝업용)
+            # ★ us_watch_today KV 저장 제거 — 웹사이트는 us_watch_history(GAS) 단일 소스 사용
             if us_stocks_map:
                 requests.put(
                     KV_WRITE_URL.format(key='us_watch_stocks'),
