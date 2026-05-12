@@ -165,9 +165,8 @@ async def fetch_all_stocks(codes):
     return results
 
 async def fetch_index_live():
-    """KOSPI/KOSDAQ 등락률 + 전체 상승/하락 종목 수 수집"""
+    """KOSPI/KOSDAQ 등락률 수집"""
     result = {}
-    breadth = {}  # 전체 시장 상승·하락 수
     async with aiohttp.ClientSession() as session:
         for idx, key in [('KOSPI','코스피'),('KOSDAQ','코스닥')]:
             try:
@@ -177,24 +176,8 @@ async def fetch_index_live():
                         d = await r.json(content_type=None)
                         v = float(d.get('fluctuationsRatio','NaN'))
                         if not (v!=v): result[key]=v
-                        # 전체 시장 상승·하락·보합 종목 수
-                        # 네이버 API 필드 전체 로깅 (디버깅용)
-                        print(f'  [지수 API {idx}] 키 목록: {list(d.keys())}')
-                        rise = (d.get('riseCount') or d.get('advanceCount') or
-                                d.get('stockRiseCount') or d.get('upCount'))
-                        fall = (d.get('fallCount') or d.get('declineCount') or
-                                d.get('stockFallCount') or d.get('downCount'))
-                        same = (d.get('sameCount') or d.get('unchangedCount') or
-                                d.get('stockSameCount') or d.get('flatCount'))
-                        print(f'  [지수 API {idx}] rise={rise}, fall={fall}, same={same}')
-                        if rise is not None and int(rise) > 100:  # 전체 시장은 100 이상
-                            breadth[key] = {
-                                'rise': int(rise),
-                                'fall': int(fall or 0),
-                                'same': int(same or 0),
-                            }
             except: pass
-    return result, breadth
+    return result
 
 # ── 3. 섹터 평균 계산 ────────────────────────────────────
 def calc_sector_avg(code_to_sectors, chg_map):
@@ -395,7 +378,6 @@ async def main():
     code_to_sectors = {}
     sector_stocks = {}
     major_index = {}
-    market_breadth = {}
     stock_data = {}
     sector_avg = {}
 
@@ -410,21 +392,19 @@ async def main():
         stock_data = build_stock_data(sector_stocks, chg_map)
 
         print('[4/5] 지수 조회 중...')
-        major_index, market_breadth = await fetch_index_live()
-        print(f'  → 지수: {major_index}')
-        print(f'  → 시장폭: {market_breadth}')
+        major_index = await fetch_index_live()
+        print(f'  → {major_index}')
 
         print('[5/5] KV 저장 중...')
         sector_avg = calc_sector_avg(code_to_sectors, chg_map)
 
         write_to_kv('kr_today', {
-            'sectors':      sector_avg,
-            'majorIndex':   major_index,
-            'marketBreadth': market_breadth,  # 전체 시장 상승·하락 종목 수
-            'date':         today_str,
-            'delayed':      False,
-            'updatedAt':    updated_at,
-            'source':       'naver_api_github_actions',
+            'sectors':    sector_avg,
+            'majorIndex': major_index,
+            'date':       today_str,
+            'delayed':    False,
+            'updatedAt':  updated_at,
+            'source':     'naver_api_github_actions',
         })
         write_to_kv('kr_stocks', {
             'stocks':    stock_data,
