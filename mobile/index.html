@@ -506,6 +506,9 @@ margin-right:12px;
 <span id="refresh-icon" style="font-size:14px;display:inline-block;transition:transform .3s">🔄</span>
 <span>새로고침</span>
 </button>
+<button id="trigger-actions-btn" onclick="triggerActionsNow()" style="background:none;border:1px solid rgba(100,181,246,.4);cursor:pointer;border-radius:5px;padding:4px 10px;font-size:12px;color:#64b5f6;white-space:nowrap;display:flex;align-items:center;gap:5px;margin-right:12px;">
+<span style="font-size:14px">📡</span><span>지금 수집</span>
+</button>
 <div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
 data-tooltip="마지막으로 스프레드시트 확정 데이터를 읽은 시각&#10;&#10;🇰🇷 섹터 확정값: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 섹터 확정값: 매일 06:00 KST 자동 업데이트">
 <div class="sheet-read-dot"></div>
@@ -593,7 +596,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div class="font-ctrl">
 <span class="font-ctrl-label">글자 크기</span>
 <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-<span class="font-size-display" id="fontSizeLabel">7</span>
+<span class="font-size-display" id="fontSizeLabel">8</span>
 <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
 </div>
 </div>
@@ -709,7 +712,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div class="font-ctrl">
 <span class="font-ctrl-label">글자 크기</span>
 <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-<span class="font-size-display" id="fontSizeLabelUs">7</span>
+<span class="font-size-display" id="fontSizeLabelUs">8</span>
 <button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
 </div>
 </div>
@@ -1347,7 +1350,7 @@ SECTOR:  {label:'GICS 11 Sectors (SPDR)',bg:'#1565C0',fg:'#fff'},
 THEMATIC:{label:'Thematic ETF',          bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'Bond / USD',            bg:'#37474F',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
 const US_WATCHED_KEY_EARLY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
@@ -1715,6 +1718,11 @@ document.documentElement.style.setProperty('--tbl-cell-pad',p);
 const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
 });
 }
+(function(){
+  document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
+  const p=S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+  document.documentElement.style.setProperty('--tbl-cell-pad',p);
+})();
 function lp(a,b,t){return Math.round(a+(b-a)*Math.max(0,Math.min(1,t)))}
 function hex(r,g,b){return '#'+('0'+r.toString(16)).slice(-2)+('0'+g.toString(16)).slice(-2)+('0'+b.toString(16)).slice(-2)}
 const DB=[21,101,192],MB=[144,195,255],W=[255,255,255],MR=[255,160,160],DR=[183,28,28];
@@ -1950,6 +1958,20 @@ S.krToday=null;
 }
 renderKr();
 }catch(e){ S.krToday=null; }
+}
+
+async function triggerActionsNow(){
+  const btn=document.getElementById('trigger-actions-btn');
+  if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+  try{
+    const d=await api('trigger_actions',0);
+    if(d&&d.message) alert('✅ '+d.message+'\n약 30초 후 새로고침 버튼을 누르세요.');
+    else alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.');
+  }catch(e){
+    alert('❌ 실패: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.style.opacity='1';}
+  }
 }
 
 async function refreshAllData(){
@@ -3467,10 +3489,6 @@ async function loadUsToday(){
 try{
 S.usOk=false; S.usWatchAt=0;
 await loadUs();
-if(false){ // dummy to keep structure
-const d={};
-updateRealtimeTime();
-renderUs();
 }catch(e){ S.usToday=null; }
 }
 function renderUs(){
