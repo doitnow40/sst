@@ -649,7 +649,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div><div class="chart-title" style="font-size:11px" id="kr-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
 <div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div></div>
 <div id="kr-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
-<button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
+<button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top10</button>
 <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
@@ -3119,23 +3119,22 @@ if(!wrap.clientWidth){
   });
   return;
 }
-var W=wrap.clientWidth||window.innerWidth||380, H2=Math.round(W*0.9); // 모바일: 정사각형에 가깝게
+// ★ 모바일 트리맵: PC와 동일 로직 (시총 기반 Top20, fallback 등락률)
+var W=wrap.clientWidth||window.innerWidth||380, H2=Math.round(W*1.1); // 모바일: 세로 충분히
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
-// 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
+// 시가총액 매핑: S.krSectors 우선, 없으면 S.krStocks(KV)에서 읽기
 var mcapMap={};
-if(S.krSectors&&S.krSectors.length){
-S.krSectors.forEach(function(sec){
+var _stockSrc=(S.krSectors&&S.krSectors.length)?S.krSectors
+  :(S.krStocks?Object.entries(S.krStocks).filter(function(e){return!e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}):[]);
+_stockSrc.forEach(function(sec){
 var sum=0,cnt=0;
 (sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0){sum+=st.marketCap;cnt++;}});
 if(sum>0)mcapMap[sec.sector]=sum;
 });
-}
-// data에 marketCap 합산값 추가
 var dataWithCap=data.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
 var upList=dataWithCap.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
 var dnList=dataWithCap.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
-// 시가총액 있는 종목 수 확인 → 면적 기준 결정
-var hasCap=upList.concat(dnList).filter(function(d){return d.marketCap&&d.marketCap>0;}).length>0;
+var hasCap=dataWithCap.some(function(d){return d.marketCap&&d.marketCap>0;});
 function tmColor(v){
 // 한국식: 상승=빨강(강도↑), 하락=파랑(강도↑), 0%=흰색, ±3% 기준 최대강도
 var MAX=3;
@@ -3420,9 +3419,51 @@ if(usChart){usChart.destroy();usChart=null;}
 if(!wrap.querySelector('#us-chart-canvas'))wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas=document.getElementById('us-chart-canvas'); if(!canvas)return;
 if(today){
+// ★ 모바일 US 오늘: PC와 동일한 시총 기반 treemap
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
-var vals=rk.map(function(n){var v=um[n];return{name:n,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.val!==null;}).sort(function(a,b){return b.val-a.val;});
-usChart=new Chart(canvas,{type:'bar',data:{labels:vals.map(function(d){return d.name;}),datasets:[{data:vals.map(function(d){return d.val;}),backgroundColor:vals.map(function(d){return d.val>=0?'rgba(239,83,80,.75)':'rgba(66,165,245,.75)';}),borderWidth:1,borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false},tooltip:{backgroundColor:'#1a2332',callbacks:{label:function(c){return ' '+c.parsed.x.toFixed(2)+'%';}}}},scales:{x:{position:'top',ticks:{color:'#8fa8c8',font:{size:8},callback:function(v){return v+'%';}},grid:{color:'rgba(46,58,80,.4)'}},y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'}}}}}); return;
+wrap.innerHTML='';
+if(usChart){usChart.destroy();usChart=null;}
+var W_us=wrap.clientWidth||window.innerWidth||380, H2_us=Math.round(W_us*1.0);
+wrap.style.height=H2_us+'px'; wrap.style.overflowY='hidden';
+var mcapUsMap={};
+var _usSrc=(S.usWatchL&&S.usWatchL.sectors)?S.usWatchL.sectors
+  :(S.usWatchStocks?Object.entries(S.usWatchStocks).filter(function(e){return!e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}):[]);
+_usSrc.forEach(function(sec){var sum=0;(sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});if(sum>0)mcapUsMap[sec.sector]=sum;});
+var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러']);
+var usVals=rk.filter(function(n){return!_usEx.has(n);}).map(function(n){var v=um[n];return{name:n,avg:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null,marketCap:mcapUsMap[n]||null};}).filter(function(d){return d.avg!==null;});
+var hasCapUs=usVals.some(function(d){return d.marketCap&&d.marketCap>0;});
+var allBoxesUs=[];
+function rowLayoutUsMob(items,W0,H0){var result=[];if(!items.length)return result;var totalA=items.reduce(function(s,d){return s+d.abs;},0);if(totalA<=0)return result;var N=items.length,numRows=Math.max(1,Math.round(Math.sqrt(N*H0/W0)));numRows=Math.min(numRows,N);var targetRowA=totalA/numRows,rows=[],curRow=[],curA=0;items.forEach(function(d,idx2){curRow.push(d);curA+=d.abs;var remaining=items.length-idx2-1,rowsLeft=numRows-rows.length-1;if(curA>=targetRowA&&rowsLeft>0&&remaining>=rowsLeft){rows.push(curRow);curRow=[];curA=0;}});if(curRow.length)rows.push(curRow);var yPos=0;rows.forEach(function(row){var rowA=row.reduce(function(s,d){return s+d.abs;},0),rowFrac=rowA/totalA,rowH=Math.round(H0*rowFrac);if(yPos+rowH>H0)rowH=H0-yPos;if(rowH<=0)return;var xPos=0;row.forEach(function(d,ci){var cellFrac=d.abs/rowA,cellW=(ci===row.length-1)?(W0-xPos):Math.round(W0*cellFrac);result.push({name:d.name,orig:d.orig,x:xPos,y:yPos,w:cellW,h:rowH});xPos+=cellW;});yPos+=rowH;});return result;}
+if(hasCapUs){
+  var capUsItems=usVals.filter(function(d){return d.marketCap&&d.marketCap>0;}).sort(function(a,b){return b.marketCap-a.marketCap;}).slice(0,20);
+  var tmUsItems=capUsItems.map(function(d){return{name:d.name,abs:Math.pow(d.marketCap,0.6),orig:d.avg};});
+  allBoxesUs=rowLayoutUsMob(tmUsItems,W_us,H2_us);
+}else{
+  usVals.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);});
+  var upU=usVals.filter(function(d){return d.avg>=0;}),dnU=usVals.filter(function(d){return d.avg<0;});
+  var uSum=upU.reduce(function(s,d){return s+d.avg;},0),dSum=dnU.reduce(function(s,d){return s+Math.abs(d.avg);},0),tot=uSum+dSum||1,gap=upU.length&&dnU.length?2:0;
+  var uW=upU.length?Math.max(40,Math.round((W_us-gap)*uSum/tot)):0;
+  allBoxesUs=rowLayoutUsMob(upU.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg};}),uW,H2_us)
+    .concat(rowLayoutUsMob(dnU.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg};}),W_us-uW-gap,H2_us).map(function(b){return Object.assign({},b,{x:b.x+uW+gap});}));
+}
+var PAD_US=1.5;
+var htmlUs='<div style="position:relative;width:100%;height:'+H2_us+'px;background:#0f1117;">';
+allBoxesUs.forEach(function(b){
+  var col=tmColorUs(b.orig); var bw=Math.max(0,b.w-PAD_US*2),bh=Math.max(0,b.h-PAD_US*2);
+  if(bw<8||bh<8)return;
+  var fs=bh>=70?14:bh>=50?12:bh>=35?10:bh>=22?9:0;
+  if(fs===0&&bh>=16&&bw>=24)fs=9;
+  var pct=(b.orig>0?'+':'')+b.orig.toFixed(2)+'%';
+  var tv=Math.min(1,Math.abs(b.orig)/3),tc=tv<0.35?'rgba(0,0,0,.88)':'rgba(255,255,255,.97)',ts=tv<0.35?'none':'0 1px 4px rgba(0,0,0,.8)';
+  var label='';
+  if(fs>0){var sp=bh>=(fs*2+6);
+    if(sp)label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(bw-4)+'px;text-shadow:'+ts+'">'+b.name+'</div><div style="font-size:'+(fs-1)+'px;color:'+tc+';opacity:.93;text-align:center;font-family:monospace;text-shadow:'+ts+'">'+pct+'</div>';
+    else label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;white-space:nowrap;overflow:hidden;max-width:'+(bw-4)+'px;text-shadow:'+ts+'">'+b.name+' <span style="font-size:'+(fs-1)+'px">'+pct+'</span></div>';}
+  htmlUs+='<div class="tm-cell" onclick="showUsSectorPopup(''+b.name+'')" style="position:absolute;left:'+(b.x+PAD_US)+'px;top:'+(b.y+PAD_US)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;">'+label+'</div>';
+});
+htmlUs+='</div>';
+wrap.innerHTML=htmlUs;
+return;
 }
 var ah=H.slice(1);
 var aFT=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
