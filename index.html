@@ -170,6 +170,15 @@ margin-right:12px;
 <span id="refresh-icon" style="font-size:14px;display:inline-block;transition:transform .3s">🔄</span>
 <span>새로고침</span>
 </button>
+<button id="trigger-actions-btn" onclick="triggerActionsNow()" title="📡 지금 데이터 수집 실행&#10;&#10;GitHub Actions를 즉시 실행하여&#10;네이버에서 최신 데이터를 수집합니다.&#10;&#10;· 약 30초 후 새로고침하면 최신값 확인 가능&#10;· 장중에만 의미 있습니다" style="
+background:none;border:1px solid rgba(100,181,246,.4);cursor:pointer;
+border-radius:5px;padding:4px 10px;font-size:12px;color:#64b5f6;
+transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:5px;
+margin-right:12px;
+">
+<span style="font-size:14px">📡</span>
+<span>지금 수집</span>
+</button>
 <div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
 data-tooltip="마지막으로 스프레드시트 확정 데이터를 읽은 시각&#10;&#10;🇰🇷 섹터 확정값: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 섹터 확정값: 매일 06:00 KST 자동 업데이트">
 <div class="sheet-read-dot"></div>
@@ -1761,6 +1770,23 @@ S.krToday=null;
 }
 renderKr();
 }catch(e){ S.krToday=null; }
+}
+
+async function triggerActionsNow(){
+  const btn = document.getElementById('trigger-actions-btn');
+  if(btn){ btn.disabled=true; btn.style.opacity='0.5'; }
+  try{
+    const d = await api('trigger_actions', 0);
+    if(d && d.message){
+      alert('✅ ' + d.message + '\n약 30초 후 새로고침 버튼을 누르세요.');
+    } else {
+      alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 새로고침해보세요.');
+    }
+  }catch(e){
+    alert('❌ 실패: ' + e.message + '\n\nGAS에 GITHUB_TOKEN이 설정됐는지 확인하세요.');
+  }finally{
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+  }
 }
 
 async function refreshAllData(){
