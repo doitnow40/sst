@@ -774,7 +774,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div class="chart-title" style="font-size:11px" id="us-heatmap-title">■ 섹터 히트맵 (N주)</div>
 <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
 </div>
-<div style="padding:6px 10px 10px;overflow:auto;max-height:300px"><div id="us-heatmap-wrap"></div></div>
+<div style="padding:6px 10px 10px;overflow:auto"><div id="us-heatmap-wrap"></div></div>
 </div>
 </div>
 </div>
@@ -3119,7 +3119,16 @@ if(!wrap.clientWidth){
   });
   return;
 }
-// ★ 모바일 트리맵: PC와 동일 로직 (시총 기반 Top20, fallback 등락률)
+// ★ 모바일 트리맵: PC와 동일 로직 (시총 기반 Top10, fallback 등락률)
+// S.krStocks가 없으면 비동기로 먼저 로드 후 재렌더링
+if(!S.krStocks){
+  api('kr_stocks',0).then(function(sd){
+    if(sd&&sd.stocks){S.krStocks=sd.stocks;S.krStocks._ts=Date.now();}
+    renderKrAnalytics();
+  }).catch(function(){});
+  wrap.innerHTML='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-muted)">시총 데이터 로딩 중...</div>';
+  return;
+}
 var W=wrap.clientWidth||window.innerWidth||380, H2=Math.round(W*1.1); // 모바일: 세로 충분히
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors 우선, 없으면 S.krStocks(KV)에서 읽기
@@ -3383,7 +3392,9 @@ if(!um||Object.keys(um).length===0){
   return;
 }
 var W_us=wrap.clientWidth||window.innerWidth||380, H2_us=Math.round(W_us*1.0);
-wrap.style.height=H2_us+'px';
+wrap.style.height=H2_us+'px'; wrap.style.minHeight=H2_us+'px';
+// 부모 패널 max-height 해제
+var _uhParent=wrap.parentElement; if(_uhParent)_uhParent.style.maxHeight='none';
 // 시가총액: S.usWatchL 또는 S.usWatchStocks
 var mcapUsMap={};
 var _usSrc=(S.usWatchL&&S.usWatchL.sectors)?S.usWatchL.sectors
