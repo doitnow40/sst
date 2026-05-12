@@ -3279,21 +3279,10 @@ if(krTreemapMode==='watch'){
 }
 allBoxes=rowLayout(tmItems,W,H2);
 }else{
-// 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 (기존 방식)
-var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
-var dnSum=dnList.reduce(function(s,d){return s+Math.abs(d.avg);},0);
-var tot=upSum+dnSum||1;
-var gap=upList.length>0&&dnList.length>0?2:0;
-var upW=upList.length===0?0:dnList.length===0?W:Math.max(60,Math.round((W-gap)*upSum/tot));
-var dnW=W-upW-gap;
-if(gap>0)html+='<div style="position:absolute;left:'+upW+'px;top:0;width:'+gap+'px;height:100%;background:#0f1117;z-index:2"></div>';
-var upItems2=upList.map(function(d){return{name:d.name,abs:d.avg,orig:d.avg,marketCap:null};});
-var dnItems2=dnList.map(function(d){return{name:d.name,abs:Math.abs(d.avg),orig:d.avg,marketCap:null};});
-var _upB=squarify2(upItems2,0,0,upW,H2);
-var _dnB=squarify2(dnItems2,upW+gap,0,dnW,H2);
-var _exH=Math.max(_upB._extraH||0,_dnB._extraH||0);
-if(_exH){H2+=_exH; wrap.style.height=H2+'px';}
-allBoxes=_upB.concat(_dnB);
+// 시가총액 데이터 없음: 모바일은 단일 rowLayout (빈공간 방지)
+var _fbData = dataWithCap.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);});
+var _fbItems=_fbData.map(function(d){return{name:d.name,abs:Math.abs(d.avg)||0.1,orig:d.avg,marketCap:null};});
+allBoxes=rowLayout(_fbItems,W,H2);
 }
 var html='<div style="position:relative;width:100%;height:'+H2+'px;background:#0f1117;">';
 allBoxes.forEach(function(b){
@@ -3421,6 +3410,10 @@ var canvas=document.getElementById('us-chart-canvas'); if(!canvas)return;
 if(today){
 // ★ 모바일 US 오늘: PC와 동일한 시총 기반 treemap
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+if(!um||Object.keys(um).length===0){
+  wrap.innerHTML='<div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px">미국 장마감 — 오늘 데이터 없음</div>';
+  return;
+}
 wrap.innerHTML='';
 if(usChart){usChart.destroy();usChart=null;}
 var W_us=wrap.clientWidth||window.innerWidth||380, H2_us=Math.round(W_us*1.0);
