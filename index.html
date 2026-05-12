@@ -2103,8 +2103,8 @@ document.getElementById('us-stats').innerHTML=
 +(_usMx?'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최고/최저 섹터</div>'
 +'<div style="display:flex;gap:8px">'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+(_usMx.v>=0?_usMx.v.toFixed(2):_usMx.v.toFixed(2))+'%</div><div class="sp-stat-click" data-sector="'+_usMx.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#4fc3f7;margin-top:3px" title="종목 보기">'+_usMx.name+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usMn.v>=0?'+':'')+_usMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMn.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef9a9a;margin-top:3px" title="종목 보기">'+_usMn.name+'</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+(_usMx.v>=0?_usMx.v.toFixed(2):_usMx.v.toFixed(2))+'%</div><div class="sp-stat-click" data-sector="'+_usMx.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usMx.name+'</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usMn.v>=0?'+':'')+_usMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMn.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usMn.name+'</div></div>'
 +'</div></div>':'')+'</div>';
 }
 
@@ -2169,12 +2169,12 @@ document.getElementById('kr-stats').innerHTML=
 +'</div></div>'
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#4fc3f7;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef9a9a;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
++'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
 +(hasTodayStats?'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#4fc3f7;margin-top:3px" title="종목 보기">'+tMxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef9a9a;margin-top:3px" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
++'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+tMxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
 // ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
 // kr_today.marketBreadth (네이버 전체 시장 데이터) 우선
 // fallback: 관심종목 기반 계산
