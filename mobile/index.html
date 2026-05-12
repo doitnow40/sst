@@ -3103,7 +3103,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   }
   data=allData;
   var el2=document.getElementById('kr-chart-title');
-  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
+  if(el2)el2.textContent='■ 오늘 Top10 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
 }
 
 // 모바일에서 패널이 숨겨진 직후 clientWidth=0이 될 수 있으므로 rAF로 재시도
@@ -3119,7 +3119,7 @@ if(!wrap.clientWidth){
   });
   return;
 }
-var W=wrap.clientWidth||window.innerWidth||700, H2=Math.round(W*0.58); // 모바일 대응
+var W=wrap.clientWidth||window.innerWidth||380, H2=Math.round(W*0.9); // 모바일: 정사각형에 가깝게
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
 var mcapMap={};
@@ -3266,7 +3266,7 @@ if(capItems.length>0){
 // 시가총액 내림차순 정렬
 capItems.sort(function(a,b){return b.marketCap-a.marketCap;});
 // 주목 모드: 주목 섹터만, Top20 모드: 시총 상위 20개
-var displayItems=krTreemapMode==='watch'?capItems:capItems.slice(0,20);
+var displayItems=krTreemapMode==='watch'?capItems:capItems.slice(0,10); // 모바일: Top10
 // ★ 스케일링: cap^0.6 — 시총 차이를 박스 크기에 명확하게 반영
 var tmItems=displayItems.map(function(d){
 var scaledCap=Math.pow(d.marketCap, 0.6);
@@ -3306,10 +3306,10 @@ if(bw<8||bh<8)return;
 var fs=0;
 if(bh>=90&&bw>=80)     fs=Math.min(18,Math.floor(bh*0.14));
 else if(bh>=60&&bw>=60)fs=Math.min(16,Math.floor(bh*0.16));
-else if(bh>=44&&bw>=44)fs=Math.min(13,Math.floor(bh*0.19));
-else if(bh>=32&&bw>=32)fs=Math.min(11,Math.floor(bh*0.22));
-else if(bh>=20&&bw>=24)fs=Math.min(9, Math.floor(bh*0.28));
-if(fs>0)fs=Math.max(10,fs); // 최소 10px
+else if(bh>=40&&bw>=40)fs=Math.min(13,Math.floor(bh*0.18));
+else if(bh>=28&&bw>=28)fs=Math.min(11,Math.floor(bh*0.22));
+else if(bh>=16&&bw>=20)fs=Math.min(9, Math.floor(bh*0.30));
+if(fs>0)fs=Math.max(9,fs); // 최소 9px (모바일)
 var pct=(b.orig>0?'+':'')+b.orig.toFixed(2)+'%';
 var label='';
 if(fs>0){
