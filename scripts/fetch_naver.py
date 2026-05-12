@@ -178,10 +178,16 @@ async def fetch_index_live():
                         v = float(d.get('fluctuationsRatio','NaN'))
                         if not (v!=v): result[key]=v
                         # 전체 시장 상승·하락·보합 종목 수
-                        rise = d.get('riseCount') or d.get('advanceCount')
-                        fall = d.get('fallCount') or d.get('declineCount')
-                        same = d.get('sameCount') or d.get('unchangedCount')
-                        if rise is not None:
+                        # 네이버 API 필드 전체 로깅 (디버깅용)
+                        print(f'  [지수 API {idx}] 키 목록: {list(d.keys())}')
+                        rise = (d.get('riseCount') or d.get('advanceCount') or
+                                d.get('stockRiseCount') or d.get('upCount'))
+                        fall = (d.get('fallCount') or d.get('declineCount') or
+                                d.get('stockFallCount') or d.get('downCount'))
+                        same = (d.get('sameCount') or d.get('unchangedCount') or
+                                d.get('stockSameCount') or d.get('flatCount'))
+                        print(f'  [지수 API {idx}] rise={rise}, fall={fall}, same={same}')
+                        if rise is not None and int(rise) > 100:  # 전체 시장은 100 이상
                             breadth[key] = {
                                 'rise': int(rise),
                                 'fall': int(fall or 0),
