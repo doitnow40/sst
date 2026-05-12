@@ -2971,13 +2971,14 @@ var W=wrap.clientWidth||700, H2=Math.round(W*0.68); // 가로형: W > H
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
 var mcapMap={};
-if(S.krSectors&&S.krSectors.length){
-S.krSectors.forEach(function(sec){
+// S.krSectors 우선, 없으면 S.krStocks(KV)에서 시총 읽기
+var _stockSrc = (S.krSectors&&S.krSectors.length) ? S.krSectors
+  : (S.krStocks ? Object.entries(S.krStocks).filter(function(e){return !e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}) : []);
+_stockSrc.forEach(function(sec){
 var sum=0,cnt=0;
 (sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0){sum+=st.marketCap;cnt++;}});
 if(sum>0)mcapMap[sec.sector]=sum;
 });
-}
 // data에 marketCap 합산값 추가
 var dataWithCap=data.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
 var upList=dataWithCap.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
@@ -3128,7 +3129,12 @@ if(krTreemapMode==='watch'){
 }
 allBoxes=rowLayout(tmItems,W,H2);
 }else{
-// 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 (기존 방식)
+// 시가총액 데이터 전혀 없음: 등락률 절대값으로 면적 — Top20 제한
+// 주목 모드는 전체, Top20 모드는 상위 20개만
+var _fallbackData = krTreemapMode==='watch' ? dataWithCap
+  : dataWithCap.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);}).slice(0,20);
+var upList=_fallbackData.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
+var dnList=_fallbackData.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
 var upSum=upList.reduce(function(s,d){return s+d.avg;},0);
 var dnSum=dnList.reduce(function(s,d){return s+Math.abs(d.avg);},0);
 var tot=upSum+dnSum||1;
@@ -3301,14 +3307,15 @@ if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size>0){
 var um={}; data.forEach(function(d){um[d.name]=d.avg;});
 
 // 시가총액 매핑 (US관심종목 시총 데이터)
+// S.usWatchL 우선, 없으면 S.usWatchStocks 에서 읽기
 var mcapMap={};
-if(S.usWatchL&&S.usWatchL.sectors){
-  S.usWatchL.sectors.forEach(function(sec){
-    var sum=0;
-    (sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});
-    if(sum>0)mcapMap[sec.sector]=sum;
-  });
-}
+var _usStockSrc = (S.usWatchL&&S.usWatchL.sectors) ? S.usWatchL.sectors
+  : (S.usWatchStocks ? Object.entries(S.usWatchStocks).filter(function(e){return !e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}) : []);
+_usStockSrc.forEach(function(sec){
+  var sum=0;
+  (sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});
+  if(sum>0)mcapMap[sec.sector]=sum;
+});
 var dataWithCap=data.map(function(d){return{name:d.name,avg:d.avg,marketCap:mcapMap[d.name]||null};});
 var upList=dataWithCap.filter(function(d){return d.avg>=0;}).sort(function(a,b){return b.avg-a.avg;});
 var dnList=dataWithCap.filter(function(d){return d.avg<0;}).sort(function(a,b){return a.avg-b.avg;});
