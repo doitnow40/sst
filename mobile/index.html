@@ -3280,7 +3280,7 @@ if(krTreemapMode==='watch'){
 allBoxes=rowLayout(tmItems,W,H2);
 }else{
 // 시가총액 데이터 없음: 모바일은 단일 rowLayout (빈공간 방지)
-var _fbData = dataWithCap.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);});
+var _fbData = dataWithCap.sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);}).slice(0,10);
 var _fbItems=_fbData.map(function(d){return{name:d.name,abs:Math.abs(d.avg)||0.1,orig:d.avg,marketCap:null};});
 allBoxes=rowLayout(_fbItems,W,H2);
 }
@@ -3375,6 +3375,49 @@ var lbl=document.getElementById('us-analytics-period-label');
 if(lbl)lbl.textContent='기간: '+periodText(days);
 renderUsAnalytics();
 }
+function _renderUsTodayTreemap(H,rk){
+var wrap=document.getElementById('us-heatmap-wrap'); if(!wrap)return;
+var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+if(!um||Object.keys(um).length===0){
+  wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">미국 장마감 — 오늘 데이터 없음</div>';
+  return;
+}
+var W_us=wrap.clientWidth||window.innerWidth||380, H2_us=Math.round(W_us*1.0);
+wrap.style.height=H2_us+'px';
+// 시가총액: S.usWatchL 또는 S.usWatchStocks
+var mcapUsMap={};
+var _usSrc=(S.usWatchL&&S.usWatchL.sectors)?S.usWatchL.sectors
+  :(S.usWatchStocks?Object.entries(S.usWatchStocks).filter(function(e){return!e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}):[]);
+_usSrc.forEach(function(sec){var sum=0;(sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});if(sum>0)mcapUsMap[sec.sector]=sum;});
+var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러']);
+var usVals=rk.filter(function(n){return!_usEx.has(n);}).map(function(n){var v=um[n];return{name:n,avg:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null,marketCap:mcapUsMap[n]||null};}).filter(function(d){return d.avg!==null;});
+if(!usVals.length){wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-muted)">섹터 데이터 없음</div>';return;}
+var hasCapUs=usVals.some(function(d){return d.marketCap&&d.marketCap>0;});
+var allBoxesUs=[];
+function rlUs(items,W0,H0){var result=[];if(!items.length)return result;var totalA=items.reduce(function(s,d){return s+d.abs;},0);if(totalA<=0)return result;var N=items.length,numRows=Math.max(1,Math.round(Math.sqrt(N*H0/W0)));numRows=Math.min(numRows,N);var targetRowA=totalA/numRows,rows=[],curRow=[],curA=0;items.forEach(function(d,idx){curRow.push(d);curA+=d.abs;var remaining=items.length-idx-1,rowsLeft=numRows-rows.length-1;if(curA>=targetRowA&&rowsLeft>0&&remaining>=rowsLeft){rows.push(curRow);curRow=[];curA=0;}});if(curRow.length)rows.push(curRow);var yPos=0;rows.forEach(function(row){var rowA=row.reduce(function(s,d){return s+d.abs;},0),rowFrac=rowA/totalA,rowH=Math.round(H0*rowFrac);if(yPos+rowH>H0)rowH=H0-yPos;if(rowH<=0)return;var xPos=0;row.forEach(function(d,ci){var cellFrac=d.abs/rowA,cellW=(ci===row.length-1)?(W0-xPos):Math.round(W0*cellFrac);result.push({name:d.name,orig:d.orig,x:xPos,y:yPos,w:cellW,h:rowH});xPos+=cellW;});yPos+=rowH;});return result;}
+if(hasCapUs){
+  var ci=usVals.filter(function(d){return d.marketCap&&d.marketCap>0;}).sort(function(a,b){return b.marketCap-a.marketCap;}).slice(0,20);
+  allBoxesUs=rlUs(ci.map(function(d){return{name:d.name,abs:Math.pow(d.marketCap,0.6),orig:d.avg};}),W_us,H2_us);
+}else{
+  var srt=usVals.slice().sort(function(a,b){return Math.abs(b.avg)-Math.abs(a.avg);}).slice(0,20);
+  allBoxesUs=rlUs(srt.map(function(d){return{name:d.name,abs:Math.abs(d.avg)||0.1,orig:d.avg};}),W_us,H2_us);
+}
+var PAD=1.5,html='<div style="position:relative;width:100%;height:'+H2_us+'px;background:#0f1117;">';
+allBoxesUs.forEach(function(b){
+  var col=tmColorUs(b.orig);var bw=Math.max(0,b.w-PAD*2),bh=Math.max(0,b.h-PAD*2);
+  if(bw<8||bh<8)return;
+  var fs=bh>=70?14:bh>=50?12:bh>=35?10:bh>=22?9:bh>=14?8:0;
+  var pct=(b.orig>0?'+':'')+b.orig.toFixed(2)+'%';
+  var tv=Math.min(1,Math.abs(b.orig)/3),tc=tv<0.35?'rgba(0,0,0,.88)':'rgba(255,255,255,.97)',ts='0 1px 3px rgba(0,0,0,.7)';
+  var label='';
+  if(fs>0){var sp=bh>=(fs*2+4);
+    if(sp)label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;overflow:hidden;max-width:'+(bw-2)+'px;text-shadow:'+ts+'">'+b.name+'</div><div style="font-size:'+(fs-1)+'px;color:'+tc+';text-align:center;text-shadow:'+ts+'">'+pct+'</div>';
+    else label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;overflow:hidden;max-width:'+(bw-2)+'px;text-shadow:'+ts+'">'+b.name+' '+pct+'</div>';}
+  html+='<div class="tm-cell" style="position:absolute;left:'+(b.x+PAD)+'px;top:'+(b.y+PAD)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;">'+label+'</div>';
+});
+wrap.innerHTML=html+'</div>';
+}
+
 function renderUsAnalytics(){
 if(!S.usD)return;
 // ── 모바일: analytics-panels가 hidden이면 잠깐 보이게 해서 레이아웃 계산 확보 ──
@@ -3389,13 +3432,21 @@ var el2=document.getElementById('us-chart-title'); if(el2)el2.textContent='■ �
 if(usAnalyticsPeriod===0){
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
 var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true); _renderUsHeatmap([],H,H.slice(1),true); var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none';
+_renderUsRiseFall(allAvg);
+// 오늘: 추이차트 숨기고 treemap을 heatmap 영역에 표시
+var _cw=document.getElementById('us-chart-wrap');
+if(_cw){_cw.style.display='none';}
+var uhp=document.getElementById('us-heatmap-panel');
+if(uhp){uhp.style.display='';}
+_renderUsTodayTreemap(H,rk);
 if(_wasHidden){_panel.style.display='none';_panel.style.visibility='';}
 return;
 }
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
 var allAvg=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display=''; _renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
+var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='';
+var _cw2=document.getElementById('us-chart-wrap'); if(_cw2)_cw2.style.display='';
+_renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
 if(_wasHidden){_panel.style.display='none';_panel.style.visibility='';}
 }
 function _renderUsRiseFall(allAvg){
