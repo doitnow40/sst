@@ -3459,7 +3459,7 @@ allBoxesUs.forEach(function(b){
   if(fs>0){var sp=bh>=(fs*2+6);
     if(sp)label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(bw-4)+'px;text-shadow:'+ts+'">'+b.name+'</div><div style="font-size:'+(fs-1)+'px;color:'+tc+';opacity:.93;text-align:center;font-family:monospace;text-shadow:'+ts+'">'+pct+'</div>';
     else label='<div style="font-size:'+fs+'px;font-weight:700;color:'+tc+';text-align:center;white-space:nowrap;overflow:hidden;max-width:'+(bw-4)+'px;text-shadow:'+ts+'">'+b.name+' <span style="font-size:'+(fs-1)+'px">'+pct+'</span></div>';}
-  htmlUs+='<div class="tm-cell" onclick="showUsSectorPopup(''+b.name+'')" style="position:absolute;left:'+(b.x+PAD_US)+'px;top:'+(b.y+PAD_US)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;">'+label+'</div>';
+  htmlUs+='<div class="tm-cell" data-sector="'+b.name+'" onclick="showUsSectorPopup(this.dataset.sector)" style="position:absolute;left:'+(b.x+PAD_US)+'px;top:'+(b.y+PAD_US)+'px;width:'+bw+'px;height:'+bh+'px;background:'+col+';display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;">'+label+'</div>';
 });
 htmlUs+='</div>';
 wrap.innerHTML=htmlUs;
