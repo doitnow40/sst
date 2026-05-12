@@ -2130,9 +2130,18 @@ document.getElementById('kr-stats').innerHTML=
 +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMxN+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
-// ── 종목 상승·하락 카운트 (KOSPI / KOSDAQ 분리) ──
+// ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
+// kr_today.marketBreadth (네이버 전체 시장 데이터) 우선
+// fallback: 관심종목 기반 계산
 var _adCnt={kospi:{up:0,dn:0,neu:0},kosdaq:{up:0,dn:0,neu:0}};
-if(S.krSectors){
+var _usedMarketBreadth = false;
+if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).length > 0){
+  var _mb = S.krToday.marketBreadth;
+  if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
+  if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
+  _usedMarketBreadth = true;
+} else if(S.krSectors){
+  // fallback: 관심종목 기반
   S.krSectors.forEach(function(sec){
     if(!sec.stocks) return;
     sec.stocks.forEach(function(st){
