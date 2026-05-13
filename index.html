@@ -2211,7 +2211,7 @@ if(_kospiTot>0||_kosdaqTot>0){
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 ('+todayDate+')</div>'
     +'<div style="display:flex;gap:8px">'
     +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
-    +'<div class="stat-label">KOSPI</div>'
+    +'<div class="stat-label">KOSPI'+(_usedMarketBreadth&&S.krToday.marketBreadth&&S.krToday.marketBreadth['코스피']&&S.krToday.marketBreadth['코스피'].estimated?' <span style="font-size:8px;color:var(--text-muted)">추정</span>':'')+'</div>'
     +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
     +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kospi.up+'</span>'
     +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
