@@ -1863,16 +1863,32 @@ const mnName=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
 const mx=mxVal!==null?mxVal.toFixed(2):'-';
 const mn=mnVal!==null?mnVal.toFixed(2):'-';
 const latestDate=lt[0];
-const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=S.krToday?S.krToday.date:'';
-// 주말/휴장, 이미 확정 저장된 날짜, 데이터 없음이면 오늘 박스 숨김
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
 const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
-// 장중(delayed=false)이면 오늘 행이 히스토리에 있어도 실시간 박스 표시
+// ★ 장중(delayed=false)이면 KV 실시간값, 장마감 후면 히스토리 시트 오늘 행 값 사용
 const _isLive = S.krToday && S.krToday.delayed===false;
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&(!_alreadyConfirmed||_isLive);
+var todayMap={};
+if(!_isLive && _alreadyConfirmed && todayDate) {
+  // 장마감 후: 히스토리에서 오늘 행 값 읽기 (KV보다 정확)
+  const _tIdx=baseRows.findIndex(function(r){return r[0]===todayDate;});
+  if(_tIdx>=0){
+    const _tRow=baseRows[_tIdx];
+    pureSectors.forEach(function(sec){
+      const ci=H.indexOf(sec);
+      if(ci>0&&_tRow[ci]!==null&&_tRow[ci]!==undefined&&_tRow[ci]!==''){
+        todayMap[sec]=parseFloat(_tRow[ci]);
+      }
+    });
+  }
+}
+// 히스토리에서 못 가져왔으면 KV 실시간값 사용
+if(Object.keys(todayMap).length===0&&S.krToday&&S.krToday.sectors){
+  Object.assign(todayMap,S.krToday.sectors);
+}
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend;
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
 // ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
