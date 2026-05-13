@@ -1870,9 +1870,9 @@ const todayDate=S.krToday?S.krToday.date:'';
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
 const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
-// ★ 오늘 날짜가 이미 시트에 확정 저장된 경우 → "오늘" 박스 숨김
-// (최근 영업일 박스가 곧 오늘이므로 중복 표시 불필요, 소스 다름으로 인한 수치 차이 방지)
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!_alreadyConfirmed;
+// 장중(delayed=false)이면 오늘 행이 히스토리에 있어도 실시간 박스 표시
+const _isLive = S.krToday && S.krToday.delayed===false;
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&(!_alreadyConfirmed||_isLive);
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
 // ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
@@ -3936,7 +3936,8 @@ const todayDate=S.krToday?S.krToday.date:'';
 const _alreadyConfirmedT=todayDate&&rows.some(r=>r[0]===todayDate);
 const _todayDowT=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekendT=(_todayDowT===0||_todayDowT===6);
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekendT&&!_alreadyConfirmedT;
+const _isLiveT = S.krToday && S.krToday.delayed===false;
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekendT&&(!_alreadyConfirmedT||_isLiveT);
 let tAvg='-',tMx='-',tMn='-',tMxName='',tMnName='';
 if(hasTodayStats){
 // ★ pair 방식으로 인덱스 불일치 버그 수정
