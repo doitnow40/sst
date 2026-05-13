@@ -165,19 +165,10 @@ async def fetch_all_stocks(codes):
     return results
 
 async def fetch_index_live():
-    """KOSPI/KOSDAQ 등락률 + 전체 시장 상승/하락 종목 수 수집"""
+    """KOSPI/KOSDAQ 등락률 수집"""
     result = {}
-    breadth = {}  # { '코스피': {rise, fall, same}, '코스닥': {...} }
-
-    # 네이버 시장 breadth API 엔드포인트 목록 (순서대로 시도)
-    BREADTH_URLS = {
-        'KOSPI':  'https://m.stock.naver.com/api/stocks/all?market=KOSPI&page=1&pageSize=1',
-        'KOSDAQ': 'https://m.stock.naver.com/api/stocks/all?market=KOSDAQ&page=1&pageSize=1',
-    }
-
     async with aiohttp.ClientSession() as session:
         for idx, key in [('KOSPI','코스피'),('KOSDAQ','코스닥')]:
-            # 1) 등락률
             try:
                 async with session.get(NAVER_INDEX_URL.format(index=idx), headers=NAVER_HEADERS,
                                        timeout=aiohttp.ClientTimeout(total=10)) as r:
@@ -186,36 +177,7 @@ async def fetch_index_live():
                         v = float(d.get('fluctuationsRatio','NaN'))
                         if not (v!=v): result[key]=v
             except: pass
-
-            # 2) 전체 상승/하락 수
-            try:
-                async with session.get(BREADTH_URLS[idx], headers=NAVER_HEADERS,
-                                       timeout=aiohttp.ClientTimeout(total=10)) as r:
-                    if r.status==200:
-                        d = await r.json(content_type=None)
-                        # 가능한 필드명 탐색
-                        rise = None
-                        for fn in ['riseCount','advanceCount','upCount','stockRiseCount']:
-                            if d.get(fn) is not None:
-                                rise = int(d[fn]); break
-                        fall = None
-                        for fn in ['fallCount','declineCount','downCount','stockFallCount']:
-                            if d.get(fn) is not None:
-                                fall = int(d[fn]); break
-                        same = None
-                        for fn in ['sameCount','unchangedCount','flatCount','stockSameCount']:
-                            if d.get(fn) is not None:
-                                same = int(d[fn]); break
-                        if rise is not None and rise > 50:  # 유효한 전체 시장 데이터
-                            breadth[key] = {
-                                'rise': rise,
-                                'fall': fall or 0,
-                                'same': same or 0,
-                            }
-                            print(f'  [breadth] {key}: 상승 {rise}, 하락 {fall}, 보합 {same}')
-            except: pass
-
-    return result, breadth
+    return result
 
 # ── 3. 섹터 평균 계산 ────────────────────────────────────
 def calc_sector_avg(code_to_sectors, chg_map):
@@ -430,11 +392,32 @@ async def main():
     if kr_open:
         stock_data = build_stock_data(sector_stocks, chg_map)
 
-        print('[4/5] 지수 조회 중...')
-        major_index, market_breadth = await fetch_index_live()
-        print(f'  → 지수: {major_index}')
+        # ── breadth: chg_map + ticker로 KOSPI/KOSDAQ 상승/하락 직접 계산 ──
+        _kr, _kd = {'r':0,'f':0,'s':0}, {'r':0,'f':0,'s':0}
+        seen = set()
+        for sec_list in sector_stocks.values():
+            for st in sec_list:
+                code = st.get('code','')
+                ticker = st.get('ticker','')
+                chg_v = chg_map.get(code)
+                if code in seen or chg_v is None:
+                    continue
+                seen.add(code)
+                bucket = _kr if 'KOSPI' in ticker else _kd
+                if chg_v > 0: bucket['r'] += 1
+                elif chg_v < 0: bucket['f'] += 1
+                else: bucket['s'] += 1
+        market_breadth = {}
+        if _kr['r'] + _kr['f'] > 0:
+            market_breadth['코스피'] = {'rise': _kr['r'], 'fall': _kr['f'], 'same': _kr['s']}
+        if _kd['r'] + _kd['f'] > 0:
+            market_breadth['코스닥'] = {'rise': _kd['r'], 'fall': _kd['f'], 'same': _kd['s']}
         if market_breadth:
-            print(f'  → 시장폭: {market_breadth}')
+            print(f'  → 시장폭(관심종목): 코스피 상승{_kr["r"]}/하락{_kr["f"]}, 코스닥 상승{_kd["r"]}/하락{_kd["f"]}')
+
+        print('[4/5] 지수 조회 중...')
+        major_index = await fetch_index_live()
+        print(f'  → 지수: {major_index}')
 
         print('[5/5] KV 저장 중...')
         sector_avg = calc_sector_avg(code_to_sectors, chg_map)
