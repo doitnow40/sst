@@ -3464,7 +3464,8 @@ var _panel=document.getElementById('us-analytics-panels');
 var _wasHidden=_panel&&_panel.style.display==='none';
 if(_wasHidden){_panel.style.visibility='hidden';_panel.style.display='';}
 var H=S.usD.headers, rows=S.usD.rows;
-var rk=H.slice(1).filter(function(h){var m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+var _usRankEx=new Set(['달러','VIX','장기채권','단기채권','하이일드']);
+var rk=H.slice(1).filter(function(h){var m=US_META[h]||{};return m.type!=='YIELD'&&!_usRankEx.has(h)&&h;});
 var pLabel=periodText(usAnalyticsPeriod);
 var el=document.getElementById('us-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
 var el2=document.getElementById('us-chart-title'); if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
@@ -3482,7 +3483,8 @@ if(_wasHidden){_panel.style.display='none';_panel.style.visibility='';}
 return;
 }
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
-var allAvg=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
+var _rkPeriod=rk.filter(function(n){return!new Set(['달러','VIX','장기채권','단기채권','하이일드']).has(n);});
+var allAvg=_rkPeriod.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='';
 var _cw2=document.getElementById('us-chart-wrap'); if(_cw2)_cw2.style.display='';
 _renderUsRiseFall(allAvg); _renderUsTrendChart(cr,H,rk,false); _renderUsHeatmap(cr,H,H.slice(1),false);
@@ -3549,7 +3551,14 @@ wrap.innerHTML=htmlUs;
 return;
 }
 var ah=H.slice(1);
-var aFT=rk.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
+wrap.style.height='280px'; wrap.style.overflowY='';
+if(!wrap.querySelector('canvas#us-chart-canvas')){
+  wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
+}
+var canvas2=document.getElementById('us-chart-canvas');
+if(!canvas2){return;}
+var _aFTExM=new Set(['달러','VIX','장기채권','단기채권','하이일드']);
+var aFT=rk.filter(function(n){return!_aFTExM.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['SP500','Nasdaq'].forEach(function(n){top5.add(n);});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
@@ -3558,7 +3567,7 @@ var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(
 var opts=JSON.parse(JSON.stringify(CHART_OPTS_BASE)); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
 opts.plugins.legend.labels.filter=function(legendItem){ return _isMobile() ? !legendItem.hidden : true; };
 opts.plugins.legend.onClick=CHART_OPTS_BASE.plugins.legend.onClick;
-usChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
+usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
 }
 function _renderUsHeatmap(cr,H,ah,today){
 var wrap=document.getElementById('us-heatmap-wrap'); if(!wrap)return;
