@@ -2059,13 +2059,7 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-// 장중 여부 판단
-const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
-const _kstDow2=_kstNow2.getDay();
-const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
-const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930;
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
 if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
@@ -2269,8 +2263,10 @@ document.getElementById('us-stats').innerHTML=
 
 function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
 if(!f||!f.length)return;
-var _ltIdx=(isMarketOpen&&f.length>1)?1:0;
-var lt=f[_ltIdx];
+// ★ 최근 영업일: 장중/장마감 무관하게 항상 직전 영업일(f[1]) 표시
+//   GAS 시트는 영업일만 기록하므로 f[1]이 곧 가장 최근 직전 영업일
+//   f[1]이 없으면(데이터 부족) f[0]으로 fallback
+var lt=(f.length>1)?f[1]:f[0];
 var sVals=pureSectors.map(function(h){return parseFloat(lt[H.indexOf(h)]);}).filter(function(v){return!isNaN(v);});
 var avg=sVals.length?(sVals.reduce(function(a,b){return a+b;},0)/sVals.length).toFixed(2):'-';
 var mxVal=sVals.length?Math.max.apply(null,sVals):null, mnVal=sVals.length?Math.min.apply(null,sVals):null;
@@ -3973,13 +3969,7 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-// 장중 여부 판단
-const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
-const _kstDow2=_kstNow2.getDay();
-const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
-const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930;
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
 if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
