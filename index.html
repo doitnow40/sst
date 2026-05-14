@@ -1060,7 +1060,7 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 // ══════════════════════════════════════════════════
 //  섹터 종목 팝업
 // ══════════════════════════════════════════════════
-function openSectorPopup(sectorName, isKr) {
+function openSectorPopup(sectorName, isKr, prevDate) {
   // F&G 컬럼은 전용 팝업으로 분기
   if (sectorName === 'FnG') { openFnGPopup(); return; }
 
@@ -1081,7 +1081,7 @@ function openSectorPopup(sectorName, isKr) {
   document.addEventListener('keydown', _popupEscHandler);
 
   // 종목 데이터 로드
-  _loadSectorPopupData(sectorName, isKr, avgEl, body);
+  _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate||'');
 }
 
 function closeSectorPopup() {
@@ -1287,7 +1287,7 @@ function _popupEscHandler(e) {
   if (e.key === 'Escape') closeSectorPopup();
 }
 
-async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
+async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
   try {
     // ── KRX 장 상태 판정 (KRX 기준 15:30) ────────────────────────────
     // isKrMarket:  장중(09:00~15:30) 또는 장마감후(15:30~, 평일) = 오늘 데이터 유효
@@ -1307,7 +1307,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     // 장전·주말·공휴일: S.krD.rows[0] = GAS 히스토리 최근 영업일 확정값
     if (isKr) {
       let dispAvg = null;
-      if (_isKrTradingDay) {
+      // prevDate가 있으면 최근 영업일 박스 클릭 → 히스토리에서 해당 날짜 행 우선 사용
+      if (prevDate && S.krD && S.krD.headers && S.krD.rows) {
+        const hIdx = S.krD.headers.indexOf(sectorName);
+        const row = S.krD.rows.find(r => r[0] === prevDate);
+        if (row && hIdx > 0) { const v = parseFloat(row[hIdx]); if (!isNaN(v)) dispAvg = v; }
+      }
+      if (dispAvg === null && _isKrTradingDay) {
         const todayMap = S.krToday && S.krToday.sectors ? S.krToday.sectors : {};
         const v = todayMap[sectorName];
         if (v !== undefined && v !== null && !isNaN(v)) dispAvg = parseFloat(v);
@@ -1353,8 +1359,17 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
       // 관심종목 리스트 (S.usWatchL 기반)
       let stocksHtml = '';
-      if (S.usWatchL && S.usWatchL.sectors) {
-        const sec = S.usWatchL.sectors.find(s => s.sector === sectorName);
+      // usWatchStocks(KV) 우선, 없으면 usWatchL(GAS) fallback
+      // usWatchStocks는 {sectorName:[stocks,...]} 객체 형태
+      let _usStockSrc = S.usWatchL;
+      if (S.usWatchStocks && typeof S.usWatchStocks === 'object' && !Array.isArray(S.usWatchStocks)) {
+        const _secs = Object.entries(S.usWatchStocks)
+          .filter(([k]) => !k.startsWith('_'))
+          .map(([sector, stocks]) => ({ sector, stocks: Array.isArray(stocks) ? stocks : [] }));
+        if (_secs.length > 0) _usStockSrc = { sectors: _secs };
+      }
+      if (_usStockSrc && _usStockSrc.sectors) {
+        const sec = _usStockSrc.sectors.find(s => s.sector === sectorName);
         if (sec && sec.stocks && sec.stocks.length > 0) {
           stocksHtml = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
           
@@ -2290,8 +2305,8 @@ document.getElementById('kr-stats').innerHTML=
 +'</div></div>'
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
++'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
 +(hasTodayStats?'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+tMxN+'</div></div>'
@@ -5758,8 +5773,12 @@ tooltip.style.top=Math.round(y-h)+'px';
 document.addEventListener('click', function(e) {
   const el = e.target.closest('.sp-stat-click');
   if (!el) return;
-  const sector = el.getAttribute('data-sector');
-  if (sector) openSectorPopup(sector, true);
+  const sector  = el.getAttribute('data-sector');
+  const market  = el.getAttribute('data-market') || '';
+  const isPrev  = el.getAttribute('data-isprev') === '1';
+  const prevDate= el.getAttribute('data-date') || '';
+  const isKr    = market === 'us' ? false : true;
+  if (sector) openSectorPopup(sector, isKr, isPrev ? prevDate : '');
 });
 // 랭킹 바 차트 클릭 이벤트 위임
 document.addEventListener('click', function(e) {
