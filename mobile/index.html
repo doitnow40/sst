@@ -3151,6 +3151,8 @@ return'rgb('+r+','+g+','+b2+')';
 return'rgb(255,255,255)';
 }
 }
+// US 트리맵 색상 (tmColor와 동일 로직, MAX=3 기준)
+function tmColorUs(v){var MAX=3,t=Math.min(1,Math.abs(v)/MAX);if(v>0){return'rgb('+Math.round(255-77*t)+','+Math.round(255-255*t)+','+Math.round(255-255*t)+')';}else if(v<0){return'rgb('+Math.round(255-255*t)+','+Math.round(255-184*t)+','+Math.round(255-84*t)+')';}return'rgb(255,255,255)';}
 // ── rowLayout: 행 기반 트리맵 레이아웃 ──
 // 아이템을 면적 기준으로 여러 행에 나누고,
 // 각 행 내에서는 면적 비례로 너비를 배분
