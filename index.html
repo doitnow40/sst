@@ -2263,6 +2263,21 @@ todayBox2.innerHTML='<div style="font-size:9px;color:#90a4ae;font-weight:700;let
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">하이일드</div><div class="stat-val" style="color:'+hygCT+'">'+hygFmtT+'</div><div class="stat-sub">등락률</div></div>'
 +'</div>';
 inner.appendChild(todayBox2);
+// ── 오늘 최고/최저 섹터 박스 (KR과 동일 로직)
+var _usTEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
+var _usTVals=Object.entries(todayMap).filter(function(e){return!_usTEx.has(e[0])&&!isNaN(parseFloat(e[1]));}).map(function(e){return{name:e[0],v:parseFloat(e[1])};});
+if(_usTVals.length>0){
+  var _usTMx=_usTVals.reduce(function(a,b){return b.v>a.v?b:a;});
+  var _usTMn=_usTVals.reduce(function(a,b){return b.v<a.v?b:a;});
+  var todayBox3=document.createElement('div');
+  todayBox3.style.cssText='border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0';
+  todayBox3.innerHTML='<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
+  +'<div style="display:flex;gap:8px">'
+  +'<div class="'+sc+'" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.05)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_usTMx.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMx.name.replace(/'/g,"\\'")+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usTMx.name+'</div></div>'
+  +'<div class="'+sc+'" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.05)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usTMn.v>=0?'+':'')+_usTMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMn.name.replace(/'/g,"\\'")+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usTMn.name+'</div></div>'
+  +'</div>';
+  inner.appendChild(todayBox3);
+}
 }
 
 function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
