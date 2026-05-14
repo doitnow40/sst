@@ -447,6 +447,13 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 .adfit-wrap{width:100%;display:flex;justify-content:center;margin:12px 0 0;min-height:0;overflow:hidden}
 .adfit-wrap:empty{display:none !important;margin:0 !important}
 #sidebar-adfit-wrap{display:none !important}
+
+.h-scrollbar-wrap{position:relative;height:20px;margin-bottom:6px;padding:0 2px;}
+.h-scrollbar-track{position:relative;height:6px;background:rgba(46,58,80,0.5);border-radius:10px;top:7px;cursor:pointer;}
+.h-scrollbar-thumb{position:absolute;height:100%;background:linear-gradient(90deg,#4fc3f7,#81d4fa);border-radius:10px;cursor:grab;transition:background .15s;box-shadow:0 0 6px rgba(79,195,247,.4);}
+.h-scrollbar-thumb:hover{background:linear-gradient(90deg,#81d4fa,#4fc3f7);box-shadow:0 0 10px rgba(79,195,247,.6);}
+.h-scrollbar-thumb:active{cursor:grabbing;}
+.h-scrollbar-thumb-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:radial-gradient(circle,#fff 30%,#4fc3f7 100%);border-radius:50%;box-shadow:0 0 6px rgba(79,195,247,.7),0 1px 3px rgba(0,0,0,.5);pointer-events:none;}
 </style>
 </head>
 <body>
@@ -595,6 +602,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div id="kr-stats" class="stats-row"></div>
 <div id="kr-fng-stat-wrap" style="display:none"></div>
+<div class="h-scrollbar-wrap" id="kr-hscroll-wrap"><div class="h-scrollbar-track" id="kr-hscroll-track"><div class="h-scrollbar-thumb" id="kr-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
 <div class="table-container">
 <div class="table-today-notice" id="kr-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 5분마다 자동 갱신</div>
 <div class="table-scroll" id="kr-table">
@@ -710,6 +718,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 </div>
 <div id="us-stats" class="stats-row"></div>
+<div class="h-scrollbar-wrap" id="us-hscroll-wrap"><div class="h-scrollbar-track" id="us-hscroll-track"><div class="h-scrollbar-thumb" id="us-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
 <div class="table-container">
 <div class="table-today-notice" id="us-today-notice" style="display:none">● 오늘 실시간 Data: 약 20분 지연 · 5분마다 자동 갱신</div>
 <div class="table-scroll" id="us-table">
@@ -5537,5 +5546,46 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
+
+<script>
+(function(){
+  function initHScroll(tableId, thumbId, trackId){
+    var table=document.getElementById(tableId);
+    var thumb=document.getElementById(thumbId);
+    var track=document.getElementById(trackId);
+    if(!table||!thumb||!track) return;
+    function updateThumb(){
+      var trackW=track.offsetWidth, scrollW=table.scrollWidth, clientW=table.clientWidth;
+      if(scrollW<=clientW){thumb.style.display='none';return;}
+      thumb.style.display='';
+      var ratio=clientW/scrollW, thumbW=Math.max(36,trackW*ratio);
+      var maxLeft=trackW-thumbW, scrollRatio=table.scrollLeft/(scrollW-clientW);
+      thumb.style.width=thumbW+'px';
+      thumb.style.left=(scrollRatio*maxLeft)+'px';
+    }
+    table.addEventListener('scroll',updateThumb);
+    var dragging=false,startX=0,startLeft=0;
+    thumb.addEventListener('mousedown',function(e){dragging=true;startX=e.clientX;startLeft=parseFloat(thumb.style.left)||0;e.preventDefault();});
+    document.addEventListener('mousemove',function(e){if(!dragging)return;var trackW=track.offsetWidth,thumbW=thumb.offsetWidth,maxLeft=trackW-thumbW;var newLeft=Math.max(0,Math.min(maxLeft,startLeft+(e.clientX-startX)));thumb.style.left=newLeft+'px';table.scrollLeft=(newLeft/maxLeft)*(table.scrollWidth-table.clientWidth);});
+    document.addEventListener('mouseup',function(){dragging=false;});
+    thumb.addEventListener('touchstart',function(e){dragging=true;startX=e.touches[0].clientX;startLeft=parseFloat(thumb.style.left)||0;e.preventDefault();},{passive:false});
+    document.addEventListener('touchmove',function(e){if(!dragging)return;var trackW=track.offsetWidth,thumbW=thumb.offsetWidth,maxLeft=trackW-thumbW;var newLeft=Math.max(0,Math.min(maxLeft,startLeft+(e.touches[0].clientX-startX)));thumb.style.left=newLeft+'px';table.scrollLeft=(newLeft/maxLeft)*(table.scrollWidth-table.clientWidth);},{passive:false});
+    document.addEventListener('touchend',function(){dragging=false;});
+    track.addEventListener('click',function(e){if(e.target===thumb||thumb.contains(e.target))return;var rect=track.getBoundingClientRect(),clickX=e.clientX-rect.left,trackW=track.offsetWidth,thumbW=thumb.offsetWidth,maxLeft=trackW-thumbW;var newLeft=Math.max(0,Math.min(maxLeft,clickX-thumbW/2));thumb.style.left=newLeft+'px';table.scrollLeft=(newLeft/maxLeft)*(table.scrollWidth-table.clientWidth);});
+    var mo=new MutationObserver(function(){setTimeout(updateThumb,80);});
+    mo.observe(table,{childList:true,subtree:false});
+    if(window.ResizeObserver) new ResizeObserver(updateThumb).observe(table);
+    window.addEventListener('resize',updateThumb);
+    setTimeout(updateThumb,300);
+  }
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      initHScroll('kr-table','kr-hscroll-thumb','kr-hscroll-track');
+      initHScroll('us-table','us-hscroll-thumb','us-hscroll-track');
+    },500);
+  });
+})();
+</script>
+
 </body>
 </html>
