@@ -1276,7 +1276,9 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 <div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬">🔤</div>
 <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
 </div>
-<script>if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+<script>// ★ 전역 함수 최상단 선언 (호이스팅 보장)
+function tmColorUs(v){var MAX=3,t=Math.min(1,Math.abs(v)/MAX);if(v>0){return'rgb('+Math.round(255-77*t)+','+Math.round(255-255*t)+','+Math.round(255-255*t)+')';}else if(v<0){return'rgb('+Math.round(255-255*t)+','+Math.round(255-184*t)+','+Math.round(255-84*t)+')';}return'rgb(255,255,255)';}
+if(window.ChartDataLabels) Chart.register(ChartDataLabels);
 Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
