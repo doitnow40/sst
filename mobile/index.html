@@ -1362,7 +1362,7 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 // ══════════════════════════════════════════════════
 //  섹터 종목 팝업
 // ══════════════════════════════════════════════════
-function openSectorPopup(sectorName, isKr) {
+function openSectorPopup(sectorName, isKr, prevDate) {
   // FnG 컬럼은 전용 팝업으로 분기
   if (sectorName === 'FnG') { openFnGPopup(); return; }
   const popup    = document.getElementById('sector-popup');
@@ -1384,7 +1384,7 @@ function openSectorPopup(sectorName, isKr) {
   document.addEventListener('keydown', _popupEscHandler);
 
   // 종목 데이터 로드
-  _loadSectorPopupData(sectorName, isKr, avgEl, body);
+  _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate||'');
 }
 
 function closeSectorPopup() {
@@ -1511,7 +1511,7 @@ function _renderFnGPopup(score, history, latestDate) {
 }
 
 
-async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
+async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
   try {
     // ── KRX 장 상태 판정 (15:30 기준) ────────────────────────────────
     const _nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
@@ -1525,7 +1525,12 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body) {
     // 장전·주말·공휴일: S.krD.rows[0] = GAS 히스토리 최근 영업일 확정값
     if (isKr) {
       let dispAvg = null;
-      if (_isKrTradingDay) {
+      if (prevDate && S.krD && S.krD.headers && S.krD.rows) {
+        const hIdx = S.krD.headers.indexOf(sectorName);
+        const row = S.krD.rows.find(r => r[0] === prevDate);
+        if (row && hIdx > 0) { const v = parseFloat(row[hIdx]); if (!isNaN(v)) dispAvg = v; }
+      }
+      if (dispAvg === null && _isKrTradingDay) {
         const todayMap = S.krToday && S.krToday.sectors ? S.krToday.sectors : {};
         const v = todayMap[sectorName];
         if (v !== undefined && v !== null && !isNaN(v)) dispAvg = parseFloat(v);
@@ -2396,8 +2401,8 @@ document.getElementById('kr-stats').innerHTML=
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">전체 섹터평균</div><div class="stat-val '+(pUp?'up':'dn')+'">'+(pUp?'+':'')+avg+'%</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+mxN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+mnN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mnN+'</div></div></div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+mnN+'</div></div></div></div>'
 // ④ 등록 정보 박스
 +'<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
@@ -5422,8 +5427,12 @@ tooltip.style.top=Math.round(y-h)+'px';
 document.addEventListener('click', function(e) {
   const el = e.target.closest('.sp-stat-click');
   if (!el) return;
-  const sector = el.getAttribute('data-sector');
-  if (sector) openSectorPopup(sector, true);
+  const sector  = el.getAttribute('data-sector');
+  const market  = el.getAttribute('data-market') || '';
+  const isPrev  = el.getAttribute('data-isprev') === '1';
+  const prevDate= el.getAttribute('data-date') || '';
+  const isKr    = market === 'us' ? false : true;
+  if (sector) openSectorPopup(sector, isKr, isPrev ? prevDate : '');
 });
 // 랭킹 바 차트 클릭 이벤트 위임
 document.addEventListener('click', function(e) {
