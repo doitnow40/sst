@@ -3670,9 +3670,10 @@ const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
 const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
 }
+const _gMapR=S.usD.groupMap||{};
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{
-const g=(gMap[h])||(US_META[h]?.group)||'INDEX';
+const g=(_gMapR[h])||(US_META[h]?.group)||'INDEX';
 if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
