@@ -2345,7 +2345,37 @@ document.getElementById('us-stats').innerHTML=
 +'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmt+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2Fmt+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygC+'">'+hygFmt+'</div><div class="stat-sub">OAS</div></div>'
-+'</div></div></div>';
++'</div></div>'
++(function(){
+var _mEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
+var _mVals=H.slice(1).filter(function(h){return!_mEx.has(h)&&h;}).map(function(n){var i=H.indexOf(n);return{name:n,v:i>=0?parseFloat(lt[i]):NaN};}).filter(function(d){return!isNaN(d.v);});
+if(!_mVals.length)return'';
+var _mMx=_mVals.reduce(function(a,b){return b.v>a.v?b:a;});
+var _mMn=_mVals.reduce(function(a,b){return b.v<a.v?b:a;});
+return '<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
++'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 섹터</div>'
++'<div style="display:flex;gap:8px">'
++'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_mMx.v.toFixed(2)+'%</div><div class="stat-sub sp-stat-click" data-sector="'+_mMx.name+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+_mMx.name+'</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_mMn.v>=0?'+':'')+_mMn.v.toFixed(2)+'%</div><div class="stat-sub sp-stat-click" data-sector="'+_mMn.name+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+_mMn.name+'</div></div>'
++'</div></div>';
+})()
++(function(){
+var _uTM=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+var _uTD=S.usToday?S.usToday.date:'';
+if(!_uTD||!Object.keys(_uTM).length)return'';
+var _uTEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
+var _uTV=Object.entries(_uTM).filter(function(e){return!_uTEx.has(e[0])&&!isNaN(parseFloat(e[1]));}).map(function(e){return{name:e[0],v:parseFloat(e[1])};});
+if(!_uTV.length)return'';
+var _uTMx=_uTV.reduce(function(a,b){return b.v>a.v?b:a;});
+var _uTMn=_uTV.reduce(function(a,b){return b.v<a.v?b:a;});
+return '<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
++'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+_uTD+')</div>'
++'<div style="display:flex;gap:8px">'
++'<div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.05)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_uTMx.v.toFixed(2)+'%</div><div class="stat-sub sp-stat-click" data-sector="'+_uTMx.name+'" data-market="us" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+_uTMx.name+'</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(255,183,77,.3);background:rgba(255,183,77,.05)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_uTMn.v>=0?'+':'')+_uTMn.v.toFixed(2)+'%</div><div class="stat-sub sp-stat-click" data-sector="'+_uTMn.name+'" data-market="us" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+_uTMn.name+'</div></div>'
++'</div></div>';
+})()
++'</div>';
 }
 
 function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
