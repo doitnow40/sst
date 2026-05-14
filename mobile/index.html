@@ -513,11 +513,11 @@ border-radius:6px;transition:background .15s;
 <div class="logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
 </div>
 <div class="header-right">
-<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 화면 전체 즉시 새로고침&#10;&#10;지금 보이는 화면의 모든 데이터를&#10;즉시 최신 상태로 업데이트합니다.&#10;&#10;· 화면은 5분마다 자동으로 갱신되지만&#10;  지금 당장 최신값을 보고 싶을 때 누르세요.&#10;· 어느 페이지에서나 사용 가능한 전체 새로고침입니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." class="hdr-badge" style="cursor:pointer;border-color:var(--border-light);">
+<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 새로고침&#10;&#10;이미 서버에 저장된 최신 데이터를&#10;화면에 즉시 반영합니다.&#10;&#10;· 서버의 데이터 자체를 바꾸지는 않습니다&#10;· 화면이 오래됐거나 값이 안 바뀐 것 같을 때 사용&#10;&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:var(--border-light);">
 <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
 <span>새로고침</span>
 </button>
-<button id="trigger-actions-btn" onclick="triggerActionsNow()" class="hdr-badge" style="cursor:pointer;border-color:rgba(100,181,246,.4);color:#64b5f6;">
+<button id="trigger-actions-btn" onclick="triggerActionsNow()" title="📡 지금 수집&#10;&#10;서버에서 최신 데이터를 즉시 수집합니다.&#10;&#10;· 수집 완료까지 약 30~60초 소요&#10;· 완료 후 [새로고침] 버튼을 눌러 확인하세요&#10;· 장중에만 의미 있습니다&#10;&#10;※ [새로고침]: 이미 저장된 데이터를 화면에 반영&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:rgba(100,181,246,.4);color:#64b5f6;">
 <span style="font-size:11px">📡</span><span>지금 수집</span>
 </button>
 <div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
@@ -586,7 +586,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshKrToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 5분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+<button onclick="refreshKrToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
 </div>
 <div class="controls-bar">
 <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
@@ -703,7 +703,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshUsToday(this)" title="📡 오늘 등락률만 즉시 업데이트&#10;&#10;표의 맨 위 '오늘' 행만 지금 최신값으로&#10;바꿔줍니다. (약 20분 지연 반영)&#10;&#10;· 과거 날짜 데이터는 건드리지 않습니다.&#10;· 화면은 5분마다 자동으로 갱신되지만&#10;  지금 바로 오늘 값을 확인하고 싶을 때 사용하세요.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다." style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+<button onclick="refreshUsToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
 </div>
 <div class="controls-bar">
 <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -1969,7 +1969,10 @@ async function triggerActionsNow(){
   if(btn){btn.disabled=true;btn.style.opacity='0.5';}
   try{
     const d=await api('trigger_actions',0);
-    if(d&&d.cooldown) alert('⏳ '+d.message);
+    if(d&&d.cooldown){
+const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
+const ss=String(d.remain%60).padStart(2,'0');
+alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 [새로고침] 버튼을 눌러 확인해 보세요.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');}
     else if(d&&d.ok) alert('✅ '+d.message+'\n약 30초 후 새로고침 버튼을 누르세요.');
     else alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.');
   }catch(e){
