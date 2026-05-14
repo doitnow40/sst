@@ -1963,7 +1963,8 @@ async function triggerActionsNow(){
   if(btn){btn.disabled=true;btn.style.opacity='0.5';}
   try{
     const d=await api('trigger_actions',0);
-    if(d&&d.message) alert('✅ '+d.message+'\n약 30초 후 새로고침 버튼을 누르세요.');
+    if(d&&d.cooldown) alert('⏳ '+d.message);
+    else if(d&&d.ok) alert('✅ '+d.message+'\n약 30초 후 새로고침 버튼을 누르세요.');
     else alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.');
   }catch(e){
     alert('❌ 실패: '+e.message);
