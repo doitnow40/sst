@@ -2059,7 +2059,13 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
+// 장중 여부 판단
+const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
+const _kstDow2=_kstNow2.getDay();
+const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
+const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930;
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
 if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
@@ -2261,9 +2267,10 @@ document.getElementById('us-stats').innerHTML=
 +'</div></div></div>';
 }
 
-function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap){
+function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
 if(!f||!f.length)return;
-var lt=f[0];
+var _ltIdx=(isMarketOpen&&f.length>1)?1:0;
+var lt=f[_ltIdx];
 var sVals=pureSectors.map(function(h){return parseFloat(lt[H.indexOf(h)]);}).filter(function(v){return!isNaN(v);});
 var avg=sVals.length?(sVals.reduce(function(a,b){return a+b;},0)/sVals.length).toFixed(2):'-';
 var mxVal=sVals.length?Math.max.apply(null,sVals):null, mnVal=sVals.length?Math.min.apply(null,sVals):null;
@@ -3966,7 +3973,13 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
+// 장중 여부 판단
+const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
+const _kstDow2=_kstNow2.getDay();
+const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
+const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930;
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
 if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
