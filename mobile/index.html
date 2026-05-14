@@ -2274,6 +2274,14 @@ var spFmt=isNaN(sp)?'-':sp.toLocaleString(),nqFmt=isNaN(nq)?'-':nq.toLocaleStrin
 var vxFmt=isNaN(vx)?'-':vx.toFixed(2);
 var vxC=isNaN(vx)?'var(--text-muted)':vx<20?'#66bb6a':vx<30?'#ffa726':'#ef5350';
 var spUp=!isNaN(sp500Chg)&&sp500Chg>=0, nqUp=!isNaN(nasdaqChg)&&nasdaqChg>=0;
+var tnxIdx=H.indexOf('장기채권'),ust2Idx=H.indexOf('단기채권'),hygIdx=H.indexOf('하이일드');
+var tnxV=tnxIdx>=0?parseFloat(lt[tnxIdx]):NaN;
+var ust2V=ust2Idx>=0?parseFloat(lt[ust2Idx]):NaN;
+var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
+var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(2)+'%';
+var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(2)+'%';
+var hygFmt=isNaN(hygV)?'-':(hygV>=0?'+':'')+hygV.toFixed(2)+'%';
+var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=0?'#ef5350':'#42a5f5';
 document.getElementById('us-stats').innerHTML=
 '<div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">'
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
@@ -2281,7 +2289,14 @@ document.getElementById('us-stats').innerHTML=
 +'<div style="display:flex;gap:8px">'
 +'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">S&P500</div><div class="stat-val '+(spUp?'up':'dn')+'">'+spFmt+'</div><div class="stat-sub">'+(isNaN(sp500Chg)?'-':(sp500Chg>=0?'+':'')+sp500Chg.toFixed(2)+'%')+'</div></div>'
 +'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">Nasdaq</div><div class="stat-val '+(nqUp?'up':'dn')+'">'+nqFmt+'</div><div class="stat-sub">'+(isNaN(nasdaqChg)?'-':(nasdaqChg>=0?'+':'')+nasdaqChg.toFixed(2)+'%')+'</div></div>'
-+'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">VIX</div><div class="stat-val" style="color:'+vxC+'">'+vxFmt+'</div><div class="stat-sub">변동성</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">VIX</div><div class="stat-val" style="color:'+vxC+'">'+vxFmt+'</div><div class="stat-sub">공포지수</div></div>'
++'</div></div>'
++'<div style="border:1px solid rgba(176,190,197,.3);border-radius:10px;padding:10px 14px;background:rgba(176,190,197,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
++'<div style="font-size:9px;color:#90a4ae;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">채권 금리</div>'
++'<div style="display:flex;gap:8px">'
++'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmt+'</div><div class="stat-sub">미국채</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2Fmt+'</div><div class="stat-sub">미국채</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">하이일드</div><div class="stat-val" style="color:'+hygC+'">'+hygFmt+'</div><div class="stat-sub">등락률</div></div>'
 +'</div></div></div>';
 }
 
@@ -3618,7 +3633,7 @@ const f=rows.slice(0,S.usR);
 const sh=H.slice(1);
 if(f.length){
 const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
-const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
+const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
 }
 const spans=[];let pg=null,gs=0;
@@ -4052,7 +4067,7 @@ const f=rows.slice(0,S.usR);
 const sh=H.slice(1);
 if(f.length){
 const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
-const sp=si>0?parseFloat(lt[si]):NaN,nq=ni>0?parseFloat(lt[ni]):NaN,vx=vi>0?parseFloat(lt[vi]):NaN;
+const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
 }
 const spans=[];let pg=null,gs=0;
