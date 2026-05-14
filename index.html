@@ -1772,7 +1772,10 @@ async function triggerActionsNow(){
   if(btn){ btn.disabled=true; btn.style.opacity='0.5'; }
   try{
     const d = await api('trigger_actions', 0);
-    if(d && d.message){
+    if(d && d.cooldown){
+      // 서버 쿨다운 중
+      alert('⏳ ' + d.message);
+    } else if(d && d.ok){
       alert('✅ ' + d.message + '\n약 30초 후 새로고침 버튼을 누르세요.');
     } else {
       alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 새로고침해보세요.');
