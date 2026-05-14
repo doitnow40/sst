@@ -1550,7 +1550,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         const row  = S.usD.rows.find(r => String(r[0]).startsWith(prevDate));
         if (row && hIdx > 0) { const v = parseFloat(row[hIdx]); if (!isNaN(v)) _usDispAvg = v; }
       }
+      if (_usDispAvg === null && S.usD && S.usD.headers && S.usD.rows && S.usD.rows.length > 0) {
+        // prevDate 없음 = 테이블 헤더 클릭 → 최신 행(rows[0]) 기준
+        const hIdx = S.usD.headers.indexOf(sectorName);
+        if (hIdx > 0) { const v = parseFloat(S.usD.rows[0][hIdx]); if (!isNaN(v)) _usDispAvg = v; }
+      }
       if (_usDispAvg === null) {
+        // rows[0]에 없으면 오늘 실시간 fallback
         const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
         const sectorAvg = todayMap[sectorName];
         if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) _usDispAvg = parseFloat(sectorAvg);
