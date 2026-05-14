@@ -2280,8 +2280,8 @@ var ust2V=ust2Idx>=0?parseFloat(lt[ust2Idx]):NaN;
 var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
 var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(3)+'%';
 var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(3)+'%';
-var hygFmt=isNaN(hygV)?'-':(hygV>=0?'+':'')+hygV.toFixed(2)+'%';
-var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=0?'#ef5350':'#42a5f5';
+var hygFmt=isNaN(hygV)?'-':hygV.toFixed(3)+'%';
+var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=4?'#ef5350':hygV>=3?'#ffa726':'#66bb6a';
 document.getElementById('us-stats').innerHTML=
 '<div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">'
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
@@ -2296,7 +2296,7 @@ document.getElementById('us-stats').innerHTML=
 +'<div style="display:flex;gap:8px">'
 +'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmt+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2Fmt+'</div><div class="stat-sub">수익률</div></div>'
-+'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">하이일드</div><div class="stat-val" style="color:'+hygC+'">'+hygFmt+'</div><div class="stat-sub">등락률</div></div>'
++'<div class="stat-card" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygC+'">'+hygFmt+'</div><div class="stat-sub">OAS</div></div>'
 +'</div></div></div>';
 }
 
