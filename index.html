@@ -522,6 +522,8 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다.
 <div class="about-section">
 <div class="about-section-title">📊 차트 이용 안내</div>
 <div class="about-section-body">
+<strong>📊 최근 영업일 박스 / 오늘 섹터 박스</strong><br>
+페이지 상단 요약 박스에서 <strong>최근 영업일</strong>은 장중·장마감 무관하게 항상 <strong>직전 영업일</strong>의 확정 데이터를 표시합니다. <strong>오늘 섹터</strong> 박스는 오늘 장중 실시간 데이터가 있을 때만 표시됩니다.<br><br>
 <strong>📈 추이 차트</strong><br>
 선택한 기간(1주·2주·1개월) 동안 각 섹터의 등락률 변화를 선 그래프로 표시합니다. 기본적으로 해당 기간 상위 5개 섹터와 주요 지수만 표시되며, 범례를 클릭해 원하는 섹터를 추가로 켜고 끌 수 있습니다.<br><br>
 <strong>🏆 랭킹 차트</strong><br>
@@ -533,18 +535,26 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다.
 <div class="about-section">
 <div class="about-section-title">🕐 데이터 업데이트 주기</div>
 <div class="about-section-body">
-데이터는 <strong>매 영업일 장 마감 후 자동으로 업데이트</strong>됩니다.<br><br>
-· 🇰🇷 한국: 매일 장 마감 후(오후 3시 30분 이후) 업데이트<br>
-· 🇺🇸 미국: 매일 미국 장 마감 후(한국시간 기준 다음날 새벽) 업데이트<br><br>
-화면 우상단에는 두 가지 시각이 표시됩니다.<br>· <strong>"확정 데이터"</strong>: 가장 최근 장 마감 후 확정된 데이터의 기준 시각<br>· <strong>"실시간 갱신"</strong>: 오늘 장중 실시간 데이터(약 20분 지연)가 마지막으로 갱신된 시각 — 5분마다 자동 갱신<br><br>
+<strong>📡 실시간 수집 (장중 5분 간격)</strong><br>
+장중에는 서버가 <strong>5분마다 자동으로 최신 데이터를 수집</strong>합니다.<br>
+· 🇰🇷 한국: KST 09:00~15:30 장중에 5분마다 수집<br>
+· 🇺🇸 미국: 미국 정규장 시간에 5분마다 수집<br><br>
+<strong>📋 장 마감 후 데이터 처리</strong><br>
+장 마감 후에는 마지막 수집된 값이 그대로 확정 데이터로 유지됩니다.<br>
+별도의 마감 처리 없이 장중 마지막 수집값이 해당 영업일의 최종값이 됩니다.<br><br>
+화면 우상단에는 두 가지 시각이 표시됩니다.<br>
+· <strong>"확정 데이터"</strong>: 가장 최근 확정 저장된 데이터의 기준 시각<br>
+· <strong>"실시간 갱신"</strong>: 오늘 실시간 데이터(약 20분 지연)가 마지막으로 화면에 반영된 시각<br><br>
 <strong>📡 오늘(장중) 실시간 행</strong><br>
 섹터 History 표 최상단에 <span style="color:#ffb74d">오늘 날짜로 표시된 행</span>은 현재 장중 실시간 등락률을 반영한 행입니다.<br>
 · 🇰🇷 한국: 각 종목의 현재 등락률 평균으로 계산<br>
 · 🇺🇸 미국: 각 ETF의 현재 등락률로 표시<br>
-· ⚠️ <strong>약 20분 지연된 값</strong>이 표시됩니다 (데이터 제공 특성상 실시간이 아닌 20분 지연값). 장 종료 후에는 최종 확정값으로 자동 교체됩니다.<br><br>
+· ⚠️ <strong>약 20분 지연된 값</strong>이 표시됩니다. 장 종료 후에는 마지막 수집값이 그대로 확정값으로 유지됩니다.<br><br>
 <strong>🔄 갱신 방식</strong><br>
-· <strong>자동 갱신</strong>: 섹터 History 및 섹터 종목 List 페이지에서 오늘 실시간 등락률은 <strong>5분 간격으로 자동 갱신</strong>됩니다.<br>
-· <strong>수동 갱신</strong>: 각 페이지의 <span style="color:#ffb74d">🔄 지금 갱신 / 오늘 데이터 갱신</span> 버튼을 클릭하면 즉시 최신값으로 업데이트됩니다.
+· <strong>자동 갱신</strong>: 오늘 실시간 등락률은 <strong>5분 간격으로 자동 갱신</strong>됩니다.<br>
+· <strong>📡 지금 수집</strong>: 서버에서 즉시 최신 데이터를 수집합니다. 수집 완료 후 [새로고침]을 눌러 확인하세요. 5분 쿨다운이 있어 다른 사용자가 방금 누른 경우 잠시 대기 안내가 표시됩니다.<br>
+· <strong>🔄 새로고침</strong>: 서버에 이미 저장된 최신 데이터를 화면에 즉시 반영합니다.<br>
+· <strong>🔄 오늘 데이터 갱신</strong>: 표 맨 위 오늘 행만 빠르게 갱신합니다 (전체 새로고침보다 빠름).
 </div>
 </div>
 <div class="notice-box" style="border-left-color:#4fc3f7;margin-top:4px">
@@ -859,10 +869,10 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
   <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">⏱️ 자동 갱신 타이머 구조</div>
   <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>캐시 TTL:</strong> 10분 (600,000ms) — 동일 데이터 요청 시 캐시 반환, TTL 초과 시 GAS 웹앱 재요청<br>
-    · <strong>한국 데이터 확정:</strong> 매일 20:00 KST (GAS 트리거 자동 실행 → 구글 스프레드시트 기록)<br>
-    · <strong>미국 데이터 확정:</strong> 매일 06:00 KST (한국시간 기준, 미국 장 마감 후 GAS 트리거 자동 실행)<br>
-    · <strong>원 소스 (구글 스프레드시트):</strong> 모든 확정 데이터의 근거. 웹 화면에서는 읽기만 수행하며 쓰기(변경/저장)는 GAS 트리거만 수행.
+    · <strong>수집 주기:</strong> 5분 (GitHub Actions cron) — 장중에 5분마다 수집 후 KV 저장. 화면은 KV에서만 읽음.<br>
+    · <strong>한국/미국 데이터 확정:</strong> 장중 5분마다 GitHub Actions가 수집 → KV 저장. 장 마감 후 수집 중단 시 마지막 수집값이 확정값으로 유지됨.<br>
+    · <strong>Config 시트 GAS 트리거(20:00 KST / 06:00 KST):</strong> 현재 비활성화 검토 중. GitHub Actions 마지막 수집값으로 충분히 대체 가능.<br>
+    · <strong>원 소스 (구글 스프레드시트):</strong> 히스토리 데이터의 근거. 웹 화면에서는 읽기만 수행하며 쓰기(변경/저장)는 GAS만 수행.
   </div>
 </div>
 
