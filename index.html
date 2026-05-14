@@ -2127,9 +2127,9 @@ var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
 // 장기채/단기채: 절대 수익률값 (4.42% 형태) — 소수점 3자리
 var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(3)+'%';
 var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(3)+'%';
-// 하이일드: HYG ETF 등락률 (부호 포함)
-var hygFmt=isNaN(hygV)?'-':(hygV>=0?'+':'')+hygV.toFixed(2)+'%';
-var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=0?'#ef5350':'#42a5f5';
+// 하이일드: FRED OAS 스프레드 절대값 (높을수록 위험)
+var hygFmt=isNaN(hygV)?'-':hygV.toFixed(3)+'%';
+var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=4?'#ef5350':hygV>=3?'#ffa726':'#66bb6a';
 // 최고/최저 섹터 계산 (채권·달러·VIX 제외)
 var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
 var _usSn=H.slice(1).filter(function(h){return!_usEx.has(h)&&h;});
