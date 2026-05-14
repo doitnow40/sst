@@ -3672,7 +3672,7 @@ _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.
 }
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{
-const g=(US_META[h]?.group)||'INDEX';
+const g=(gMap[h])||(US_META[h]?.group)||'INDEX';
 if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
@@ -4107,8 +4107,10 @@ const lt=f[0],si=H.indexOf('SP500'),ni=H.indexOf('Nasdaq'),vi=H.indexOf('VIX');
 const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
 _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("Nasdaq")]));
 }
+// ★ gMap: 시트의 실제 그룹 정보 사용 (US_META 키와 시트 헤더명이 다를 수 있음)
+const gMap2=S.usD.groupMap||{};
 const spans=[];let pg=null,gs=0;
-sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
+sh.forEach((h,i)=>{const g=gMap2[h]||(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
 // ★ renderUsTableOnly 단독 호출 시에도 _usGroupBorderCols 재계산
 window._usGroupBorderCols=new Set();
 {let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
