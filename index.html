@@ -512,7 +512,9 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 · <strong>테마ETF</strong>: 반도체, 소프트웨어, AI/로봇, 바이오, 방산, 클린에너지 등 테마별 ETF<br>
 · <strong>채권·달러</strong>: 장기채권(TLT, 만기 20년 이상), 단기채권(SHY, 만기 1~3년), 하이일드채권(HYG), 달러인덱스 — 모두 ETF 가격 등락률로 표시<br><br>
 <strong>채권 금리 표시 방식</strong><br>
-히스토리 표에서 장기채권·단기채권·하이일드는 ETF 가격 등락률(%)로 표시됩니다.<br>단, <strong>상단 요약 박스(최근 영업일 / 오늘)</strong>에서는 다음 절대 수치도 함께 표시됩니다.<br>· <strong>장기채(10년물)</strong>: 미국 10년물 국채 수익률 절대값 (예: 4.42%)<br>· <strong>단기채(2년물)</strong>: 미국 2년물 국채 수익률 절대값 (예: 3.92%)<br>· <strong>하이일드</strong>: HYG ETF 당일 등락률 (신용위험 반영)<br><br>
+<strong>히스토리 표</strong><br>
+· <strong>장기채권(10년물)</strong>: 미국 10년물 국채 수익률 절대값 (예: 4.420%)<br>· <strong>단기채권(2년물)</strong>: 미국 2년물 국채 수익률 절대값 (예: 3.920%)<br>· <strong>하이일드</strong>: HYG ETF 당일 등락률(%) — 하이일드 스프레드 절대값이 아닌 ETF 가격 변동률<br><br><strong>상단 요약 박스(최근 영업일 / 오늘)</strong><br>
+위와 동일한 값을 카드 형태로 표시합니다. 금리가 오를수록 숫자가 커지며, 장단기 스프레드(10년물 - 2년물)는 직접 계산하여 참고하세요.<br><br>
 <strong>VIX</strong><br>
 공포지수로 불리며 20 이하는 안정, 20~30은 경계, 30 이상은 고변동성 구간입니다. 등락률이 아닌 <strong>절대 수치</strong>로 표시됩니다.<br><br>
 <strong>색상 기준</strong><br>
@@ -2122,8 +2124,10 @@ var tnxIdx=H.indexOf('장기채권'),ust2Idx=H.indexOf('단기채권'),hygIdx=H.
 var tnxV=tnxIdx>=0?parseFloat(lt[tnxIdx]):NaN;
 var ust2V=ust2Idx>=0?parseFloat(lt[ust2Idx]):NaN;
 var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
-var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(2)+'%';
-var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(2)+'%';
+// 장기채/단기채: 절대 수익률값 (4.42% 형태) — 소수점 3자리
+var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(3)+'%';
+var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(3)+'%';
+// 하이일드: HYG ETF 등락률 (부호 포함)
 var hygFmt=isNaN(hygV)?'-':(hygV>=0?'+':'')+hygV.toFixed(2)+'%';
 var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=0?'#ef5350':'#42a5f5';
 // 최고/최저 섹터 계산 (채권·달러·VIX 제외)
@@ -2147,8 +2151,8 @@ document.getElementById('us-stats').innerHTML=
 +'<div style="border:1px solid rgba(176,190,197,.3);border-radius:10px;padding:10px 14px;background:rgba(176,190,197,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#90a4ae;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">채권 금리</div>'
 +'<div style="display:flex;gap:8px">'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmt+'</div><div class="stat-sub">미국채</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2Fmt+'</div><div class="stat-sub">미국채</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmt+'</div><div class="stat-sub">수익률</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2Fmt+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">하이일드</div><div class="stat-val" style="color:'+hygC+'">'+hygFmt+'</div><div class="stat-sub">등락률</div></div>'
 +'</div></div>'
 +(_usMx?'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
