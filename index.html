@@ -1388,13 +1388,26 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       if (_usStockSrc && _usStockSrc.sectors) {
         const sec = _usStockSrc.sectors.find(s => s.sector === sectorName);
         if (sec && sec.stocks && sec.stocks.length > 0) {
+          // ★ 최근 영업일 박스 클릭(_usIsPrevMode): prevChg(E열 전일 등락률) 메인
+          //   그 외(테이블헤더/오늘섹터): chg(D열 오늘 실시간) 메인
+          const _usUseChg = !_usIsPrevMode;
+          // 정렬: 메인 값 기준 내림차순
+          const _usSorted = [...sec.stocks].sort((a,b)=>{
+            const gv=st=>{
+              const v=_usUseChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
+              return (v!==null&&v!==undefined&&!isNaN(v))?parseFloat(v):-9999;
+            }; return gv(b)-gv(a);
+          });
           stocksHtml = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
-          
-          sec.stocks.forEach((st, idx) => {
+          const _usModeLabel=_usIsPrevMode?'전일('+prevDate+') 등락률':'오늘 등락률';
+          stocksHtml+='<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">'+_usModeLabel+' 기준</div>';
+          _usSorted.forEach((st, idx) => {
             if (!st.name) return;
-            const chg = st.chg;
+            // 메인값: 최근영업일=prevChg, 오늘=chg
+            const mainRaw = _usUseChg ? st.chg : st.prevChg;
+            const chg = (mainRaw !== null && mainRaw !== undefined && !isNaN(mainRaw)) ? parseFloat(mainRaw) : null;
             let chgHtml = '';
-            if (chg !== null && chg !== undefined && !isNaN(chg)) {
+            if (chg !== null) {
               const col = chg > 0 ? '#ef5350' : chg < 0 ? '#42a5f5' : '#8a9ab5';
               chgHtml = `<span style="font-family:var(--font-mono);font-size:11px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'}">${chg>0?'+':''}${chg.toFixed(2)}%</span>`;
             }
