@@ -1877,7 +1877,13 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
+// 장중 여부: 이 시점에서 KST 시간 계산
+const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
+const _kstDow2=_kstNow2.getDay();
+const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
+const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930; // 09:00~15:30
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
@@ -2098,9 +2104,13 @@ document.getElementById('us-stats').innerHTML=
 +'</div></div>':'')+'</div>';
 }
 
-function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap){
+function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
 if(!f||!f.length)return;
-var lt=f[0];
+// ★ 최근 영업일 데이터 소스:
+//   장중(09:00~15:30): f[0]은 오늘 실시간 행 → 직전 영업일인 f[1] 사용
+//   장마감 후 / 장전 / 주말: f[0]이 최근 확정값 → f[0] 사용
+var _ltIdx=(isMarketOpen&&f.length>1)?1:0;
+var lt=f[_ltIdx];
 var sVals=pureSectors.map(function(h){return parseFloat(lt[H.indexOf(h)]);}).filter(function(v){return!isNaN(v);});
 var avg=sVals.length?(sVals.reduce(function(a,b){return a+b;},0)/sVals.length).toFixed(2):'-';
 var mxVal=sVals.length?Math.max.apply(null,sVals):null, mnVal=sVals.length?Math.min.apply(null,sVals):null;
@@ -3957,7 +3967,13 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap);
+// 장중 여부: 이 시점에서 KST 시간 계산
+const _kstNow2=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const _kstMin2=_kstNow2.getHours()*60+_kstNow2.getMinutes();
+const _kstDow2=_kstNow2.getDay();
+const _isWeekday2=(_kstDow2>=1&&_kstDow2<=5);
+const _isMarketOpen2=_isWeekday2&&_kstMin2>=540&&_kstMin2<930; // 09:00~15:30
+_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,_isMarketOpen2);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header2=buildKrGroupHeaderRow(sectorHdrs, groupMap);
