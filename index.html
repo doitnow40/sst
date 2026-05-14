@@ -2100,12 +2100,16 @@ grid:{color:'#1e2535'},border:{color:'#3a4a65'}},
 y:{ticks:{color:'#8fa8c8',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
 grid:{
   color:function(ctx){
-    if(ctx.tick&&ctx.tick.value===0) return 'rgba(200,216,238,0.55)'; // 0% 라인: 진하게
-    return 'rgba(46,58,80,0.25)'; // 나머지: 흐리게
+    if(ctx.tick&&ctx.tick.value===0) return 'rgba(200,216,238,0.6)'; // 0% 라인: 진하게
+    return 'rgba(46,58,80,0.22)'; // 나머지: 흐리게
   },
   lineWidth:function(ctx){
     if(ctx.tick&&ctx.tick.value===0) return 1.5; // 0% 라인: 굵게
     return 0.5; // 나머지: 가늘게
+  },
+  borderDash:function(ctx){
+    if(ctx.tick&&ctx.tick.value===0) return []; // 0% 라인: 실선
+    return [3,3]; // 나머지: 점선
   }
 },
 border:{color:'#3a4a65'}}
@@ -3637,16 +3641,26 @@ const g=gMap[h]||'INDEX';
 if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}
 if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});
 });
+// ★ US 그룹 경계 열 인덱스 계산 (KR과 동일 방식)
+window._usGroupBorderCols=new Set();
+{let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
+// avg/sparkline 행에서도 _krGroupBorderCols 대신 _usGroupBorderCols 사용하도록 임시 매핑
+window._krGroupBorderCols=window._usGroupBorderCols;
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=_groupStyle(g);t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;});
+spans.forEach(({g,n},si)=>{
+  const gg=_groupStyle(g);
+  const bdrStyle=si>0?'border-left:3px solid #000;':'';
+  t+=`<th colspan="${n}" style="${bdrStyle}background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;
+});
 t+=`<th style="background:#1a2535;"></th>`;
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
-sh.forEach(h=>{
+sh.forEach((h,_usThi)=>{
 const gn=gMap[h]||'INDEX';const gs2=_groupStyle(gn);
 const m=US_META[h]||{bg:gs2.bg,fg:gs2.fg};
 const isW=US_WATCHED_SECTORS.has(h);
+const _usThBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_usThi))?'border-left:3px solid #000;':'';
 t+=`<th class="${isW?'watched-col':''} sector-clickable"
-  style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
+  style="${_usThBdr}background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
   onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:1px">⭐</div>':''}</th>`;
 });
 t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;font-size:9px;font-weight:700;white-space:nowrap;text-align:left;padding:4px 8px">📝 Memo</th>`;
@@ -3686,11 +3700,12 @@ const etTodayStr=nowET.getFullYear()+'-'+String(nowET.getMonth()+1).padStart(2,'
 if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData&&!_usPreMarket){
 t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
 t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-sh.forEach(name=>{
+sh.forEach((name,_usTdi)=>{
 const val=todayMap[name];
-if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;return;}
+const _usTdBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_usTdi))?'border-left:3px solid #000;':'';
+if(val===undefined||val===null){t+=`<td style="${_usTdBdr}color:var(--text-muted)">-</td>`;return;}
 const c=usCell(name,val);
-t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+t+=`<td style="${_usTdBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
 t+=`<td style="color:var(--text-muted);font-size:9px;text-align:left;padding:3px 8px">-</td>`;
 t+=`</tr>`;
@@ -3720,7 +3735,8 @@ t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
 const v=row[ci+1],c=usCell(name,v);
 const isW=US_WATCHED_SECTORS.has(name);
-t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
+const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
+t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
 });
 const usMemo=row[usMemoIdx]||'';
 t+=`<td style="min-width:80px;font-size:9px;color:${usMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;font-family:var(--font-body)">${usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
@@ -4167,7 +4183,8 @@ t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
 const v=row[ci+1],c=usCell(name,v);
 const isW=US_WATCHED_SECTORS.has(name);
-t+=`<td class="${isW?'watched-col':''}" style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
+const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
+t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
 });
 t+='</tr>';
 });
