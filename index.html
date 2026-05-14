@@ -1310,7 +1310,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       // prevDate가 있으면 최근 영업일 박스 클릭 → 히스토리에서 해당 날짜 행 우선 사용
       if (prevDate && S.krD && S.krD.headers && S.krD.rows) {
         const hIdx = S.krD.headers.indexOf(sectorName);
-        const row = S.krD.rows.find(r => r[0] === prevDate);
+        // 날짜 형식 차이 대응: '2026-05-13' vs '2026-05-13 (수)' 등
+        const row = S.krD.rows.find(r => String(r[0]).startsWith(prevDate));
         if (row && hIdx > 0) { const v = parseFloat(row[hIdx]); if (!isNaN(v)) dispAvg = v; }
       }
       if (dispAvg === null && _isKrTradingDay) {
@@ -1327,12 +1328,21 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         avgEl.style.color = dispAvg > 0 ? '#ef5350' : dispAvg < 0 ? '#42a5f5' : 'var(--text-muted)';
       }
     } else {
-      const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-      const sectorAvg = todayMap[sectorName];
-      if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) {
-        const v = parseFloat(sectorAvg);
-        avgEl.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-        avgEl.style.color = v > 0 ? '#ef5350' : v < 0 ? '#42a5f5' : 'var(--text-muted)';
+      // US avgEl: prevDate가 있으면 히스토리 행에서 해당 날짜 값 우선
+      let _usDispAvg = null;
+      if (prevDate && S.usD && S.usD.headers && S.usD.rows) {
+        const hIdx = S.usD.headers.indexOf(sectorName);
+        const row  = S.usD.rows.find(r => String(r[0]).startsWith(prevDate));
+        if (row && hIdx > 0) { const v = parseFloat(row[hIdx]); if (!isNaN(v)) _usDispAvg = v; }
+      }
+      if (_usDispAvg === null) {
+        const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+        const sectorAvg = todayMap[sectorName];
+        if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) _usDispAvg = parseFloat(sectorAvg);
+      }
+      if (_usDispAvg !== null) {
+        avgEl.textContent = (_usDispAvg >= 0 ? '+' : '') + _usDispAvg.toFixed(2) + '%';
+        avgEl.style.color = _usDispAvg > 0 ? '#ef5350' : _usDispAvg < 0 ? '#42a5f5' : 'var(--text-muted)';
       }
     }
 
@@ -1357,6 +1367,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       }
       const meta = US_META[sectorName] || {};
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+      const _usIsPrevMode = !!(prevDate); // 최근 영업일 박스 클릭 여부
       // 관심종목 리스트 (S.usWatchL 기반)
       let stocksHtml = '';
       // usWatchStocks(KV) 우선, 없으면 usWatchL(GAS) fallback
@@ -1461,9 +1472,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     // 장전·주말·공휴일:                  prevChg(GAS E열 최근 확정) 메인
     //   → 팝업 헤더도 S.krD 확정값을 쓰므로 종목 기준과 일관성 유지
 
+    // ★ prevDate가 있으면 최근 영업일 박스 클릭 → prevChg(확정값) 강제 사용
+    const _usePrev = !!(prevDate); // prevDate 전달 시 전일 확정값 모드
+    const _useToday = !_usePrev && _isKrTradingDay;
+
     // 정렬 기준
     const sorted = [...stocks].sort((a, b) => {
-      const getV = st => _isKrTradingDay
+      const getV = st => _useToday
         ? ((st.chg     !== null && !isNaN(st.chg))     ? st.chg     : (st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : -9999)
         : ((st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : (st.chg     !== null && !isNaN(st.chg))     ? st.chg     : -9999);
       return getV(b) - getV(a);
@@ -1477,7 +1492,14 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const memo    = st.memo || '';
 
       let mainVal, subHtml = '';
-      if (_isKrTradingDay) {
+      if (_usePrev) {
+        // ★ 최근 영업일 박스 클릭: prevChg(전일 확정) 메인, chg 보조
+        mainVal = prevChg !== null ? prevChg : chg;
+        if (chg !== null && prevChg !== null) {
+          const tc = chg >= 0 ? '+' : '';
+          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
+        }
+      } else if (_useToday) {
         // 장중/마감후: chg(네이버) 메인 + prevChg 보조
         mainVal = chg !== null ? chg : prevChg;
         if (chg !== null && prevChg !== null) {
@@ -1500,10 +1522,12 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     });
 
     // 헤더 안내 (갱신 시각 포함)
-    const validCount = sorted.filter(s => (_isKrTradingDay ? s.chg : s.prevChg) !== null).length;
-    const modeLabel  = _isKrTradingDay
-      ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
-      : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
+    const validCount = sorted.filter(s => (_useToday ? s.chg : s.prevChg) !== null).length;
+    const modeLabel  = _usePrev
+      ? ('총 '+sorted.length+'개 종목 · '+prevDate+' 기준 · 종목 등락률은 E열 최근 확정값')
+      : _useToday
+        ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
+        : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
     const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
     body.innerHTML = header + html;
@@ -2198,8 +2222,8 @@ document.getElementById('us-stats').innerHTML=
 +(_usMx?'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최고/최저 섹터</div>'
 +'<div style="display:flex;gap:8px">'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+(_usMx.v>=0?_usMx.v.toFixed(2):_usMx.v.toFixed(2))+'%</div><div class="sp-stat-click" data-sector="'+_usMx.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usMx.name+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usMn.v>=0?'+':'')+_usMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMn.name+'" data-market="us" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usMn.name+'</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+(_usMx.v>=0?_usMx.v.toFixed(2):_usMx.v.toFixed(2))+'%</div><div class="sp-stat-click" data-sector="'+_usMx.name+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usMx.name+'</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(239,83,80,.2);background:rgba(239,83,80,.04)"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usMn.v>=0?'+':'')+_usMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMn.name+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usMn.name+'</div></div>'
 +'</div></div>':'')+'</div>';
 }
 
