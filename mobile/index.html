@@ -5356,38 +5356,18 @@ document.addEventListener('click', function(e) {
 //  PWA 초기화 & 모바일 기능
 // ═══════════════════════════════════════════════════════════════
 
-// ── Service Worker 등록 ────────────────────────────────────────
-// ── 구버전 캐시 강제 삭제 ──
+// ── Service Worker 완전 비활성화 (캐시 영향 배제용) ────────────
+// ★ 테스트 중: SW 및 모든 캐시 강제 삭제
 if ('caches' in window) {
   caches.keys().then(function(names) {
-    names.forEach(function(name) {
-      if (name.includes('sst-') && !name.includes('-v2')) {
-        caches.delete(name);
-        console.log('[Cache] 구버전 삭제:', name);
-      }
-    });
+    names.forEach(function(name) { caches.delete(name); });
   });
 }
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => {
-        console.log('[SW] 등록 완료:', reg.scope);
-        // 새 버전 감지 → 자동 업데이트
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-            }
-          });
-        });
-      })
-      .catch(err => console.warn('[SW] 등록 실패:', err));
-
-    // 새 SW 활성화 시 페이지 새로고침
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) {
+      reg.unregister();
+      console.log('[SW] 강제 해제:', reg.scope);
     });
   });
 }
