@@ -2063,7 +2063,17 @@ scales:{
 x:{ticks:{color:'#8fa8c8',font:{size:9,family:"'JetBrains Mono',monospace"},maxRotation:45,autoSkip:true,maxTicksLimit:15},
 grid:{color:'#1e2535'},border:{color:'#3a4a65'}},
 y:{ticks:{color:'#8fa8c8',font:{size:9,family:"'JetBrains Mono',monospace"},callback:v=>v.toFixed(1)+'%'},
-grid:{color:'rgba(46,58,80,0.5)'},border:{color:'#3a4a65'}}
+grid:{
+  color:function(ctx){
+    if(ctx.tick&&ctx.tick.value===0) return 'rgba(200,216,238,0.55)'; // 0% 라인: 진하게
+    return 'rgba(46,58,80,0.25)'; // 나머지: 흐리게
+  },
+  lineWidth:function(ctx){
+    if(ctx.tick&&ctx.tick.value===0) return 1.5; // 0% 라인: 굵게
+    return 0.5; // 나머지: 가늘게
+  }
+},
+border:{color:'#3a4a65'}}
 }
 };
 
