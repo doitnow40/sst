@@ -4037,6 +4037,7 @@ const d=await api('kr_today',0);
 S.krToday=d;
 const n=document.getElementById('kr-today-notice');
 if(n&&d.date) n.style.display='';
+updateRealtimeTime();
 renderKr();
 }catch(e){}
 if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
@@ -4049,6 +4050,7 @@ const d=await api('us_watch_today',0);
 S.usToday=d;
 const n=document.getElementById('us-today-notice');
 if(n&&d.date) n.style.display='';
+updateRealtimeTime();
 renderUs();
 }catch(e){}
 if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
