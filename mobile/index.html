@@ -2227,6 +2227,27 @@ const CHART_COLORS=[
 ];
 // 모바일 여부 감지 헬퍼 (480px 기준)
 function _isMobile(){ return window.innerWidth<=480; }
+// ★ Chart.js grid 콜백 — JSON.stringify 복사 후 재적용용
+function _chartGridColor(ctx){
+  if(ctx.tick&&ctx.tick.value===0) return 'rgba(200,216,238,0.6)';
+  return 'rgba(46,58,80,0.22)';
+}
+function _chartGridWidth(ctx){
+  if(ctx.tick&&ctx.tick.value===0) return 1.5;
+  return 0.5;
+}
+function _chartGridDash(ctx){
+  if(ctx.tick&&ctx.tick.value===0) return [];
+  return [3,3];
+}
+function _applyChartGrid(opts){
+  if(opts&&opts.scales&&opts.scales.y){
+    opts.scales.y.grid.color=_chartGridColor;
+    opts.scales.y.grid.lineWidth=_chartGridWidth;
+    opts.scales.y.grid.borderDash=_chartGridDash;
+  }
+  return opts;
+}
 const CHART_OPTS_BASE={
 responsive:true,maintainAspectRatio:false,
 interaction:{mode:'index',intersect:false},
@@ -2985,7 +3006,7 @@ borderWidth:isMainIndex?2.5:1.5,pointRadius:isMainIndex?3:2,pointHoverRadius:6,
 tension:0.3,fill:false,spanGaps:true,order:isMainIndex?0:1,
 hidden:!top5.has(name)};
 });
-const usOpts=JSON.parse(JSON.stringify(CHART_OPTS_BASE));
+const usOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
 usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
 // JSON 딥카피로 소실된 함수 복원
 usOpts.plugins.legend.labels.filter=function(legendItem){ return _isMobile() ? !legendItem.hidden : true; };
@@ -3568,7 +3589,7 @@ var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
 var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
-var opts=JSON.parse(JSON.stringify(CHART_OPTS_BASE)); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE))); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
 opts.plugins.legend.labels.filter=function(legendItem){ return _isMobile() ? !legendItem.hidden : true; };
 opts.plugins.legend.onClick=CHART_OPTS_BASE.plugins.legend.onClick;
 usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
@@ -4088,8 +4109,12 @@ _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.
 }
 const spans=[];let pg=null,gs=0;
 sh.forEach((h,i)=>{const g=(US_META[h]?.group)||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
+// ★ renderUsTableOnly 단독 호출 시에도 _usGroupBorderCols 재계산
+window._usGroupBorderCols=new Set();
+{let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
+window._krGroupBorderCols=window._usGroupBorderCols;
 let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3)">${gg.label}</th>`;});
+spans.forEach(({g,n},si)=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};const _bdr=si>0?'border-left:3px solid #000;':'';t+=`<th colspan="${n}" style="${_bdr}background:${gg.bg};color:${gg.fg};text-align:left;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3)">${gg.label}</th>`;});
 t+='</tr><tr><th>Date</th>';
 sh.forEach((h,_mThi2)=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};const isW=US_WATCHED_SECTORS.has(h);const _mBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_mThi2))?'border-left:3px solid #000;':'';t+=`<th class="${isW?'watched-col':''} sector-clickable" style="${_mBdr}width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}</th>`;});
 t+='</tr>'
