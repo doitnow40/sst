@@ -409,9 +409,13 @@ async def main():
                 else: bucket['s'] += 1
         market_breadth = {}
         if _kr['r'] + _kr['f'] > 0:
-            market_breadth['코스피'] = {'rise': _kr['r'], 'fall': _kr['f'], 'same': _kr['s']}
+            _kr_tot = _kr['r'] + _kr['f'] + _kr['s']
+            market_breadth['코스피'] = {'rise': _kr['r'], 'fall': _kr['f'], 'same': _kr['s'],
+                                        'total': _kr_tot, 'estimated': True}  # 관심종목 기준
         if _kd['r'] + _kd['f'] > 0:
-            market_breadth['코스닥'] = {'rise': _kd['r'], 'fall': _kd['f'], 'same': _kd['s']}
+            _kd_tot = _kd['r'] + _kd['f'] + _kd['s']
+            market_breadth['코스닥'] = {'rise': _kd['r'], 'fall': _kd['f'], 'same': _kd['s'],
+                                         'total': _kd_tot, 'estimated': True}  # 관심종목 기준
         if market_breadth:
             print(f'  → 시장폭(관심종목): 코스피 상승{_kr["r"]}/하락{_kr["f"]}, 코스닥 상승{_kd["r"]}/하락{_kd["f"]}')
 
