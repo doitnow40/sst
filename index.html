@@ -1371,7 +1371,33 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       }
       const meta = US_META[sectorName] || {};
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-      const _usIsPrevMode = !!(prevDate); // 최근 영업일 박스 클릭 여부
+      const _usIsPrevMode = !!(prevDate);
+      // ★ 채권 섹터(장기채권/단기채권/하이일드): 종목 팝업 대신 설명 표시
+      const _bondInfo = {
+        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리입니다.<br>값이 높을수록 시장이 인플레이션·성장을 높게 전망한다는 신호입니다.', source:'CBOE: INDEXCBOE:TNX', link:'https://finance.yahoo.com/quote/%5ETNX/' },
+        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준(Fed) 기준금리 정책에 가장 민감하게 반응하는 금리입니다.<br>장단기 스프레드(10년 - 2년) 계산에 주로 활용됩니다.', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://finance.yahoo.com/quote/%5ETWOYEAR/' },
+        '하이일드': { title:'📊 하이일드 스프레드 (OAS)', desc:'하이일드(고수익) 회사채와 미국 국채 간 금리 차이(스프레드)입니다.<br>값이 높을수록 신용위험이 크고, 낮을수록 시장이 안정적임을 의미합니다.', source:'FRED: BAMLH0A0HYM2 (ICE BofA US HY Index OAS)', link:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
+      };
+      if (_bondInfo[sectorName]) {
+        const _bi = _bondInfo[sectorName];
+        avgEl.textContent = '';
+        const _histVal = S.usD && S.usD.headers && S.usD.rows && S.usD.rows.length > 0
+          ? (()=>{ const hi=S.usD.headers.indexOf(sectorName); return hi>=0?parseFloat(S.usD.rows[0][hi]):NaN; })()
+          : NaN;
+        if (!isNaN(_histVal)) {
+          avgEl.textContent = _histVal.toFixed(3) + '%';
+          avgEl.style.color = '#cfd8dc';
+        }
+        body.innerHTML = `<div style="padding:16px">
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">${_bi.title}</div>
+          <div style="font-size:11px;color:#8a9ab5;line-height:1.7;margin-bottom:12px">${_bi.desc}</div>
+          <div style="font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px">
+            📌 데이터 출처: ${_bi.source}<br>
+            <a href="${_bi.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:none">🔗 원본 데이터 보기 →</a>
+          </div>
+        </div>`;
+        return;
+      } // 최근 영업일 박스 클릭 여부
       // 관심종목 리스트 (S.usWatchL 기반)
       let stocksHtml = '';
       // usWatchStocks(KV) 우선, 없으면 usWatchL(GAS) fallback
@@ -2368,12 +2394,15 @@ if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).
   var _adrDak = (adrdakV!==null && !isNaN(adrdakV)) ? adrdakV : (todayMap['ADR닥']!==undefined ? parseFloat(todayMap['ADR닥']) : null);
   if(_adrPi!==null && !isNaN(_adrPi) && _adrDak!==null && !isNaN(_adrDak)){
     // ADR = (상승/하락)*100, KOSPI≈950, KOSDAQ≈1700
+    // ★ ADR을 소수점 1자리로 고정하여 역산 결과 안정화
     var _kospiTotal=950, _kosdaqTotal=1700;
-    var _kospiNeu=Math.round(_kospiTotal*0.05);
-    var _kospiDnCalc=Math.round((_kospiTotal-_kospiNeu)/(1+_adrPi/100));
+    var _adrPiFixed=Math.round(_adrPi*10)/10;   // e.g. 77.94
+    var _adrDakFixed=Math.round(_adrDak*10)/10;  // e.g. 71.55
+    var _kospiNeu=Math.round(_kospiTotal*0.05);   // 고정 47
+    var _kospiDnCalc=Math.floor((_kospiTotal-_kospiNeu)/(1+_adrPiFixed/100));
     var _kospiUpCalc=_kospiTotal-_kospiNeu-_kospiDnCalc;
-    var _kosdaqNeu=Math.round(_kosdaqTotal*0.05);
-    var _kosdaqDnCalc=Math.round((_kosdaqTotal-_kosdaqNeu)/(1+_adrDak/100));
+    var _kosdaqNeu=Math.round(_kosdaqTotal*0.05);  // 고정 85
+    var _kosdaqDnCalc=Math.floor((_kosdaqTotal-_kosdaqNeu)/(1+_adrDakFixed/100));
     var _kosdaqUpCalc=_kosdaqTotal-_kosdaqNeu-_kosdaqDnCalc;
     _adCnt.kospi={up:Math.max(0,_kospiUpCalc),dn:Math.max(0,_kospiDnCalc),neu:_kospiNeu};
     _adCnt.kosdaq={up:Math.max(0,_kosdaqUpCalc),dn:Math.max(0,_kosdaqDnCalc),neu:_kosdaqNeu};
