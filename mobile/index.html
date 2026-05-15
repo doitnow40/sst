@@ -1030,8 +1030,8 @@ font-size:11px;color:var(--accent-kr);font-family:var(--font-mono)">
 <div id="stock-manual-inputs" style="display:flex;gap:6px;flex:1">
 <select class="admin-input" id="new-stock-market" style="flex:1;cursor:pointer">
 <option value="">시장 선택</option>
-<option value="KOSPI">KOSPI</option>
-<option value="KOSDAQ">KOSDAQ</option>
+<option value="KOSPI">코스피</option>
+<option value="KOSDAQ">코스닥</option>
 </select>
 <input class="admin-input" id="new-stock-code" placeholder="종목코드 (예: 005930)" style="flex:1.5"
 oninput="onManualCodeInput()">
@@ -1989,19 +1989,30 @@ renderKr();
 
 async function triggerActionsNow(){
   const btn=document.getElementById('trigger-actions-btn');
-  if(btn){btn.disabled=true;btn.style.opacity='0.5';}
+  const origText=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.style.opacity='0.7';}
   try{
     const d=await api('trigger_actions',0);
     if(d&&d.cooldown){
-const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
-const ss=String(d.remain%60).padStart(2,'0');
-alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 [새로고침] 버튼을 눌러 확인해 보세요.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');}
-    else if(d&&d.ok) alert('✅ '+d.message+'\n약 30초 후 새로고침 버튼을 누르세요.');
-    else alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.');
+      const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
+      const ss=String(d.remain%60).padStart(2,'0');
+      alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 화면이 자동 갱신됩니다.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');
+      if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origText;}
+    } else if(d&&d.ok){
+      let remain=30;
+      alert('✅ 수집 요청 완료!\n\n30초 후 화면이 자동으로 새로고침됩니다.');
+      const cd=setInterval(()=>{
+        remain--;
+        if(btn) btn.innerHTML='<span>'+remain+'초 후 갱신</span>';
+        if(remain<=0){clearInterval(cd);if(btn){btn.innerHTML=origText;btn.disabled=false;btn.style.opacity='1';}refreshAllData();}
+      },1000);
+    } else {
+      alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.');
+      if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origText;}
+    }
   }catch(e){
     alert('❌ 실패: '+e.message);
-  }finally{
-    if(btn){btn.disabled=false;btn.style.opacity='1';}
+    if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origText;}
   }
 }
 
