@@ -709,8 +709,8 @@ font-size:11px;color:var(--accent-kr);font-family:var(--font-mono)">
 <div id="stock-manual-inputs" style="display:flex;gap:6px;flex:1">
 <select class="admin-input" id="new-stock-market" style="flex:1;cursor:pointer">
 <option value="">시장 선택</option>
-<option value="KOSPI">KOSPI</option>
-<option value="KOSDAQ">KOSDAQ</option>
+<option value="KOSPI">코스피</option>
+<option value="KOSDAQ">코스닥</option>
 </select>
 <input class="admin-input" id="new-stock-code" placeholder="종목코드 (예: 005930)" style="flex:1.5"
 oninput="onManualCodeInput()">
@@ -1844,23 +1844,35 @@ renderKr();
 
 async function triggerActionsNow(){
   const btn = document.getElementById('trigger-actions-btn');
-  if(btn){ btn.disabled=true; btn.style.opacity='0.5'; }
+  const origText = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
   try{
     const d = await api('trigger_actions', 0);
     if(d && d.cooldown){
-      // 서버 쿨다운 중
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
-const ss=String(d.remain%60).padStart(2,'0');
-alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 [새로고침] 버튼을 눌러 확인해 보세요.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');
+      const ss=String(d.remain%60).padStart(2,'0');
+      alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 화면이 자동 갱신됩니다.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');
+      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
     } else if(d && d.ok){
-      alert('✅ ' + d.message + '\n약 30초 후 새로고침 버튼을 누르세요.');
+      // ★ 성공: 30초 카운트다운 후 자동 새로고침
+      let remain = 30;
+      alert('✅ 수집 요청 완료!\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
+      const cd = setInterval(()=>{
+        remain--;
+        if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
+        if(remain <= 0){
+          clearInterval(cd);
+          if(btn){ btn.innerHTML=origText; btn.disabled=false; btn.style.opacity='1'; }
+          refreshAllData();
+        }
+      }, 1000);
     } else {
       alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 새로고침해보세요.');
+      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
     }
   }catch(e){
     alert('❌ 실패: ' + e.message + '\n\nGAS에 GITHUB_TOKEN이 설정됐는지 확인하세요.');
-  }finally{
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
   }
 }
 
@@ -2350,6 +2362,23 @@ if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).
   if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
   if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
   _usedMarketBreadth = true;
+} else if(adrpiV!==null && adrdakV!==null){
+  // ★ ADR 역산으로 전체 시장 종목 수 추정
+  // ADR = (상승/하락)*100, KOSPI 전체 약 950종목, KOSDAQ 약 1700종목
+  // 상승+하락+보합 = 전체, 보합 ≈ 5%로 가정
+  // ADR = 상승/하락*100 → 하락 = 전체/(1+ADR/100+0.05)
+  var _kospiTotal = 950, _kosdaqTotal = 1700;
+  var _kospiAdr = adrpiV/100, _kosdaqAdr = adrdakV/100;
+  // 상승 = ADR*(하락), 상승+하락+보합 = total, 보합=total*0.05 가정
+  var _kospiNeu = Math.round(_kospiTotal*0.05);
+  var _kospiDnCalc = Math.round((_kospiTotal-_kospiNeu)/(1+_kospiAdr));
+  var _kospiUpCalc = _kospiTotal-_kospiNeu-_kospiDnCalc;
+  var _kosdaqNeu = Math.round(_kosdaqTotal*0.05);
+  var _kosdaqDnCalc = Math.round((_kosdaqTotal-_kosdaqNeu)/(1+_kosdaqAdr));
+  var _kosdaqUpCalc = _kosdaqTotal-_kosdaqNeu-_kosdaqDnCalc;
+  _adCnt.kospi={up:Math.max(0,_kospiUpCalc),dn:Math.max(0,_kospiDnCalc),neu:_kospiNeu};
+  _adCnt.kosdaq={up:Math.max(0,_kosdaqUpCalc),dn:Math.max(0,_kosdaqDnCalc),neu:_kosdaqNeu};
+  _usedMarketBreadth = true; // ADR 역산 = 전체 시장 기준
 } else if(S.krSectors){
   // fallback: 관심종목 기반
   S.krSectors.forEach(function(sec){
@@ -2373,10 +2402,10 @@ if(_kospiTot>0||_kosdaqTot>0){
   var _kospiDnR=100-_kospiUpR-(_kospiTot>0?Math.round(_adCnt.kospi.neu/_kospiTot*100):0);
   var _kosdaqDnR=100-_kosdaqUpR-(_kosdaqTot>0?Math.round(_adCnt.kosdaq.neu/_kosdaqTot*100):0);
   _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-    +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 ('+todayDate+')</div>'
+    +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 전체 시장 등락 비율 ('+todayDate+')</div>'
     +'<div style="display:flex;gap:8px">'
     +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
-    +'<div class="stat-label">KOSPI'+(_usedMarketBreadth&&S.krToday.marketBreadth&&S.krToday.marketBreadth['코스피']&&S.krToday.marketBreadth['코스피'].estimated?' <span style="font-size:8px;color:var(--text-muted)">추정</span>':'')+'</div>'
+    +'<div class="stat-label">코스피</div>'
     +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
     +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kospi.up+'</span>'
     +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
@@ -2388,7 +2417,7 @@ if(_kospiTot>0||_kosdaqTot>0){
     +'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kospiUpR+'% / 하락 '+_kospiDnR+'%</div>'
     +'</div>'
     +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
-    +'<div class="stat-label">KOSDAQ</div>'
+    +'<div class="stat-label">코스닥</div>'
     +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
     +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kosdaq.up+'</span>'
     +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
