@@ -2388,39 +2388,7 @@ if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).
   if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
   if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
   _usedMarketBreadth = true;
-} else {
-  // ★ ADR 역산: adrpiV 없으면 todayMap에서 직접 읽기
-  var _adrPi  = (adrpiV!==null && !isNaN(adrpiV))  ? adrpiV  : (todayMap['ADR피']!==undefined  ? parseFloat(todayMap['ADR피'])  : null);
-  var _adrDak = (adrdakV!==null && !isNaN(adrdakV)) ? adrdakV : (todayMap['ADR닥']!==undefined ? parseFloat(todayMap['ADR닥']) : null);
-  if(_adrPi!==null && !isNaN(_adrPi) && _adrDak!==null && !isNaN(_adrDak)){
-    // ADR = (상승/하락)*100, KOSPI≈950, KOSDAQ≈1700
-    // ★ ADR을 소수점 1자리로 고정하여 역산 결과 안정화
-    var _kospiTotal=950, _kosdaqTotal=1700;
-    var _adrPiFixed=Math.round(_adrPi*10)/10;   // e.g. 77.94
-    var _adrDakFixed=Math.round(_adrDak*10)/10;  // e.g. 71.55
-    var _kospiNeu=Math.round(_kospiTotal*0.05);   // 고정 47
-    var _kospiDnCalc=Math.floor((_kospiTotal-_kospiNeu)/(1+_adrPiFixed/100));
-    var _kospiUpCalc=_kospiTotal-_kospiNeu-_kospiDnCalc;
-    var _kosdaqNeu=Math.round(_kosdaqTotal*0.05);  // 고정 85
-    var _kosdaqDnCalc=Math.floor((_kosdaqTotal-_kosdaqNeu)/(1+_adrDakFixed/100));
-    var _kosdaqUpCalc=_kosdaqTotal-_kosdaqNeu-_kosdaqDnCalc;
-    _adCnt.kospi={up:Math.max(0,_kospiUpCalc),dn:Math.max(0,_kospiDnCalc),neu:_kospiNeu};
-    _adCnt.kosdaq={up:Math.max(0,_kosdaqUpCalc),dn:Math.max(0,_kosdaqDnCalc),neu:_kosdaqNeu};
-    _usedMarketBreadth=true;
-  } else if(S.krSectors){
-  // fallback: 관심종목 기반
-  S.krSectors.forEach(function(sec){
-    if(!sec.stocks) return;
-    sec.stocks.forEach(function(st){
-      var chg=parseFloat(st.chg);
-      var tkr=String(st.ticker||'').toUpperCase();
-      var mkt=tkr.indexOf('KOSDAQ')>=0?'kosdaq':'kospi';
-      if(isNaN(chg)||chg===0) _adCnt[mkt].neu++;
-      else if(chg>0) _adCnt[mkt].up++;
-      else _adCnt[mkt].dn++;
-    });
-  });
-  }
+// marketBreadth 없으면 박스 미표시 (ADR 역산 제거)
 }
 var _kospiTot=_adCnt.kospi.up+_adCnt.kospi.dn+_adCnt.kospi.neu;
 var _kosdaqTot=_adCnt.kosdaq.up+_adCnt.kosdaq.dn+_adCnt.kosdaq.neu;
