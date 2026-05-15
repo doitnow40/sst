@@ -1569,6 +1569,32 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     if (!isKr) {
       const meta = (typeof US_META !== 'undefined' && US_META[sectorName]) ? US_META[sectorName] : null;
       const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+      // ★ 채권 섹터 설명 팝업
+      const _bondInfoM = {
+        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리.\n금리 상승 = 성장·인플레 기대 신호', source:'CBOE: INDEXCBOE:TNX', link:'https://finance.yahoo.com/quote/%5ETNX/' },
+        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준 정책금리에 가장 민감한 금리.\n장단기 스프레드 계산에 활용', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://finance.yahoo.com/quote/%5ETWOYEAR/' },
+        '하이일드': { title:'📊 하이일드 스프레드 (OAS)', desc:'하이일드 회사채와 국채 간 금리 차이.\n높을수록 신용위험 큼', source:'FRED: BAMLH0A0HYM2', link:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
+      };
+      if (_bondInfoM[sectorName]) {
+        const _bim = _bondInfoM[sectorName];
+        const _hiM = S.usD && S.usD.headers && S.usD.rows && S.usD.rows.length > 0
+          ? (()=>{ const hi=S.usD.headers.indexOf(sectorName); return hi>=0?parseFloat(S.usD.rows[0][hi]):NaN; })()
+          : NaN;
+        wh = `<div style="padding:14px">
+          <div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:6px">${_bim.title}</div>
+          ${!isNaN(_hiM)?'<div style="font-size:20px;font-weight:700;color:#cfd8dc;margin-bottom:8px">'+_hiM.toFixed(3)+'%</div>':''}
+          <div style="font-size:10px;color:#8a9ab5;line-height:1.7;margin-bottom:10px">${_bim.desc}</div>
+          <div style="font-size:9px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:8px">
+            📌 ${_bim.source}<br>
+            <a href="${_bim.link}" target="_blank" style="color:#4fc3f7">🔗 원본 데이터 보기 →</a>
+          </div></div>`;
+        document.getElementById('sp-popup-body').innerHTML = wh;
+        document.getElementById('sp-popup-title').textContent = sectorName;
+        document.getElementById('sp-popup-avg').textContent = !isNaN(_hiM)?_hiM.toFixed(3)+'%':'';
+        document.getElementById('sp-popup-flag').textContent = '🇺🇸';
+        document.getElementById('sp-popup-overlay').style.display = 'flex';
+        return;
+      }
       const usTodayVal = usTodayMap[sectorName];
       const usPrevMap = (S.usD && S.usD.rows && S.usD.rows[0]) ? S.usD.rows[0] : null;
       const usHeaders = S.usD ? S.usD.headers : [];
@@ -2475,9 +2501,10 @@ document.getElementById('kr-stats').innerHTML=
   var _adrDakM=(adrdakV!==null&&!isNaN(adrdakV))?adrdakV:(todayMap['ADR닥']!==undefined?parseFloat(todayMap['ADR닥']):null);
   if(_adrPiM===null||isNaN(_adrPiM)||_adrDakM===null||isNaN(_adrDakM)) return '';
   var _kpT=950,_kqT=1700;
+  var _adrPiMF=Math.round(_adrPiM*10)/10,_adrDakMF=Math.round(_adrDakM*10)/10;
   var _kpN=Math.round(_kpT*0.05),_kqN=Math.round(_kqT*0.05);
-  var _kpDn=Math.round((_kpT-_kpN)/(1+_adrPiM/100)),_kpUp=_kpT-_kpN-_kpDn;
-  var _kqDn=Math.round((_kqT-_kqN)/(1+_adrDakM/100)),_kqUp=_kqT-_kqN-_kqDn;
+  var _kpDn=Math.floor((_kpT-_kpN)/(1+_adrPiMF/100)),_kpUp=_kpT-_kpN-_kpDn;
+  var _kqDn=Math.floor((_kqT-_kqN)/(1+_adrDakMF/100)),_kqUp=_kqT-_kqN-_kqDn;
   var _kpUpR=Math.round(_kpUp/_kpT*100),_kqUpR=Math.round(_kqUp/_kqT*100);
   var _kpDnR=100-_kpUpR-Math.round(_kpN/_kpT*100),_kqDnR=100-_kqUpR-Math.round(_kqN/_kqT*100);
   return '<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
