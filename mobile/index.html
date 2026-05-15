@@ -2507,7 +2507,7 @@ document.getElementById('kr-stats').innerHTML=
   var _kpUpR=Math.round(_kpUp/_kpTot*100),_kpDnR=Math.round(_kpDn/_kpTot*100);
   var _kqUpR=Math.round(_kqUp/_kqTot*100),_kqDnR=Math.round(_kqDn/_kqTot*100);
   return '<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-  +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 전체 시장 등락 비율 ('+todayDate+')</div>'
+  +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'+'<div style="font-size:8px;color:var(--text-muted);margin-bottom:4px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
   +'<div style="display:flex;gap:8px">'
   +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)"><div class="stat-label">코스피</div>'
   +'<div style="display:flex;gap:3px;align-items:baseline;margin:2px 0"><span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#ef5350">'+_kpUp+'</span><span style="font-size:8px;color:var(--text-muted)">상승</span>'
