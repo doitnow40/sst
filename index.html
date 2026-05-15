@@ -1178,7 +1178,7 @@ function _renderFnGPopup(score, history, latestDate) {
   const gaugeHtml = `
   <div style="text-align:center;padding:24px 0 10px">
     <div style="font-size:9px;color:var(--accent-kr);font-family:var(--font-mono);margin-bottom:6px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);border-radius:4px;padding:2px 8px;display:inline-block">${latestDate?latestDate+' 기준 (확정값)':'-- 기준'}</div>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">KOSPI · KOSDAQ</div>
+    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">코스피 · KOSDAQ</div>
     <div style="position:relative;width:200px;height:110px;margin:0 auto">
       <svg viewBox="0 0 200 105" width="200" height="105" style="overflow:visible">
         <defs>
@@ -2256,7 +2256,7 @@ document.getElementById('us-stats').innerHTML=
 +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">VIX</div><div class="stat-val" style="color:'+vxCT+'">'+vxFmtT+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmtT+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2FmtT+'</div><div class="stat-sub">수익률</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygCT+'">'+hygFmtT+'</div><div class="stat-sub">OAS</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygCT+'">'+hygFmtT+'</div><div class="stat-sub">신용위험</div></div>'
 +'</div></div>':'')
 // ── 박스2: 최근 영업일
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
@@ -2362,24 +2362,23 @@ if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).
   if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
   if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
   _usedMarketBreadth = true;
-} else if(adrpiV!==null && adrdakV!==null){
-  // ★ ADR 역산으로 전체 시장 종목 수 추정
-  // ADR = (상승/하락)*100, KOSPI 전체 약 950종목, KOSDAQ 약 1700종목
-  // 상승+하락+보합 = 전체, 보합 ≈ 5%로 가정
-  // ADR = 상승/하락*100 → 하락 = 전체/(1+ADR/100+0.05)
-  var _kospiTotal = 950, _kosdaqTotal = 1700;
-  var _kospiAdr = adrpiV/100, _kosdaqAdr = adrdakV/100;
-  // 상승 = ADR*(하락), 상승+하락+보합 = total, 보합=total*0.05 가정
-  var _kospiNeu = Math.round(_kospiTotal*0.05);
-  var _kospiDnCalc = Math.round((_kospiTotal-_kospiNeu)/(1+_kospiAdr));
-  var _kospiUpCalc = _kospiTotal-_kospiNeu-_kospiDnCalc;
-  var _kosdaqNeu = Math.round(_kosdaqTotal*0.05);
-  var _kosdaqDnCalc = Math.round((_kosdaqTotal-_kosdaqNeu)/(1+_kosdaqAdr));
-  var _kosdaqUpCalc = _kosdaqTotal-_kosdaqNeu-_kosdaqDnCalc;
-  _adCnt.kospi={up:Math.max(0,_kospiUpCalc),dn:Math.max(0,_kospiDnCalc),neu:_kospiNeu};
-  _adCnt.kosdaq={up:Math.max(0,_kosdaqUpCalc),dn:Math.max(0,_kosdaqDnCalc),neu:_kosdaqNeu};
-  _usedMarketBreadth = true; // ADR 역산 = 전체 시장 기준
-} else if(S.krSectors){
+} else {
+  // ★ ADR 역산: adrpiV 없으면 todayMap에서 직접 읽기
+  var _adrPi  = (adrpiV!==null && !isNaN(adrpiV))  ? adrpiV  : (todayMap['ADR피']!==undefined  ? parseFloat(todayMap['ADR피'])  : null);
+  var _adrDak = (adrdakV!==null && !isNaN(adrdakV)) ? adrdakV : (todayMap['ADR닥']!==undefined ? parseFloat(todayMap['ADR닥']) : null);
+  if(_adrPi!==null && !isNaN(_adrPi) && _adrDak!==null && !isNaN(_adrDak)){
+    // ADR = (상승/하락)*100, KOSPI≈950, KOSDAQ≈1700
+    var _kospiTotal=950, _kosdaqTotal=1700;
+    var _kospiNeu=Math.round(_kospiTotal*0.05);
+    var _kospiDnCalc=Math.round((_kospiTotal-_kospiNeu)/(1+_adrPi/100));
+    var _kospiUpCalc=_kospiTotal-_kospiNeu-_kospiDnCalc;
+    var _kosdaqNeu=Math.round(_kosdaqTotal*0.05);
+    var _kosdaqDnCalc=Math.round((_kosdaqTotal-_kosdaqNeu)/(1+_adrDak/100));
+    var _kosdaqUpCalc=_kosdaqTotal-_kosdaqNeu-_kosdaqDnCalc;
+    _adCnt.kospi={up:Math.max(0,_kospiUpCalc),dn:Math.max(0,_kospiDnCalc),neu:_kospiNeu};
+    _adCnt.kosdaq={up:Math.max(0,_kosdaqUpCalc),dn:Math.max(0,_kosdaqDnCalc),neu:_kosdaqNeu};
+    _usedMarketBreadth=true;
+  } else if(S.krSectors){
   // fallback: 관심종목 기반
   S.krSectors.forEach(function(sec){
     if(!sec.stocks) return;
@@ -2392,6 +2391,7 @@ if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).
       else _adCnt[mkt].dn++;
     });
   });
+  }
 }
 var _kospiTot=_adCnt.kospi.up+_adCnt.kospi.dn+_adCnt.kospi.neu;
 var _kosdaqTot=_adCnt.kosdaq.up+_adCnt.kosdaq.dn+_adCnt.kosdaq.neu;
