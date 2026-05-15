@@ -2003,9 +2003,13 @@ document.getElementById('kr-table').innerHTML=
 async function loadKrToday(){
 try{
 const d=await api('kr_today',0);
-if(!d.noTrading && Object.keys(d.sectors||{}).length > 0){
+if(!d.noTrading && (
+  Object.keys(d.sectors||{}).length > 0 ||
+  Object.keys(d.majorIndex||{}).length > 0 ||
+  Object.keys(d.marketBreadth||{}).length > 0
+)){
 S.krToday=d;
-updateRealtimeTime();
+if(Object.keys(d.sectors||{}).length > 0) updateRealtimeTime();
 } else {
 S.krToday=null;
 }
@@ -2424,6 +2428,18 @@ document.getElementById('us-stats').innerHTML=
 
 function _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,isMarketOpen){
 if(!f||!f.length)return;
+// ★ 시간대 판단
+var _nowKST=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+var _kstDow=_nowKST.getDay(); // 0=일,6=토
+var _kstMin=_nowKST.getHours()*60+_nowKST.getMinutes();
+var _kstIsWeekend=(_kstDow===0||_kstDow===6);
+var _kstMarketOpen=!_kstIsWeekend&&_kstMin>=540&&_kstMin<930;  // 09:00~15:30
+var _kstAfterClose=!_kstIsWeekend&&_kstMin>=930&&_kstMin<1440; // 15:30~24:00
+var _kstPreMarket =!_kstIsWeekend&&_kstMin<540;                // 00:00~09:00
+// 오늘 데이터 표시 여부
+// 장중: 실시간값, 장마감후: 마지막값 유지(00:00까지), 장전/주말: '오늘 데이터 없음'
+var _showTodayData=_kstMarketOpen||_kstAfterClose; // 장중 or 장마감후(평일)
+var _noDataReason=_kstIsWeekend?'주말':(_kstPreMarket?'장전 (09:00 이후 표시)':null);
 // ★ 최근 영업일: 장중/장마감 무관하게 항상 직전 영업일(f[1]) 표시
 //   GAS 시트는 영업일만 기록하므로 f[1]이 곧 가장 최근 직전 영업일
 //   f[1]이 없으면(데이터 부족) f[0]으로 fallback
@@ -2473,22 +2489,43 @@ var fngEl=document.getElementById('kr-fng-stat-wrap');if(fngEl)fngEl.style.displ
 // ── 순서: 오늘 주요지표 → 오늘 섹터 → 최근 영업일 → 등록 정보 ──
 document.getElementById('kr-stats').innerHTML=
 '<div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">'
-// ① 오늘 주요 지표 박스
-+'<div style="border:1px solid rgba(79,195,247,.35);border-radius:10px;padding:10px 14px;background:rgba(79,195,247,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--accent-kr);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 주요 지표 ('+todayLabelDate+')</div>'
-+'<div style="display:flex;gap:6px;align-items:stretch">'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스피</div><div class="stat-val '+kospiF.cls+'">'+kospiF.t+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스닥</div><div class="stat-val '+kosdaqF.cls+'">'+kosdaqF.t+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR피</div><div class="stat-val neu">'+adrpiF.t+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR닥</div><div class="stat-val neu">'+adrdakF.t+'</div></div>'
-+(fngInfo?'<div class="'+sc+'" style="flex:1;border-color:rgba(232,218,239,.35);background:rgba(232,218,239,.05);cursor:pointer" onclick="openFnGPopup()" title="F&G 지수 보기"><div class="stat-label">🧭 F&G</div><div class="stat-val" style="color:'+fngInfo.color+'">'+fngInfo.score+'</div><div class="stat-sub" style="color:'+fngInfo.color+'">'+fngInfo.label+'</div></div>':'<div class="'+sc+'" style="flex:1;border-color:rgba(232,218,239,.2)"><div class="stat-label">🧭 F&G</div><div class="stat-val neu">-</div></div>')
-+'</div></div>'
-// ② 오늘 섹터 박스 (hasTodayStats일 때만)
-+(hasTodayStats?'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">전체 섹터평균</div><div class="stat-val '+(tUp?'up':'dn')+'">'+(tUp?'+':'')+tAvg+'%</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;text-decoration:underline dotted" title="종목 보기">'+tMnN+'</div></div></div></div>':'')
+// ① 오늘 주요 지표 박스 (시간대별)
++(function(){
+  var _kpiInner='';
+  if(_showTodayData){
+    if(kospiV!==null||kosdaqV!==null){
+      _kpiInner='<div style="display:flex;gap:6px;align-items:stretch">'
+        +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스피</div><div class="stat-val '+kospiF.cls+'">'+kospiF.t+'</div></div>'
+        +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스닥</div><div class="stat-val '+kosdaqF.cls+'">'+kosdaqF.t+'</div></div>'
+        +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR피</div><div class="stat-val neu">'+adrpiF.t+'</div></div>'
+        +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR닥</div><div class="stat-val neu">'+adrdakF.t+'</div></div>'
+        +(fngInfo?'<div class="'+sc+'" style="flex:1;border-color:rgba(232,218,239,.35);background:rgba(232,218,239,.05);cursor:pointer" onclick="openFnGPopup()"><div class="stat-label">🧭 F&G</div><div class="stat-val" style="color:'+fngInfo.color+'">'+fngInfo.score+'</div><div class="stat-sub" style="color:'+fngInfo.color+'">'+fngInfo.label+'</div></div>':'<div class="'+sc+'" style="flex:1;border-color:rgba(232,218,239,.2)"><div class="stat-label">🧭 F&G</div><div class="stat-val neu">-</div></div>')
+        +'</div>';
+    } else {
+      _kpiInner='<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음<div style="font-size:9px;margin-top:3px">장중 수집 후 표시됩니다</div></div>';
+    }
+  } else {
+    _kpiInner='<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음'
+      +(_noDataReason?'<div style="font-size:9px;margin-top:3px">'+_noDataReason+'</div>':'')+'</div>';
+  }
+  return '<div style="border:1px solid rgba(79,195,247,.35);border-radius:10px;padding:10px 14px;background:rgba(79,195,247,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+    +'<div style="font-size:9px;color:var(--accent-kr);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 주요 지표 ('+todayLabelDate+')</div>'
+    +_kpiInner+'</div>';
+})()
+// ② 오늘 섹터 박스 (시간대별)
++(function(){
+  if(hasTodayStats){
+    return '<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+      +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+todayDate+')</div>'
+      +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">전체 섹터평균</div><div class="stat-val '+(tUp?'up':'dn')+'">'+(tUp?'+':'')+tAvg+'%</div></div>'
+      +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최고 섹터</div><div class="stat-val up">+'+tMx+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMxN+'" style="cursor:pointer;text-decoration:underline dotted">'+tMxN+'</div></div>'
+      +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label" style="color:#ffb74d">최저 섹터</div><div class="stat-val dn">'+tMn+'%</div><div class="stat-sub sp-stat-click" data-sector="'+tMnN+'" style="cursor:pointer;text-decoration:underline dotted">'+tMnN+'</div></div></div></div>';
+  } else if(_showTodayData){
+    return '<div style="border:1px solid rgba(255,183,77,.25);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.02);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+      +'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터</div>'
+      +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음</div></div>';
+  } else { return ''; }
+})()
 // ③ 최근 영업일 박스
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
@@ -2500,7 +2537,12 @@ document.getElementById('kr-stats').innerHTML=
   // marketBreadth에서 직접 읽기 (ADR 역산 아님)
   var _mb=S.krToday&&S.krToday.marketBreadth?S.krToday.marketBreadth:{};
   var _kp=_mb['코스피'],_kq=_mb['코스닥'];
-  if(!_kp||!_kq) return '';
+  if(!_kp||!_kq){
+    if(!_showTodayData) return '';
+    return '<div style="border:1px solid rgba(129,199,132,.25);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.02);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
+      +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황</div>'
+      +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음<div style="font-size:9px;margin-top:3px">장중 수집 후 표시됩니다</div></div></div>';
+  }
   var _kpUp=_kp.rise||0,_kpDn=_kp.fall||0,_kpNeu=_kp.same||0;
   var _kqUp=_kq.rise||0,_kqDn=_kq.fall||0,_kqNeu=_kq.same||0;
   var _kpTot=(_kpUp+_kpDn+_kpNeu)||1,_kqTot=(_kqUp+_kqDn+_kqNeu)||1;
