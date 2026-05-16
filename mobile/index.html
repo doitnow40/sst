@@ -1326,7 +1326,7 @@ const US_META = {
 'Oil/Gas':   {type:'ETF',  bg:'#ffd54f',fg:'#000',group:'THEMATIC'},
 'LongBond':  {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
 'ShortBond': {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
-'HiYield':   {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
+'HiYield':   {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
 'USD':       {type:'ETF',  bg:'#5c6bc0',fg:'#fff',group:'BOND'},
 };
 const KR_FIXED = {
@@ -2766,7 +2766,9 @@ if(krChart){krChart.destroy();krChart=null;}
 if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
-const allAvg=sectorNames.map(name=>{
+const _krRankEx=new Set(['코스피','코스닥','ADR피','ADR닥','FnG','날짜']);
+const rankSectorNames=sectorNames.filter(n=>!_krRankEx.has(n));
+const allAvg=rankSectorNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
 return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
