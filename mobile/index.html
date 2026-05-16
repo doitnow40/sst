@@ -1352,7 +1352,7 @@ SECTOR:  {label:'GICS 11 Sectors (SPDR)',bg:'#1565C0',fg:'#fff'},
 THEMATIC:{label:'Thematic ETF',          bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'Bond / USD',            bg:'#37474F',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,krNotes:{},usNotes:{}};
 const US_WATCHED_KEY_EARLY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
@@ -1510,6 +1510,16 @@ function _renderFnGPopup(score, history, latestDate) {
 
 
 async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
+  function _renderSectorNoteHeader(sn, isKr) {
+    const notes=isKr?(S.krNotes||{}):(S.usNotes||{});
+    const note=notes[sn]||{};
+    if(!note.memo&&!note.link) return '';
+    let h='<div style="margin-bottom:10px;padding:7px 10px;background:rgba(79,195,247,.07);border-radius:7px;border:1px solid rgba(79,195,247,.2);font-size:10px;line-height:1.7">';
+    if(note.memo) h+=`<div style="color:#cfd8dc">📌 섹터메모 : ${note.memo}</div>`;
+    if(note.link) h+=`<div>🔗 <span style="color:#b0bec5">밸류체인 : </span><a href="${note.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all">${note.link}</a></div>`;
+    h+='</div>';
+    return h;
+  }
   try {
     // ── KRX 장 상태 판정 (15:30 기준) ────────────────────────────────
     const _nowKst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
@@ -1627,7 +1637,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
       const sym = meta ? (meta.symbol || '') : '';
       const grp = meta ? (meta.group || '') : '';
-      body.innerHTML = `
+      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
         <div style="padding:4px 2px">
           ${sym ? `<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px">📌 심볼: <span style="font-family:var(--font-mono);color:var(--accent-us)">${sym}</span> &nbsp;|&nbsp; 그룹: <span style="color:var(--accent-gold)">${grp}</span></div>` : ''}
           ${usTodayVal !== undefined ? `<div style="font-size:12px;margin-bottom:6px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(usTodayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(usTodayVal)>=0?'+':''}${parseFloat(usTodayVal).toFixed(2)}%</span></div>` : ''}
@@ -1731,7 +1741,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     const _cachedHtml2 = _cachedAt2 ? ' <span style="color:#4fc3f7">· 📡 D열 수집: '+_cachedAt2+'</span>' : '';
     const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel2}${_cachedHtml2}</div>`;
 
-    body.innerHTML = header + html;
+    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + header + html;
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;color:#ef9a9a;font-size:12px">❌ 로드 실패: ${e.message}</div>`;
   }
@@ -1848,7 +1858,7 @@ if(m.type==='YIELD') return yldCell(val);
 if(m.type==='VIX')   return vixCell(val);
 return pctCell(val,6);
 }
-async function api(type,range,forceRefresh){
+async function api(type,range,forceRefresh,extraParams){
 if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes('YOUR_SUBDOMAIN')){
   try{
     const workerUrl=`${REALTIME_WORKER_URL}?type=${type}&_t=${Date.now()}`;
@@ -1856,9 +1866,9 @@ if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes(
     if(wr.ok){const wj=await wr.json();if(wj.ok)return wj.data;}
   }catch(e){console.warn('[api] Worker fallback to GAS:',e.message);}
 }
-// forceRefresh=true면 GAS 웹앱에 강제 새로고침 신호 전달
 const freshId=forceRefresh?'&fresh='+Date.now():'&_t='+Date.now();
-const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}${freshId}`;
+const extraStr=extraParams?Object.entries(extraParams).map(([k,v])=>`&${k}=${encodeURIComponent(v)}`).join(''):'';
+const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}${freshId}${extraStr}`;
 const r=await fetch(url,{cache:'no-store'});
 if(!r.ok)throw new Error(`HTTP ${r.status}`);
 const j=await r.json();
@@ -1994,6 +2004,7 @@ S.krToday = null;
 updateSheetReadTime(d.sheetReadAt);
 S.krD=d; S.krOk=true;
 renderKr();
+loadSectorNotes('kr');
 }catch(e){
 document.getElementById('kr-status').textContent='❌ 오류';
 document.getElementById('kr-table').innerHTML=
@@ -2046,6 +2057,18 @@ async function triggerActionsNow(){
   }
 }
 
+async function loadSectorNotes(market){
+  try{
+    const d=await api('sector_notes',0,false,{market:market});
+    if(market==='us'){
+      S.usNotes=d||{};
+      if(Object.keys(S.usNotes).length>0 && S.usOk) renderUs();
+    } else {
+      S.krNotes=d||{};
+      if(Object.keys(S.krNotes).length>0 && S.krOk) renderKr();
+    }
+  }catch(e){ console.warn('섹터 메모 로드 실패',e); }
+}
 async function refreshAllData(){
 const btn=document.getElementById('refresh-all-btn');
 const icon=document.getElementById('refresh-icon');
@@ -2549,7 +2572,7 @@ document.getElementById('kr-stats').innerHTML=
   var _kpUpR=Math.round(_kpUp/_kpTot*100),_kpDnR=Math.round(_kpDn/_kpTot*100);
   var _kqUpR=Math.round(_kqUp/_kqTot*100),_kqDnR=Math.round(_kqDn/_kqTot*100);
   return '<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-  +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'+'<div style="font-size:8px;color:var(--text-muted);margin-bottom:4px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
+  +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'+'<div style="font-size:8px;color:var(--text-muted);margin-bottom:4px">'+((_mb['코스피']&&_mb['코스피'].estimated)?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
   +'<div style="display:flex;gap:8px">'
   +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)"><div class="stat-label">코스피</div>'
   +'<div style="display:flex;gap:3px;align-items:baseline;margin:2px 0"><span style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:#ef5350">'+_kpUp+'</span><span style="font-size:8px;color:var(--text-muted)">상승</span>'
@@ -3812,6 +3835,7 @@ S.usWatchAt=Date.now();
 updateSheetReadTime(d.sheetReadAt);
 S.usD=d; S.usOk=true;
 renderUs();
+loadSectorNotes('us');
 }catch(e){
 document.getElementById('us-status').textContent='❌ 오류';
 document.getElementById('us-table').innerHTML=
@@ -4024,13 +4048,16 @@ const chgNum=chgVal!==null&&!isNaN(parseFloat(chgVal))?parseFloat(chgVal):null;
 const chgStr=chgNum!==null?(chgNum>=0?'+':'')+chgNum.toFixed(2)+'%':'-';
 const chgColor=chgNum>0?'#ef5350':chgNum<0?'#42a5f5':'var(--text-muted)';
 const avgClass=chgNum>0?'avg-up':chgNum<0?'avg-dn':'';
+const _usNoteM=(S.usNotes||{})[sName]||{};
 wh+=`<div class="sector-card ${avgClass} ${isW?'watched':''}">
 <div class="sector-card-header">
 <div class="sector-card-title" onclick="openSectorPopup('${sName.replace(/'/g,"\'")}',false)" style="cursor:pointer">${isW?'⭐ ':''}${sName}</div>
 <div class="sector-card-meta">
 <span class="sector-tag" style="background:${meta.bg};color:${meta.fg};font-size:11px;padding:2px 6px">${chgStr}</span>
 <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-left:auto">${meta.group||''}</span>
-</div></div>
+</div>
+${_usNoteM.memo||_usNoteM.link?'<div style="padding:4px 10px 2px;font-size:9px;color:#b0bec5;line-height:1.6;border-bottom:1px solid rgba(255,255,255,.06)">'+((_usNoteM.memo)?'<div style="color:#cfd8dc">📌 '+_usNoteM.memo+'</div>':'')+''+((_usNoteM.link)?'<div>🔗 <span style="color:#b0bec5">밸류체인 : </span><a href="'+_usNoteM.link+'" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all">'+_usNoteM.link+'</a></div>':'')+'</div>':''}
+</div>
 <div class="sector-stocks">`;
 if(sec.stocks&&sec.stocks.length){
 // ★ 최근영업일 클릭(_usIsPrevMode): prevChg(전일), 그 외: chg(오늘)
@@ -4529,6 +4556,13 @@ const active = isUp ? (i < filled) : (BARS-1-i < filled);
 barHtml+=`<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
 }
 barHtml+='</div>';
+}
+const _krNoteM=(S.krNotes||{})[sec.sector]||{};
+if(_krNoteM.memo||_krNoteM.link){
+  h+='<div style="padding:4px 10px 2px;font-size:9px;color:#b0bec5;line-height:1.6;border-bottom:1px solid rgba(255,255,255,.06)">';
+  if(_krNoteM.memo) h+=`<div style="color:#cfd8dc">📌 ${_krNoteM.memo}</div>`;
+  if(_krNoteM.link) h+=`<div>🔗 <span style="color:#b0bec5">밸류체인 : </span><a href="${_krNoteM.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all" onclick="event.stopPropagation()">${_krNoteM.link}</a></div>`;
+  h+='</div>';
 }
 h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
 h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
