@@ -1929,8 +1929,15 @@ async function triggerActionsNow(){
 async function loadSectorNotes(market){
   try{
     const d=await api('sector_notes',0,false,{market:market});
-    if(market==='us') S.usNotes=d||{};
-    else S.krNotes=d||{};
+    if(market==='us'){
+      S.usNotes=d||{};
+      // 메모/링크 로드 후 US 섹터 카드 재렌더링
+      if(Object.keys(S.usNotes).length>0 && S.usOk) renderUs();
+    } else {
+      S.krNotes=d||{};
+      // 메모/링크 로드 후 KR 섹터 카드 재렌더링
+      if(Object.keys(S.krNotes).length>0 && S.krOk) renderKr();
+    }
   }catch(e){ console.warn('섹터 메모 로드 실패',e); }
 }
 async function refreshAllData(){
