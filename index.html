@@ -1052,7 +1052,8 @@ THEMATIC:{label:'▶ 테마 ETF',               bg:'#4A148C',fg:'#fff'},
 BOND:    {label:'▶ 채권 & 달러',            bg:'#37474F',fg:'#fff'},
 CUSTOM:  {label:'▶ 관심 섹터',              bg:'#2E7D32',fg:'#fff'},
 };
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null};
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
+  krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1286,6 +1287,17 @@ function _popupEscHandler(e) {
 }
 
 async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
+  // ★ 섹터 메모/링크 헤더 - 팝업 body 상단에 항상 표시
+  function _renderSectorNoteHeader(sectorName, isKr) {
+    const notes = isKr ? (S.krNotes||{}) : (S.usNotes||{});
+    const note = notes[sectorName]||{};
+    if(!note.memo && !note.link) return '';
+    let html='<div style="margin-bottom:10px;padding:7px 10px;background:rgba(79,195,247,.07);border-radius:7px;border:1px solid rgba(79,195,247,.2);font-size:10px;line-height:1.7">';
+    if(note.memo) html+=`<div style="color:#cfd8dc">📌 ${note.memo}</div>`;
+    if(note.link) html+=`<div>🔗 <a href="${note.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all">${note.link}</a></div>`;
+    html+='</div>';
+    return html;
+  }
   try {
     // ── KRX 장 상태 판정 (KRX 기준 15:30) ────────────────────────────
     // isKrMarket:  장중(09:00~15:30) 또는 장마감후(15:30~, 평일) = 오늘 데이터 유효
@@ -1388,7 +1400,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
           avgEl.textContent = _histVal.toFixed(3) + '%';
           avgEl.style.color = '#cfd8dc';
         }
-        body.innerHTML = `<div style="padding:16px">
+        body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `<div style="padding:16px">
           <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:8px">${_bi.title}</div>
           <div style="font-size:11px;color:#8a9ab5;line-height:1.7;margin-bottom:12px">${_bi.desc}</div>
           <div style="font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px">
@@ -1455,7 +1467,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       // 메타 정보 + 오늘 실시간 + 종목 목록 + 최근 5일
       const todayVal = usTodayMap[sectorName];
       const grpLabel = meta.group ? ({'INDEX':'주요지수','SECTOR':'GICS섹터','THEMATIC':'테마ETF','BOND':'채권·달러'}[meta.group]||meta.group) : '';
-      body.innerHTML = `
+      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
         <div style="padding:4px 2px">
           <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap">
             ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
@@ -1573,7 +1585,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
     const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
-    body.innerHTML = header + html;
+    // ★ 섹터 메모/링크 헤더 prepend
+    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + header + html;
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;color:#ef9a9a;font-size:12px">❌ 로드 실패: ${e.message}</div>`;
   }
@@ -1692,7 +1705,7 @@ if(m.type==='YIELD') return yldCell(val);
 if(m.type==='VIX')   return vixCell(val);
 return pctCell(val,6);
 }
-async function api(type,range,forceRefresh){
+async function api(type,range,forceRefresh,extraParams){
 // ★ kr_today / us_watch_today → Cloudflare Worker (KV) 우선 호출
 // 실패 시 GAS 웹앱 fallback (Worker 미배포 or KV 데이터 없을 때 자동 대응)
 if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes('YOUR_SUBDOMAIN')){
@@ -1704,7 +1717,8 @@ if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes(
 }
 // GAS 웹앱 호출 (기존 로직 그대로 / Worker fallback)
 const freshId=forceRefresh?'&fresh='+Date.now():'&_t='+Date.now();
-const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}${freshId}`;
+const extraStr=extraParams?Object.entries(extraParams).map(([k,v])=>`&${k}=${encodeURIComponent(v)}`).join(''):'';
+const url=`${GAS_WEBAPP_URL}?type=${type}&range=${range}${freshId}${extraStr}`;
 const r=await fetch(url,{cache:'no-store'});
 if(!r.ok)throw new Error(`HTTP ${r.status}`);
 const j=await r.json();
@@ -1853,6 +1867,7 @@ S.krToday = null;
 updateSheetReadTime(d.sheetReadAt);
 S.krD=d; S.krOk=true;
 renderKr();
+loadSectorNotes('kr'); // ★ 섹터 메모/링크 비동기 로드
 }catch(e){
 document.getElementById('kr-status').textContent='❌ 오류';
 document.getElementById('kr-table').innerHTML=
@@ -1910,6 +1925,14 @@ async function triggerActionsNow(){
   }
 }
 
+// ★ 섹터 메모/링크 로드 (KR/US 공통)
+async function loadSectorNotes(market){
+  try{
+    const d=await api('sector_notes',0,false,{market:market});
+    if(market==='us') S.usNotes=d||{};
+    else S.krNotes=d||{};
+  }catch(e){ console.warn('섹터 메모 로드 실패',e); }
+}
 async function refreshAllData(){
 const btn=document.getElementById('refresh-all-btn');
 const icon=document.getElementById('refresh-icon');
@@ -3732,6 +3755,7 @@ S.usWatchAt=Date.now();
 updateSheetReadTime(d.sheetReadAt);
 S.usD=d; S.usOk=true;
 renderUs();
+loadSectorNotes('us'); // ★ 섹터 메모/링크 비동기 로드
 }catch(e){
 document.getElementById('us-status').textContent='❌ 오류';
 document.getElementById('us-table').innerHTML=
@@ -4048,6 +4072,16 @@ h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}
   onclick="openSectorPopup('${sec.sector.replace(/'/g,"\\'")}',false)">${sec.sector}`;
 if(meta.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;margin-left:6px;opacity:.8">${meta.etf}</span>`;
 h+=`</div>`;
+// ★ 섹터 메모/링크 표시
+const _krNote=(S.krNotes||{})[sec.sector]||{};
+if(_krNote.memo||_krNote.link){
+  h+=`<div style="padding:3px 10px 0;font-size:9px;color:#b0bec5;line-height:1.5">`;
+  if(_krNote.memo) h+=`<div>📌 ${_krNote.memo}</div>`;
+  if(_krNote.link) h+=`<div>🔗 <a href="${_krNote.link}" target="_blank" rel="noopener"
+    style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all"
+    onclick="event.stopPropagation()">${_krNote.link}</a></div>`;
+  h+=`</div>`;
+}
 h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
 h+=`<span class="sector-count">${sec.stocks.length} 종목</span>`;
 if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
@@ -4528,6 +4562,16 @@ const titleBg = isWatched
 : 'linear-gradient(90deg,#2a3550,#303d58)';
 const titleFg = isWatched ? '#1a1a00' : '#c8d8f0';
 h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}">${sec.sector}</div>`;
+// ★ US 섹터 메모/링크 표시
+const _usNote=(S.usNotes||{})[sec.sector]||{};
+if(_usNote.memo||_usNote.link){
+  h+=`<div style="padding:3px 10px 0;font-size:9px;color:#b0bec5;line-height:1.5">`;
+  if(_usNote.memo) h+=`<div>📌 ${_usNote.memo}</div>`;
+  if(_usNote.link) h+=`<div>🔗 <a href="${_usNote.link}" target="_blank" rel="noopener"
+    style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all"
+    onclick="event.stopPropagation()">${_usNote.link}</a></div>`;
+  h+=`</div>`;
+}
 const BAR_MAX=15, BARS=10;
 let barHtml='';
 if(secAvg!==null){
@@ -4717,9 +4761,68 @@ function usAdminSelectSector(sector){
 _usAdminSelSector=sector;
 usAdminRenderSectorList();
 usAdminRenderStockPanel(sector);
+// ★ US 섹터 메모/링크 패널 표시
+renderUsSectorNotePanel(sector);
 // 종목 추가 섹션 표시
 const addSec=document.getElementById('us-add-stock-section');
 if(addSec) addSec.style.display='';
+}
+function renderUsSectorNotePanel(sectorName){
+const notes=S.usNotes||{};
+const note=notes[sectorName]||{memo:'',link:''};
+const usPanel=document.getElementById('us-sector-note-panel');
+if(usPanel){
+  document.getElementById('us-sector-note-memo').value=note.memo||'';
+  document.getElementById('us-sector-note-link').value=note.link||'';
+  usPanel.style.display='';
+  usPanel.dataset.sector=sectorName;
+} else {
+  const container=document.getElementById('us-admin-panel-body').parentElement;
+  const np=document.createElement('div');
+  np.id='us-sector-note-panel';
+  np.dataset.sector=sectorName;
+  np.dataset.market='us';
+  np.style.cssText='margin-bottom:8px;padding:8px;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.3);border-radius:8px';
+  np.innerHTML=`
+    <div style="font-size:10px;font-weight:700;color:#4fc3f7;margin-bottom:6px">📝 ${sectorName} 섹터 메모/링크</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:5px">
+      <span style="font-size:9px;color:var(--text-muted);width:60px;flex-shrink:0">📌 섹터메모</span>
+      <input class="admin-input" id="us-sector-note-memo" style="flex:1;font-size:10px;padding:3px 7px"
+        value="${(note.memo||'').replace(/"/g,'&quot;')}" placeholder="예: 2026년 AI 수혜 섹터">
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <span style="font-size:9px;color:var(--text-muted);width:60px;flex-shrink:0">🔗 밸류체인</span>
+      <input class="admin-input" id="us-sector-note-link" style="flex:1;font-size:10px;padding:3px 7px"
+        value="${(note.link||'').replace(/"/g,'&quot;')}" placeholder="https://blog.example.com/article">
+    </div>
+    <div style="display:flex;gap:5px;justify-content:flex-end">
+      <span id="us-sector-note-msg" style="font-size:10px;color:#81c784"></span>
+      <button class="admin-add-btn" style="font-size:11px;padding:4px 16px;background:#0288d1"
+        onclick="saveUsSectorNote()">저장</button>
+    </div>`;
+  container.insertBefore(np,document.getElementById('us-admin-panel-body'));
+}
+}
+async function saveUsSectorNote(){
+const panel=document.getElementById('us-sector-note-panel');
+if(!panel)return;
+const sectorName=panel.dataset.sector;
+const memo=document.getElementById('us-sector-note-memo').value.trim();
+const link=document.getElementById('us-sector-note-link').value.trim();
+const msg=document.getElementById('us-sector-note-msg');
+try{
+  const pw=ADM.pwHash||await getAdminPwHash();
+  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${pw}`
+    +`&market=us&sector=${encodeURIComponent(sectorName)}`
+    +`&memo=${encodeURIComponent(memo)}&link=${encodeURIComponent(link)}`;
+  const r=await fetch(url,{cache:'no-store'});
+  const d=await r.json();
+  if(d.ok){
+    if(!S.usNotes) S.usNotes={};
+    S.usNotes[sectorName]={memo,link};
+    if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
+  } else { if(msg) msg.textContent='❌ '+(d.error||'실패'); }
+}catch(e){ if(msg) msg.textContent='❌ '+e.message; }
 }
 function usAdminRenderStockPanel(sector){
 const title=document.getElementById('us-admin-panel-title');
@@ -5158,13 +5261,83 @@ renderAdminSectors(kw);
 }
 function selectSector(sectorName){
 ADM.selectedSector=sectorName;
+ADM.selectedMarket=ADM.selectedMarket||'kr';
 const kw=document.getElementById('sector-filter-input')?.value||'';
 renderAdminSectors(kw);
 const sec=ADM.sectors.find(s=>s.sector===sectorName);
 if(!sec) return;
 document.getElementById('admin-stock-panel-title').textContent='📋 '+sectorName+' 종목 ('+sec.stocks.length+'개)';
 document.getElementById('add-stock-section').style.display='';
+// ★ 섹터 메모/링크 입력란 표시
+renderSectorNotePanel(sectorName, ADM.selectedMarket||'kr');
 renderStockList(sec, sectorName);
+}
+function renderSectorNotePanel(sectorName, market){
+// 섹터 메모/링크 입력란 - admin-stock-list 상단에 고정 표시
+const notes = (market==='us') ? (S.usNotes||{}) : (S.krNotes||{});
+const note = notes[sectorName] || {memo:'', link:''};
+const esc = sectorName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+const panel = document.getElementById('sector-note-panel');
+if(panel){
+  document.getElementById('sector-note-memo').value = note.memo||'';
+  document.getElementById('sector-note-link').value = note.link||'';
+  panel.style.display='';
+  panel.dataset.sector=sectorName;
+  panel.dataset.market=market;
+} else {
+  // 패널이 없으면 admin-stock-list 위에 삽입
+  const container = document.getElementById('admin-stock-list').parentElement;
+  const np = document.createElement('div');
+  np.id='sector-note-panel';
+  np.dataset.sector=sectorName;
+  np.dataset.market=market;
+  np.style.cssText='margin-bottom:8px;padding:8px;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.3);border-radius:8px';
+  np.innerHTML=`
+    <div style="font-size:10px;font-weight:700;color:#4fc3f7;margin-bottom:6px">📝 ${sectorName} 섹터 메모/링크</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:5px">
+      <span style="font-size:9px;color:var(--text-muted);width:60px;flex-shrink:0">📌 섹터메모</span>
+      <input class="admin-input" id="sector-note-memo" style="flex:1;font-size:10px;padding:3px 7px"
+        value="${(note.memo||'').replace(/"/g,'&quot;')}" placeholder="예: 2026년 AI 수혜 섹터">
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+      <span style="font-size:9px;color:var(--text-muted);width:60px;flex-shrink:0">🔗 밸류체인</span>
+      <input class="admin-input" id="sector-note-link" style="flex:1;font-size:10px;padding:3px 7px"
+        value="${(note.link||'').replace(/"/g,'&quot;')}" placeholder="https://blog.example.com/article">
+    </div>
+    <div style="display:flex;gap:5px;justify-content:flex-end">
+      <span id="sector-note-msg" style="font-size:10px;color:#81c784"></span>
+      <button class="admin-add-btn" style="font-size:11px;padding:4px 16px;background:#0288d1"
+        onclick="saveSectorNote()">저장</button>
+    </div>`;
+  container.insertBefore(np, document.getElementById('admin-stock-list'));
+}
+}
+async function saveSectorNote(){
+const panel=document.getElementById('sector-note-panel');
+if(!panel)return;
+const sectorName=panel.dataset.sector;
+const market=panel.dataset.market||'kr';
+const memo=document.getElementById('sector-note-memo').value.trim();
+const link=document.getElementById('sector-note-link').value.trim();
+const msg=document.getElementById('sector-note-msg');
+try{
+  const pw=ADM.pwHash||await getAdminPwHash();
+  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${pw}`
+    +`&market=${encodeURIComponent(market)}&sector=${encodeURIComponent(sectorName)}`
+    +`&memo=${encodeURIComponent(memo)}&link=${encodeURIComponent(link)}`;
+  const r=await fetch(url,{cache:'no-store'});
+  const d=await r.json();
+  if(d.ok){
+    // 로컬 캐시 업데이트
+    if(market==='us') S.usNotes[sectorName]={memo,link};
+    else S.krNotes[sectorName]={memo,link};
+    if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
+  } else {
+    if(msg){msg.textContent='❌ '+d.error;}
+  }
+}catch(e){
+  if(msg){msg.textContent='❌ '+e.message;}
+}
 }
 function renderStockList(sec, sectorName){
 const ctrlBar=`<div id="stock-ctrl-bar" style="display:flex;gap:5px;align-items:center;padding:6px 8px;background:var(--bg-card2);border-radius:6px;margin-bottom:8px;flex-wrap:wrap">
