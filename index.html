@@ -4811,14 +4811,15 @@ const memo=document.getElementById('us-sector-note-memo').value.trim();
 const link=document.getElementById('us-sector-note-link').value.trim();
 const msg=document.getElementById('us-sector-note-msg');
 try{
-  const pw=ADM.pwHash||await getAdminPwHash();
-  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${pw}`
+  const pw=ADMIN_CONFIG.PW_HASH||'';
+  if(!pw||!ADM.loggedIn){if(msg)msg.textContent='❌ 관리자 로그인 필요';return;}
+  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${encodeURIComponent(pw)}`
     +`&market=us&sector=${encodeURIComponent(sectorName)}`
     +`&memo=${encodeURIComponent(memo)}&link=${encodeURIComponent(link)}`;
   const r=await fetch(url,{cache:'no-store'});
   const d=await r.json();
   if(d.ok){
-    if(!S.usNotes) S.usNotes={};
+    if(!S.usNotes)S.usNotes={};
     S.usNotes[sectorName]={memo,link};
     if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
   } else { if(msg) msg.textContent='❌ '+(d.error||'실패'); }
@@ -5321,19 +5322,19 @@ const memo=document.getElementById('sector-note-memo').value.trim();
 const link=document.getElementById('sector-note-link').value.trim();
 const msg=document.getElementById('sector-note-msg');
 try{
-  const pw=ADM.pwHash||await getAdminPwHash();
-  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${pw}`
+  const pw=ADMIN_CONFIG.PW_HASH||'';
+  if(!pw||!ADM.loggedIn){if(msg)msg.textContent='❌ 관리자 로그인 필요';return;}
+  const url=`${GAS_WEBAPP_URL}?type=admin&action=save_sector_note&pw_hash=${encodeURIComponent(pw)}`
     +`&market=${encodeURIComponent(market)}&sector=${encodeURIComponent(sectorName)}`
     +`&memo=${encodeURIComponent(memo)}&link=${encodeURIComponent(link)}`;
   const r=await fetch(url,{cache:'no-store'});
   const d=await r.json();
   if(d.ok){
-    // 로컬 캐시 업데이트
-    if(market==='us') S.usNotes[sectorName]={memo,link};
-    else S.krNotes[sectorName]={memo,link};
+    if(market==='us'){if(!S.usNotes)S.usNotes={};S.usNotes[sectorName]={memo,link};}
+    else{if(!S.krNotes)S.krNotes={};S.krNotes[sectorName]={memo,link};}
     if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
   } else {
-    if(msg){msg.textContent='❌ '+d.error;}
+    if(msg){msg.textContent='❌ '+(d.error||'실패');}
   }
 }catch(e){
   if(msg){msg.textContent='❌ '+e.message;}
