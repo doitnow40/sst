@@ -1293,8 +1293,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     const note = notes[sectorName]||{};
     if(!note.memo && !note.link) return '';
     let html='<div style="margin-bottom:10px;padding:7px 10px;background:rgba(79,195,247,.07);border-radius:7px;border:1px solid rgba(79,195,247,.2);font-size:10px;line-height:1.7">';
-    if(note.memo) html+=`<div style="color:#cfd8dc">📌 ${note.memo}</div>`;
-    if(note.link) html+=`<div>🔗 <a href="${note.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all">${note.link}</a></div>`;
+    if(note.memo) html+=`<div style="color:#cfd8dc">📌 섹터메모 : ${note.memo}</div>`;
+    if(note.link) html+=`<div>🔗 <span style="color:#b0bec5">밸류체인 : </span><a href="${note.link}" target="_blank" rel="noopener" style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all">${note.link}</a></div>`;
     html+='</div>';
     return html;
   }
@@ -4072,11 +4072,11 @@ h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}
   onclick="openSectorPopup('${sec.sector.replace(/'/g,"\\'")}',false)">${sec.sector}`;
 if(meta.etf) h+=`<span style="font-family:var(--font-mono);font-size:9px;margin-left:6px;opacity:.8">${meta.etf}</span>`;
 h+=`</div>`;
-// ★ 섹터 메모/링크 표시
+// ★ 섹터 메모/링크: 섹터명 바로 하단에 표시
 const _krNote=(S.krNotes||{})[sec.sector]||{};
 if(_krNote.memo||_krNote.link){
-  h+=`<div style="padding:3px 10px 0;font-size:9px;color:#b0bec5;line-height:1.5">`;
-  if(_krNote.memo) h+=`<div>📌 ${_krNote.memo}</div>`;
+  h+=`<div style="padding:4px 10px 2px;font-size:9px;color:#b0bec5;line-height:1.6;border-bottom:1px solid rgba(255,255,255,.06)">`;
+  if(_krNote.memo) h+=`<div style="color:#cfd8dc">📌 ${_krNote.memo}</div>`;
   if(_krNote.link) h+=`<div>🔗 <a href="${_krNote.link}" target="_blank" rel="noopener"
     style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all"
     onclick="event.stopPropagation()">${_krNote.link}</a></div>`;
@@ -4562,11 +4562,11 @@ const titleBg = isWatched
 : 'linear-gradient(90deg,#2a3550,#303d58)';
 const titleFg = isWatched ? '#1a1a00' : '#c8d8f0';
 h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}">${sec.sector}</div>`;
-// ★ US 섹터 메모/링크 표시
+// ★ US 섹터 메모/링크: 섹터명 바로 하단에 표시
 const _usNote=(S.usNotes||{})[sec.sector]||{};
 if(_usNote.memo||_usNote.link){
-  h+=`<div style="padding:3px 10px 0;font-size:9px;color:#b0bec5;line-height:1.5">`;
-  if(_usNote.memo) h+=`<div>📌 ${_usNote.memo}</div>`;
+  h+=`<div style="padding:4px 10px 2px;font-size:9px;color:#b0bec5;line-height:1.6;border-bottom:1px solid rgba(255,255,255,.06)">`;
+  if(_usNote.memo) h+=`<div style="color:#cfd8dc">📌 ${_usNote.memo}</div>`;
   if(_usNote.link) h+=`<div>🔗 <a href="${_usNote.link}" target="_blank" rel="noopener"
     style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all"
     onclick="event.stopPropagation()">${_usNote.link}</a></div>`;
