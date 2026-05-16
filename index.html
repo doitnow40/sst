@@ -1932,11 +1932,18 @@ async function loadSectorNotes(market){
     if(market==='us'){
       S.usNotes=d||{};
       // 메모/링크 로드 후 US 섹터 카드 재렌더링
-      if(Object.keys(S.usNotes).length>0 && S.usOk) renderUs();
+      if(Object.keys(S.usNotes).length>0){
+        if(S.usOk) renderUs();
+        if(typeof renderUsList==='function' && S.usWatchD) renderUsList(S.usWatchD.sectors||[]);
+      }
     } else {
       S.krNotes=d||{};
       // 메모/링크 로드 후 KR 섹터 카드 재렌더링
-      if(Object.keys(S.krNotes).length>0 && S.krOk) renderKr();
+      // 섹터종목List 페이지면 renderKrListFiltered, History 페이지면 renderKr
+    if(Object.keys(S.krNotes).length>0){
+      if(S.krOk) renderKr();
+      if(typeof renderKrListFiltered==='function') renderKrListFiltered();
+    }
     }
   }catch(e){ console.warn('섹터 메모 로드 실패',e); }
 }
