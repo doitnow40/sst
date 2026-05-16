@@ -4576,14 +4576,14 @@ const titleBg = isWatched
 : 'linear-gradient(90deg,#2a3550,#303d58)';
 const titleFg = isWatched ? '#1a1a00' : '#c8d8f0';
 h+=`<div class="sector-card-title" style="background:${titleBg};color:${titleFg}">${sec.sector}</div>`;
-// ★ US 섹터 메모/링크: 섹터명 바로 하단에 표시
-const _usNote=(S.usNotes||{})[sec.sector]||{};
-if(_usNote.memo||_usNote.link){
+// ★ KR 섹터 메모/링크: 섹터명 바로 하단에 표시
+const _krNoteL=(S.krNotes||{})[sec.sector]||{};
+if(_krNoteL.memo||_krNoteL.link){
   h+=`<div style="padding:4px 10px 2px;font-size:9px;color:#b0bec5;line-height:1.6;border-bottom:1px solid rgba(255,255,255,.06)">`;
-  if(_usNote.memo) h+=`<div style="color:#cfd8dc">📌 ${_usNote.memo}</div>`;
-  if(_usNote.link) h+=`<div>🔗 <a href="${_usNote.link}" target="_blank" rel="noopener"
+  if(_krNoteL.memo) h+=`<div style="color:#cfd8dc">📌 ${_krNoteL.memo}</div>`;
+  if(_krNoteL.link) h+=`<div>🔗 <a href="${_krNoteL.link}" target="_blank" rel="noopener"
     style="color:#4fc3f7;text-decoration:underline dotted;word-break:break-all"
-    onclick="event.stopPropagation()">${_usNote.link}</a></div>`;
+    onclick="event.stopPropagation()">${_krNoteL.link}</a></div>`;
   h+=`</div>`;
 }
 const BAR_MAX=15, BARS=10;
