@@ -1324,8 +1324,8 @@ const US_META = {
 'CleanEnergy':{type:'ETF', bg:'#43a047',fg:'#fff',group:'THEMATIC'},
 'Gold':      {type:'ETF',  bg:'#ffd54f',fg:'#000',group:'THEMATIC'},
 'Oil/Gas':   {type:'ETF',  bg:'#ffd54f',fg:'#000',group:'THEMATIC'},
-'LongBond':  {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
-'ShortBond': {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
+'LongBond':  {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
+'ShortBond': {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
 'HiYield':   {type:'ETF',  bg:'#78909c',fg:'#fff',group:'BOND'},
 'USD':       {type:'ETF',  bg:'#5c6bc0',fg:'#fff',group:'BOND'},
 };
@@ -2062,10 +2062,16 @@ async function loadSectorNotes(market){
     const d=await api('sector_notes',0,false,{market:market});
     if(market==='us'){
       S.usNotes=d||{};
-      if(Object.keys(S.usNotes).length>0 && S.usOk) renderUs();
+      if(Object.keys(S.usNotes).length>0){
+        if(S.usOk) renderUs();
+        if(typeof renderUsList==='function') renderUsList();
+      }
     } else {
       S.krNotes=d||{};
-      if(Object.keys(S.krNotes).length>0 && S.krOk) renderKr();
+      if(Object.keys(S.krNotes).length>0){
+        if(S.krOk) renderKr();
+        if(typeof renderKrListFiltered==='function') renderKrListFiltered();
+      }
     }
   }catch(e){ console.warn('섹터 메모 로드 실패',e); }
 }
@@ -2651,7 +2657,7 @@ const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=S.krToday?S.krToday.date:'';
 const hasToday=todayDate&&Object.keys(todayMap).length>0;
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 if(krChartType==='heatmap'){
 document.getElementById('kr-chart-title').textContent='🗓️ 섹터 히트맵 (오늘 실시간)';
@@ -2671,7 +2677,7 @@ if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
 const allAvg=pureNames.map(name=>{
 const v=todayMap[name];
 return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
@@ -2694,7 +2700,7 @@ if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas)return;
 if(krChart){krChart.destroy();krChart=null;}
-const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
 const vals=allNames.map(name=>{const v=todayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
 const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
 const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
@@ -2702,7 +2708,7 @@ krChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'오늘 등�
 krChartAllOn=true; return;
 }
 const chartRows=[...rows.slice(0,krChartPeriod)].reverse();
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
 if(krChartType==='heatmap'){
@@ -3677,7 +3683,7 @@ var _panel=document.getElementById('us-analytics-panels');
 var _wasHidden=_panel&&_panel.style.display==='none';
 if(_wasHidden){_panel.style.visibility='hidden';_panel.style.display='';}
 var H=S.usD.headers, rows=S.usD.rows;
-var _usRankEx=new Set(['달러','VIX','장기채권','단기채권','하이일드']);
+var _usRankEx=new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']);
 var rk=H.slice(1).filter(function(h){var m=US_META[h]||{};return m.type!=='YIELD'&&!_usRankEx.has(h)&&h;});
 var pLabel=periodText(usAnalyticsPeriod);
 var el=document.getElementById('us-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
@@ -3696,7 +3702,7 @@ if(_wasHidden){_panel.style.display='none';_panel.style.visibility='';}
 return;
 }
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
-var _rkPeriod=rk.filter(function(n){return!new Set(['달러','VIX','장기채권','단기채권','하이일드']).has(n);});
+var _rkPeriod=rk.filter(function(n){return!new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']).has(n);});
 var allAvg=_rkPeriod.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='';
 var _cw2=document.getElementById('us-chart-wrap'); if(_cw2)_cw2.style.display='';
@@ -3770,7 +3776,7 @@ if(!wrap.querySelector('canvas#us-chart-canvas')){
 }
 var canvas2=document.getElementById('us-chart-canvas');
 if(!canvas2){return;}
-var _aFTExM=new Set(['달러','VIX','장기채권','단기채권','하이일드']);
+var _aFTExM=new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']);
 var aFT=rk.filter(function(n){return!_aFTExM.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['SP500','Nasdaq'].forEach(function(n){top5.add(n);});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
