@@ -2588,7 +2588,7 @@ const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=S.krToday?S.krToday.date:'';
 const hasToday=todayDate&&Object.keys(todayMap).length>0;
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 if(krChartType==='heatmap'){
 document.getElementById('kr-chart-title').textContent='🗓️ 섹터 히트맵 (오늘 실시간)';
@@ -2608,7 +2608,7 @@ if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
 const allAvg=pureNames.map(name=>{
 const v=todayMap[name];
 return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
@@ -2631,7 +2631,7 @@ if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas)return;
 if(krChart){krChart.destroy();krChart=null;}
-const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
 const vals=allNames.map(name=>{const v=todayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
 const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
 const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
@@ -2639,7 +2639,7 @@ krChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'오늘 등�
 krChartAllOn=true; return;
 }
 const chartRows=[...rows.slice(0,krChartPeriod)].reverse();
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥']);
+const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
 if(krChartType==='heatmap'){
@@ -2697,7 +2697,9 @@ if(krChart){krChart.destroy();krChart=null;}
 if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
-const allAvg=sectorNames.map(name=>{
+const _krRkEx=new Set(['코스피','코스닥','ADR피','ADR닥','FnG','날짜']);
+const rkNames=sectorNames.filter(n=>!_krRkEx.has(n));
+const allAvg=rkNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
 return{name,avg:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0};
