@@ -1852,8 +1852,12 @@ else{bg=DR;fg='#fff';label='극도탐욕';}
 const bgHex=Array.isArray(bg)?hex(bg[0],bg[1],bg[2]):(bg===DB?hex(DB[0],DB[1],DB[2]):hex(DR[0],DR[1],DR[2]));
 return{bg:bgHex,fg,b:n<=25||n>=75,t:n.toFixed(0)};
 }
+// 한글 섹터명 → US_META 영문 키 매핑 (히스토리 시트가 한글로 저장)
+const _KR2EN={'장기채권':'LongBond','단기채권':'ShortBond','하이일드':'HiYield',
+  '달러':'USD','VIX':'VIX','S&P500':'S&P500','나스닥':'나스닥'};
 function usCell(name,val){
-const m=US_META[name];if(!m)return pctCell(val,6);
+const _n=_KR2EN[name]||name;
+const m=US_META[_n];if(!m)return pctCell(val,6);
 if(m.type==='YIELD') return yldCell(val);
 if(m.type==='VIX')   return vixCell(val);
 return pctCell(val,6);
