@@ -2246,6 +2246,7 @@ const _dispName=(name==='FnG'?'F&G':name);
 const _cls=`${isW?'watched-col':''} ${(isFixed&&!isFnG)?'':'sector-clickable'}`;
 t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${_dispName}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}${isFnG?'<div style="font-size:8px;margin-top:2px">🧭</div>':''}</th>`;
 });
+t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;font-size:9px;font-weight:700;white-space:nowrap;text-align:left;padding:4px 8px">📝 메모</th>`;
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
@@ -2286,6 +2287,7 @@ const _isBdrT=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT));
 const _bdrT=_isBdrT?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrT}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
 });
+t+=`<td style="background:#0f1e30;border-left:1px solid rgba(79,195,247,.15)"></td>`;
 t+=`</tr>`;
 }
 // 장전·주말·공휴일: 오늘 행 없음 → 최근 영업일 행이 자연스럽게 최상단에 위치
@@ -2303,6 +2305,9 @@ const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd=_isBdrTd?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrTd}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
 });
+const krMemoIdx=sectorHdrs.length+1;
+const krMemo=row[krMemoIdx]||'';
+t+=`<td style="min-width:120px;max-width:260px;background:#0f1e30;color:${krMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15)">${krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -3907,7 +3912,9 @@ if(!S.usD)return;
 const{headers:H,rows:baseRows}=S.usD;
 const rows=baseRows; // rows는 항상 baseRows만 사용
 const f=rows.slice(0,S.usR);
-const sh=H.slice(1);
+// ★ US 메모 컬럼('📝 Memo')은 sh에서 제외 — 별도 Memo 컬럼으로 표시
+const _memoColName='📝 Memo';
+const sh=H.slice(1).filter(h=>h!==_memoColName);
 if(f.length){
 const ltToday=f[0];
 const ltPrev=(f.length>1)?f[1]:f[0];
@@ -3927,8 +3934,10 @@ window._usGroupBorderCols=new Set();
 window._krGroupBorderCols=window._usGroupBorderCols;
 let t=`<table><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n},si)=>{const gg=US_GROUPS[g]||{label:g,bg:'#607D8B',fg:'#fff'};const _bdr=si>0?'border-left:3px solid #000;':'';t+=`<th colspan="${n}" style="${_bdr}background:${gg.bg};color:${gg.fg};text-align:left;padding:4px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3)">${gg.label}</th>`;});
+t+=`<th style="background:#1a2535;"></th>`;
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach((h,_mThi)=>{const m=US_META[h]||{bg:'#2e3a50',fg:'#e2e8f0'};const isW=US_WATCHED_SECTORS.has(h);const _mThBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_mThi))?'border-left:3px solid #000;':'';t+=`<th class="${isW?'watched-col':''} sector-clickable" style="${_mThBdr}width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px" onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}</th>`;});
+t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;font-size:9px;font-weight:700;white-space:nowrap;text-align:left;padding:4px 8px">📝 Memo</th>`;
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
@@ -3963,6 +3972,7 @@ if(val===undefined||val===null){t+=`<td style="color:var(--text-muted)">-</td>`;
 const c=usCell(name,val);
 t+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
 });
+t+=`<td style="background:#0f1e30;border-left:1px solid rgba(79,195,247,.15)"></td>`;
 t+=`</tr>`;
 } else if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usPreMarket){
 // 장 전 시간대: 오늘 행 대신 이유 안내 행 표시
@@ -3970,7 +3980,7 @@ const latestDate=baseRows.length?baseRows[0][0]:'';
 const etTimeStr=(etHour<10?'0':'')+etHour+':'+(etMin<10?'0':'')+etMin+' ET';
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
 t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`<td colspan="${sh.length+1}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
@@ -3979,15 +3989,18 @@ const latestDate=baseRows.length?baseRows[0][0]:'';
 const dayNames=['일','월','화','수','목','금','토'];
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
 t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
+t+=`<td colspan="${sh.length+1}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
 t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`</tr>`;
 }
 }
+const usMemoIdx=sh.length+1;
 f.forEach(row=>{
-if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
+if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length+1}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{const v=row[ci+1],c=usCell(name,v);const _mB=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';t+=`<td style="${_mB}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;});
+const usMemo=row[usMemoIdx]||'';
+t+=`<td style="min-width:120px;max-width:260px;background:#0f1e30;color:${usMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15)">${usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
