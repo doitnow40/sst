@@ -2896,7 +2896,7 @@ const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
 const latestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
 const addToday=hasTodayData&&todayDate!==latestDate;
 const labels=[...chartRows.map(r=>r[0]),...(addToday?[todayDate+'★']:[] )];
-const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
+const pureSecNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
 const avgForTop=pureSecNames.map(name=>{
 const ci=H.indexOf(name);
 const vs=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));
@@ -3586,7 +3586,7 @@ if(toggleBtn)toggleBtn.style.display='';
 if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
-var aFT=sn.filter(function(n){return n!=='FnG';}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
+var aFT=sn.filter(function(n){return !KR_STATS_EXCLUDE.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); top5.add('코스피'); top5.add('코스닥');
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
