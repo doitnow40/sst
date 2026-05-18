@@ -3868,9 +3868,9 @@ const{headers:H,rows:baseRows}=S.usD;
 const rows=baseRows; // rows는 항상 baseRows만 사용
 const f=rows.slice(0,S.usR);
 // ★ 메모 컬럼(헤더가 '메모'인 열)은 sh에서 제거 — 별도 Memo 컬럼으로 표시
-const _memoColName='메모';
-const _memoHdrIdx=H.indexOf(_memoColName); // GAS 시트 내 메모 열 인덱스 (-1이면 없음)
-const sh=H.slice(1).filter(h=>h!==_memoColName);
+// ★ US 메모 컬럼명은 GAS 상수 US_WATCH_MEMO = '📝 Memo' 와 일치해야 함
+const _memoColName='📝 Memo';
+const sh=H.slice(1).filter(h=>h!==_memoColName); // 메모 컬럼 제외한 섹터만
 if(f.length){
 const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
 const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
@@ -3984,13 +3984,14 @@ t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 �
 t+=`<td></td></tr>`;
 }
 }
-// 메모 인덱스: GAS 행 배열에서 실제 메모 열 위치
-const usMemoIdx=_memoHdrIdx>=0?_memoHdrIdx:sh.length+1;
+// ★ KR과 동일한 방식: sh는 메모 제외 섹터만 포함, row[ci+1] 순서 기반 접근
+// sh 필터 후 순서: row[0]=날짜, row[1~sh.length]=섹터, row[sh.length+1]=메모
+const usMemoIdx=sh.length+1;
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td><td></td></tr>`;return;}
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
-const v=row[H.indexOf(name)],c=usCell(name,v);
+const v=row[ci+1],c=usCell(name,v);
 const isW=US_WATCHED_SECTORS.has(name);
 const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
 t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
