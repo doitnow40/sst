@@ -2769,7 +2769,7 @@ if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const pureNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
+const pureNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='FnG'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
 const allAvg=pureNames.map(name=>{
 const v=todayMap[name];
 return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
@@ -2858,7 +2858,7 @@ if(krChart){krChart.destroy();krChart=null;}
 if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
-const rankSectorNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
+const rankSectorNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='FnG'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
 const allAvg=rankSectorNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
