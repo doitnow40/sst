@@ -2769,7 +2769,7 @@ if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const pureNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
+const pureNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
 const allAvg=pureNames.map(name=>{
 const v=todayMap[name];
 return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
@@ -2792,7 +2792,7 @@ if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas)return;
 if(krChart){krChart.destroy();krChart=null;}
-const allNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥'&&n!=='FnG');
+const allNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
 const vals=allNames.map(name=>{const v=todayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
 const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
 const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
@@ -2858,8 +2858,7 @@ if(krChart){krChart.destroy();krChart=null;}
 if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
-const _krRankEx=new Set(['코스피','코스닥','ADR피','ADR닥','FnG','날짜']);
-const rankSectorNames=sectorNames.filter(n=>!_krRankEx.has(n));
+const rankSectorNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
 const allAvg=rankSectorNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
@@ -2971,7 +2970,7 @@ const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
 const latestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
 const addToday=hasTodayData&&todayDate!==latestDate;
 const labels=[...chartRows.map(r=>r[0]),...(addToday?[todayDate+'★']:[] )];
-const pureSecNames=sectorNames.filter(n=>n!=='코스피'&&n!=='코스닥');
+const pureSecNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n));
 const avgForTop=pureSecNames.map(name=>{
 const ci=H.indexOf(name);
 const vs=chartRows.map(r=>parseFloat(r[ci])).filter(v=>!isNaN(v));
