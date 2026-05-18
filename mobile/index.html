@@ -1337,7 +1337,7 @@ const US_META = {
 const KR_STATS_EXCLUDE = new Set([
   '코스피', '코스닥',          // 시장 지수
   'ADR피',  'ADR닥',           // ADR 지표
-  'FnG',                       // 공포탐욕지수 (절대값)
+  'F&G',                       // 공포탐욕지수 (절대값)
   '날짜',                       // 날짜 컬럼
 ]);
 const US_STATS_EXCLUDE = new Set([
@@ -1351,7 +1351,7 @@ const KR_FIXED = {
 '코스닥':{type:'GF',  bg:'#FFE082',fg:'#000000'},
 'ADR피': {type:'ADR', bg:'#E8F5E9',fg:'#1B5E20'},
 'ADR닥': {type:'ADR', bg:'#E3F2FD',fg:'#0D47A1'},
-'FnG':   {type:'FNG', bg:'#E8DAEF',fg:'#4A235A'},
+'F&G':   {type:'FNG', bg:'#E8DAEF',fg:'#4A235A'},
 };
 const KR_SEC_COLORS=[
 {bg:'#DAE3F3',fg:'#1A237E'},{bg:'#E2EFDA',fg:'#1B5E20'},{bg:'#FCE4D6',fg:'#BF360C'},
@@ -1378,7 +1378,7 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 // ══════════════════════════════════════════════════
 function openSectorPopup(sectorName, isKr, prevDate) {
   // FnG 컬럼은 전용 팝업으로 분기
-  if (sectorName === 'FnG') { openFnGPopup(); return; }
+  if (sectorName === 'F&G') { openFnGPopup(); return; }
   const popup    = document.getElementById('sector-popup');
   const backdrop = document.getElementById('sector-popup-backdrop');
   const title    = document.getElementById('sector-popup-title');
@@ -1425,7 +1425,7 @@ function openFnGPopup() {
   let todayScore = null, history = [], latestDate = '';
   if (S.krD && S.krD.headers) {
     let fngIdx = -1;
-    fngIdx = S.krD.headers.indexOf('FnG');
+    fngIdx = S.krD.headers.indexOf('F&G');
     if (fngIdx >= 0) {
       const rawHist = S.krD.rows
         .map(r => ({ date: r[0], score: parseFloat(r[fngIdx]) }))
@@ -1994,7 +1994,7 @@ if(filtered.length>=5){
 const vs=filtered.slice(0,5).map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
 if(vs.length){
 const a=vs.reduce((x,y)=>x+y,0)/vs.length;
-const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='FnG'?fngCell(a):pctCell(a,15)));
+const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='F&G'?fngCell(a):pctCell(a,15)));
 h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(mode==='us'&&US_META[name]?.type==='YIELD'?3:2)}</td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)"></td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)"></td>`;
@@ -2008,7 +2008,7 @@ sectorHdrs.forEach((name,ci)=>{
 const val=avg20Data[ci+1];
 if(val!==null&&val!==undefined&&!isNaN(parseFloat(val))){
 const a=parseFloat(val);
-const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='FnG'?fngCell(a):pctCell(a,15)));
+const c=mode==='us'?usCell(name,a):(KR_FIXED[name]?.type==='ADR'?adrCell(a):(name==='F&G'?fngCell(a):pctCell(a,15)));
 h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFixed(2)}</td>`;
 }else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)"></td>`;
 });
@@ -2238,7 +2238,7 @@ tMnName=tMnPair?tMnPair.name:'';
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
-if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
+if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('F&G');
 var _fngStatInfo=null;
 if(_fngStatIdx>=0&&f.length){
 var _fv=parseFloat(f[0][_fngStatIdx]);
@@ -2259,13 +2259,13 @@ if(fixed){bg=fixed.bg;fg=fixed.fg;}
 else{const c=secColorMap[name]||{bg:'#2e3a50',fg:'#e2e8f0'};bg=c.bg;fg=c.fg;}
 const isW=WATCHED_SECTORS.has(name);
 const isFixed=!!KR_FIXED[name];
-const isFnG=(name==='FnG');
+const isFnG=(name==='F&G');
 const _isBdr=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_si));
 const _bdr=_isBdr?"border-left:3px solid #000;":"";
 const clickAttr=isFixed?'':` onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)" class="sector-clickable ${isW?'watched-col':''}"`;
 const _onclick=isFnG?`onclick="openFnGPopup()"`:(isFixed?'':` onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)"`);
 const _title=isFnG?'title="공포탐욕지수 F&G 보기"':(isFixed?'':`title="${name} 종목 보기"`);
-const _dispName=(name==='FnG'?'F&G':name);
+const _dispName=(name==='F&G'?'F&G':name);
 const _cls=`${isW?'watched-col':''} ${(isFixed&&!isFnG)?'':'sector-clickable'}`;
 t+=`<th ${_cls} style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr}" ${_onclick} ${_title}>${_dispName}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}${isFnG?'<div style="font-size:8px;margin-top:2px">🧭</div>':''}</th>`;
 });
@@ -2304,7 +2304,7 @@ const val=(majorMap[name]!==undefined&&majorMap[name]!==null)?majorMap[name]:
           (todayMap[name]!==undefined&&todayMap[name]!==null)?todayMap[name]:undefined;
 if(val===undefined||val===null||isNaN(parseFloat(val))){const _bTmp=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT))?"border-left:3px solid #000;":"";t+=`<td style="${_bTmp}color:var(--text-muted)">-</td>`;return;}
 const numVal=parseFloat(val);
-const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):(name==='FnG'?fngCell(numVal):pctCell(numVal,15));
+const c=KR_FIXED[name]?.type==='ADR'?adrCell(numVal):(name==='F&G'?fngCell(numVal):pctCell(numVal,15));
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrT=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_siT));
 const _bdrT=_isBdrT?"border-left:3px solid #000;":"";
@@ -2321,7 +2321,7 @@ sectorHdrs.forEach((name,ci)=>{
 const val=row[ci+1];
 let c;
 if(KR_FIXED[name]?.type==='ADR') c=adrCell(val);
-else if(name==='FnG') c=fngCell(val);
+else if(name==='F&G') c=fngCell(val);
 else c=pctCell(val,15);
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
@@ -2573,7 +2573,7 @@ var adrpiV=majorMap['ADR피']!==undefined?majorMap['ADR피']:null;
 var adrdakV=majorMap['ADR닥']!==undefined?majorMap['ADR닥']:null;
 var fngTodayScore=null;
 if(S.krD&&S.krD.headers&&S.krD.rows){
-  var fIdx=S.krD.headers.indexOf('FnG');
+  var fIdx=S.krD.headers.indexOf('F&G');
   if(fIdx>=0&&S.krD.rows.length>0){var fv=parseFloat(S.krD.rows[0][fIdx]);if(!isNaN(fv)&&fv>0)fngTodayScore=fv;}
 }
 function _fmtMajor(v,isADR){
@@ -2769,7 +2769,7 @@ if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const pureNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='FnG'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
+const pureNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='F&G'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
 const allAvg=pureNames.map(name=>{
 const v=todayMap[name];
 return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};
@@ -2858,7 +2858,7 @@ if(krChart){krChart.destroy();krChart=null;}
 if(krChartType==='ranking'){
 document.getElementById('kr-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
-const rankSectorNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='FnG'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
+const rankSectorNames=sectorNames.filter(n=>!KR_STATS_EXCLUDE.has(n)&&n!=='F&G'&&n!=='코스피'&&n!=='코스닥'&&n!=='ADR피'&&n!=='ADR닥');
 const allAvg=rankSectorNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>parseFloat(r[colIdx])).filter(v=>!isNaN(v));
@@ -4355,7 +4355,7 @@ tMnName=tMnPair?tMnPair.name:'';
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 // FnG 데이터 from history
 var _fngStatIdx=-1;
-if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('FnG');
+if(S.krD&&S.krD.headers) _fngStatIdx=S.krD.headers.indexOf('F&G');
 var _fngStatInfo=null;
 if(_fngStatIdx>=0&&f.length){
 var _fv=parseFloat(f[0][_fngStatIdx]);
