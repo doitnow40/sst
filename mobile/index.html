@@ -2188,16 +2188,23 @@ const mnName=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
 const mx=mxVal!==null?mxVal.toFixed(2):'-';
 const mn=mnVal!==null?mnVal.toFixed(2):'-';
 const latestDate=lt[0];
-const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
-const todayDate=S.krToday?S.krToday.date:'';
-// 주말/휴장, 이미 확정 저장된 날짜, 데이터 없음이면 오늘 박스 숨김
+// ★ PC와 동일: 항상 히스토리 최신행(f[0])에서 오늘 섹터 값을 읽음
+// KV 실시간값(S.krToday.sectors)은 사용하지 않음 — 마지막 Actions 수집값이라 부정확
+var todayMap={};
+if(f.length>0){
+  const _tRow=f[0];
+  pureSectors.forEach(function(sec){
+    const ci=H.indexOf(sec);
+    if(ci>0&&_tRow[ci]!==null&&_tRow[ci]!==undefined&&_tRow[ci]!==''){
+      todayMap[sec]=parseFloat(_tRow[ci]);
+    }
+  });
+}
+const todayDate=f.length?f[0][0]:null; // 히스토리 최신행 날짜 (PC와 동일)
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
-const _alreadyConfirmed=todayDate&&baseRows.some(r=>r[0]===todayDate);
-// ★ 오늘 날짜가 이미 시트에 확정 저장된 경우 → "오늘" 박스 숨김
-// (최근 영업일 박스가 곧 오늘이므로 중복 표시 불필요, 소스 다름으로 인한 수치 차이 방지)
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!_alreadyConfirmed;
+const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend;
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
 // ★ pureSectors 인덱스 보존: null 제거 없이 직접 max/min 탐색
