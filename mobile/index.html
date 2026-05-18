@@ -1329,6 +1329,22 @@ const US_META = {
 'HiYield':   {type:'YIELD',bg:'#78909c',fg:'#fff',group:'BOND'},
 'USD':       {type:'ETF',  bg:'#5c6bc0',fg:'#fff',group:'BOND'},
 };
+// ══════════════════════════════════════════════════
+//  통계 제외 상수 (등락률랭킹·트리맵·섹터추이 공통)
+//  KR_STATS_EXCLUDE: 한국 지수/지표 (순수 섹터만 통계에 표시)
+//  US_STATS_EXCLUDE: 미국 지수/지표 (순수 섹터만 통계에 표시)
+// ══════════════════════════════════════════════════
+const KR_STATS_EXCLUDE = new Set([
+  '코스피', '코스닥',          // 시장 지수
+  'ADR피',  'ADR닥',           // ADR 지표
+  'FnG',                       // 공포탐욕지수 (절대값)
+  '날짜',                       // 날짜 컬럼
+]);
+const US_STATS_EXCLUDE = new Set([
+  'S&P500', '나스닥', '다우존스', '러셀2000', // 주요 지수
+  '달러', 'VIX',                               // 달러 인덱스·변동성 지수
+  '장기채권', '단기채권', '하이일드',           // 채권 (YIELD 타입, 절대값)
+]);
 const KR_FIXED = {
 '날짜':  null,
 '코스피':{type:'GF',  bg:'#FFD700',fg:'#000000'},
@@ -2460,7 +2476,7 @@ var vxFmt=isNaN(vx)?'-':vx.toFixed(2);
 var vxC=isNaN(vx)?'var(--text-muted)':vx<20?'#66bb6a':vx<30?'#ffa726':'#ef5350';
 var spUp=!isNaN(sp500Chg)&&sp500Chg>=0, nqUp=!isNaN(nasdaqChg)&&nasdaqChg>=0;
 // ── 최근 영업일 최고/최저 섹터
-var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
+var _usEx=US_STATS_EXCLUDE;
 var _usSn=H.slice(1).filter(function(h){return!_usEx.has(h)&&h;});
 var _usVals=_usSn.map(function(n){var i=H.indexOf(n);return{name:n,v:i>=0?parseFloat(lt[i]):NaN};}).filter(function(d){return!isNaN(d.v);});
 var _usMx=_usVals.length?_usVals.reduce(function(a,b){return b.v>a.v?b:a;},_usVals[0]):null;
@@ -2478,7 +2494,7 @@ var ust2FmtT=isNaN(ust2T)?'-':ust2T.toFixed(3)+'%';
 var hygFmtT=isNaN(hygT)?'-':hygT.toFixed(3)+'%';
 var hygCT=isNaN(hygT)?'var(--text-muted)':hygT>=4?'#ef5350':hygT>=3?'#ffa726':'#66bb6a';
 var hasToday=!!(ltToday&&usTdD&&ltToday!==lt);
-var _usTEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러','장기채권','단기채권','하이일드']);
+var _usTEx=US_STATS_EXCLUDE;
 var _usTVals=hasToday?H.slice(1).filter(function(n){return!_usTEx.has(n)&&n;}).map(function(n){var i=H.indexOf(n);return{name:n,v:i>=0?parseFloat(ltToday[i]):NaN};}).filter(function(d){return!isNaN(d.v);}):[];
 var _usTMx=_usTVals.length?_usTVals.reduce(function(a,b){return b.v>a.v?b:a;}):null;
 var _usTMn=_usTVals.length?_usTVals.reduce(function(a,b){return b.v<a.v?b:a;}):null;
@@ -2733,7 +2749,7 @@ const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=S.krToday?S.krToday.date:'';
 const hasToday=todayDate&&Object.keys(todayMap).length>0;
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
+const excludeFromChart=KR_STATS_EXCLUDE;
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 if(krChartType==='heatmap'){
 document.getElementById('kr-chart-title').textContent='🗓️ 섹터 히트맵 (오늘 실시간)';
@@ -2784,7 +2800,7 @@ krChart=new Chart(canvas,{type:'bar',data:{labels,datasets:[{label:'오늘 등�
 krChartAllOn=true; return;
 }
 const chartRows=[...rows.slice(0,krChartPeriod)].reverse();
-const excludeFromChart=new Set(['날짜','ADR피','ADR닥','FnG']);
+const excludeFromChart=KR_STATS_EXCLUDE;
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
 const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
 if(krChartType==='heatmap'){
@@ -3057,7 +3073,7 @@ if(usChartType==='ranking'){
 document.getElementById('us-chart-title').textContent='🏆 섹터 등락률 랭킹 (오늘 실시간)';
 if(usChart){usChart.destroy();usChart=null;}
 if(!usHasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+const rankNames=sectorNames.filter(h=>!US_STATS_EXCLUDE.has(h)&&h);
 const allAvg=rankNames.map(name=>{const v=usTodayMap[name];return{name,avg:v!==undefined&&!isNaN(v)?+parseFloat(v).toFixed(2):null};}).filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg);
 const upData=allAvg.filter(d=>d.avg>=0);const dnData=allAvg.filter(d=>d.avg<0).reverse();
 function usNeonLabel(isUp){const col=isUp?'#ff6b6b':'#4fc3f7';return{display:true,anchor:'end',align:isUp?'end':'start',color:col,backgroundColor:null,borderWidth:0,font:{size:10,weight:'bold',family:"'Courier Prime','Courier New',monospace"},formatter:(v,ctx)=>{const orig=ctx.chart.data.datasets[0]._origData?.[ctx.dataIndex];return orig!==undefined?(orig>0?'+':'')+orig.toFixed(2)+'%':(v>0?'+':'')+v.toFixed(2)+'%';},padding:{left:2,right:2},textShadowColor:isUp?'#ff0000':'#0088ff',textShadowBlur:6,clip:false};}
@@ -3075,7 +3091,7 @@ wrap.style.height='320px';wrap.style.overflowY='';
 if(!wrap.querySelector('#us-chart-canvas')){wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';wrap.style.height='320px';}
 const canvas=document.getElementById('us-chart-canvas');if(!canvas)return;
 if(usChart){usChart.destroy();usChart=null;}
-const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+const rankNames=sectorNames.filter(h=>!US_STATS_EXCLUDE.has(h)&&h);
 const vals=rankNames.map(name=>{const v=usTodayMap[name];return{name,val:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(d=>d.val!==null).sort((a,b)=>b.val-a.val);
 const labels=vals.map(d=>d.name);const data=vals.map(d=>d.val);
 const colors=data.map(v=>v>=0?'rgba(239,83,80,0.75)':'rgba(66,165,245,0.75)');
@@ -3145,7 +3161,7 @@ if(usChart){usChart.destroy();usChart=null;}
 if(usChartType==='ranking'){
 document.getElementById('us-chart-title').textContent=`🏆 섹터 평균 등락률 랭킹 (최근 ${periodLabel})`;
 if(usChart){usChart.destroy();usChart=null;}
-const rankNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+const rankNames=sectorNames.filter(h=>!US_STATS_EXCLUDE.has(h)&&h);
 const allAvg=rankNames.map(name=>{
 const colIdx=H.indexOf(name);
 const vals=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return NaN;return parseFloat(r[colIdx]);}).filter(v=>!isNaN(v));
@@ -3251,7 +3267,7 @@ const usTodayDate=S.usToday?S.usToday.date:'';
 const usLatestDate=chartRows.length?chartRows[chartRows.length-1][0]:'';
 const addUsToday=usTodayDate&&usTodayDate!==usLatestDate&&Object.keys(usTodayMap).length>0;
 const labels=[...chartRows.map(r=>r[0]),...(addUsToday?[usTodayDate+'★']:[])];
-const rankableNames=sectorNames.filter(h=>{const m=US_META[h]||{};return m.type!=='YIELD'&&m.type!=='VIX';});
+const rankableNames=sectorNames.filter(h=>!US_STATS_EXCLUDE.has(h)&&h);
 const avgForTop=rankableNames.map(name=>{
 const ci=H.indexOf(name);
 const vs=chartRows.map(r=>{if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(v=>!isNaN(v));
@@ -3725,7 +3741,7 @@ var mcapUsMap={};
 var _usSrc=(S.usWatchL&&S.usWatchL.sectors)?S.usWatchL.sectors
   :(S.usWatchStocks?Object.entries(S.usWatchStocks).filter(function(e){return!e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}):[]);
 _usSrc.forEach(function(sec){var sum=0;(sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});if(sum>0)mcapUsMap[sec.sector]=sum;});
-var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러']);
+var _usEx=US_STATS_EXCLUDE;
 var usVals=rk.filter(function(n){return!_usEx.has(n);}).map(function(n){var v=um[n];return{name:n,avg:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null,marketCap:mcapUsMap[n]||null};}).filter(function(d){return d.avg!==null;});
 if(!usVals.length){wrap.innerHTML='<div style="padding:30px;text-align:center;color:var(--text-muted)">섹터 데이터 없음</div>';return;}
 var hasCapUs=usVals.some(function(d){return d.marketCap&&d.marketCap>0;});
@@ -3761,8 +3777,8 @@ var _panel=document.getElementById('us-analytics-panels');
 var _wasHidden=_panel&&_panel.style.display==='none';
 if(_wasHidden){_panel.style.visibility='hidden';_panel.style.display='';}
 var H=S.usD.headers, rows=S.usD.rows;
-var _usRankEx=new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']);
-var rk=H.slice(1).filter(function(h){var m=US_META[h]||{};return m.type!=='YIELD'&&!_usRankEx.has(h)&&h;});
+var _usRankEx=US_STATS_EXCLUDE;
+var rk=H.slice(1).filter(function(h){return !US_STATS_EXCLUDE.has(h)&&h;});
 var pLabel=periodText(usAnalyticsPeriod);
 var el=document.getElementById('us-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
 var el2=document.getElementById('us-chart-title'); if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
@@ -3780,7 +3796,7 @@ if(_wasHidden){_panel.style.display='none';_panel.style.visibility='';}
 return;
 }
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
-var _rkPeriod=rk.filter(function(n){return!new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']).has(n);});
+var _rkPeriod=rk.filter(function(n){return!US_STATS_EXCLUDE.has(n);});
 var allAvg=_rkPeriod.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='';
 var _cw2=document.getElementById('us-chart-wrap'); if(_cw2)_cw2.style.display='';
@@ -3811,7 +3827,7 @@ var mcapUsMap={};
 var _usSrc=(S.usWatchL&&S.usWatchL.sectors)?S.usWatchL.sectors
   :(S.usWatchStocks?Object.entries(S.usWatchStocks).filter(function(e){return!e[0].startsWith('_');}).map(function(e){return{sector:e[0],stocks:e[1]};}):[]);
 _usSrc.forEach(function(sec){var sum=0;(sec.stocks||[]).forEach(function(st){if(st.marketCap&&st.marketCap>0)sum+=st.marketCap;});if(sum>0)mcapUsMap[sec.sector]=sum;});
-var _usEx=new Set(['S&P500','나스닥','다우존스','러셀2000','VIX','달러']);
+var _usEx=US_STATS_EXCLUDE;
 var usVals=rk.filter(function(n){return!_usEx.has(n);}).map(function(n){var v=um[n];return{name:n,avg:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null,marketCap:mcapUsMap[n]||null};}).filter(function(d){return d.avg!==null;});
 var hasCapUs=usVals.some(function(d){return d.marketCap&&d.marketCap>0;});
 var allBoxesUs=[];
@@ -3854,7 +3870,7 @@ if(!wrap.querySelector('canvas#us-chart-canvas')){
 }
 var canvas2=document.getElementById('us-chart-canvas');
 if(!canvas2){return;}
-var _aFTExM=new Set(['달러','VIX','장기채권','단기채권','하이일드','FnG']);
+var _aFTExM=US_STATS_EXCLUDE;
 var aFT=rk.filter(function(n){return!_aFTExM.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
 var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['SP500','Nasdaq'].forEach(function(n){top5.add(n);});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
