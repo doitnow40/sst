@@ -1812,22 +1812,64 @@ else if(dev<0){const t=Math.abs(dev)/R,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t
 else{const t=dev/R,c1=t<.5?W:MR,c2=t<.5?MR:DR,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
 return{bg:hex(bg[0],bg[1],bg[2]),fg:(dev<=-7||dev>=7)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:Math.abs(dev)>=5,t:n.toFixed(2)};
 }
-function yldCell(v){
-const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
-const dev=n-4.0;let bg;
-if(n<=0)bg=DB;else if(n>=6)bg=DR;
-else if(dev<0){const t=Math.abs(dev)/4,c1=t<.5?W:MB,c2=t<.5?MB:DB,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
-else{const t=dev/2,c1=t<.5?W:MR,c2=t<.5?MR:DR,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
-return{bg:hex(bg[0],bg[1],bg[2]),fg:(n<=1.5||n>=5.5)?'#fff':(dev<0?'#003060':(dev>0?'#7B0000':'#546E7A')),b:(n<=1||n>=5),t:n.toFixed(3)};
+// ── 채권·VIX 구간별 색상 팔레트 ────────────────────────────────
+const _ZC={
+  G :[232,245,233],
+  LP:[252,228,236],
+  PK:[244,143,177],
+  RD:[229, 57, 53],
+  DR2:[183, 28,28],
+};
+function _zLerp(from,to,t){return[lp(from[0],to[0],t),lp(from[1],to[1],t),lp(from[2],to[2],t)];}
+function _zoneBg(val,zones){
+  for(let i=0;i<zones.length;i++){
+    const {lo,hi,from,to}=zones[i];
+    if(val<hi){const t=(hi===lo)?0:Math.min((val-lo)/(hi-lo),1);return{rgb:_zLerp(from,to,t),zi:i};}
+  }
+  const last=zones[zones.length-1];return{rgb:last.to,zi:zones.length};
+}
+function _longBondZones(){return[
+  {lo:0,   hi:3.5, from:_ZC.G,  to:_ZC.G },
+  {lo:3.5, hi:4.0, from:_ZC.G,  to:_ZC.LP},
+  {lo:4.0, hi:4.5, from:_ZC.LP, to:_ZC.PK},
+  {lo:4.5, hi:5.5, from:_ZC.PK, to:_ZC.RD},
+];}
+function _shortBondZones(){return[
+  {lo:0,   hi:2.0, from:_ZC.G,  to:_ZC.G },
+  {lo:2.0, hi:3.0, from:_ZC.G,  to:_ZC.LP},
+  {lo:3.0, hi:3.5, from:_ZC.LP, to:_ZC.PK},
+  {lo:3.5, hi:4.0, from:_ZC.PK, to:_ZC.RD},
+];}
+function _hyZones(){return[
+  {lo:0,   hi:4.0, from:_ZC.G,  to:_ZC.G },
+  {lo:4.0, hi:4.5, from:_ZC.G,  to:_ZC.LP},
+  {lo:4.5, hi:5.5, from:_ZC.LP, to:_ZC.PK},
+  {lo:5.5, hi:6.0, from:_ZC.PK, to:_ZC.RD},
+];}
+function _bondFg(zi){
+  if(zi<=1)return'#1B5E20';
+  if(zi===2)return'#880E4F';
+  return'#fff';
+}
+function yldCell(v,sectorName){
+  const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
+  let zones;
+  if(sectorName==='하이일드'||sectorName==='HiYield') zones=_hyZones();
+  else if(sectorName==='단기채권'||sectorName==='ShortBond') zones=_shortBondZones();
+  else zones=_longBondZones();
+  const {rgb,zi}=_zoneBg(Math.max(n,0),zones);
+  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(3)};
 }
 function vixCell(v){
-const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
-const DG=[27,94,32],ER=[80,0,0];let bg;
-if(n<=10)bg=DG;
-else if(n<=20){const t=(n-10)/10;bg=[lp(DG[0],W[0],t),lp(DG[1],W[1],t),lp(DG[2],W[2],t)];}
-else if(n<=40){const t=(n-20)/20,c1=t<.5?W:MR,c2=t<.5?MR:DR,tt=t<.5?t*2:(t-.5)*2;bg=[lp(c1[0],c2[0],tt),lp(c1[1],c2[1],tt),lp(c1[2],c2[2],tt)];}
-else{const t=Math.min((n-40)/50,1);bg=[lp(DR[0],ER[0],t),lp(DR[1],ER[1],t),lp(DR[2],ER[2],t)];}
-return{bg:hex(bg[0],bg[1],bg[2]),fg:(n<=14||n>=25)?'#fff':(n<=20?'#1B5E20':'#7B0000'),b:(n>=30||n<=12),t:n.toFixed(2)};
+  const n=parseFloat(v);if(isNaN(n))return{bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};
+  const zones=[
+    {lo:0,  hi:15, from:_ZC.G,  to:_ZC.G },
+    {lo:15, hi:20, from:_ZC.G,  to:_ZC.LP},
+    {lo:20, hi:30, from:_ZC.LP, to:_ZC.PK},
+    {lo:30, hi:40, from:_ZC.PK, to:_ZC.RD},
+  ];
+  const {rgb,zi}=_zoneBg(Math.max(n,0),zones);
+  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(2)};
 }
 function krCellColor(name,val,secColorIdx){
 const fixed=KR_FIXED[name];
@@ -1858,7 +1900,7 @@ const _KR2EN={'장기채권':'LongBond','단기채권':'ShortBond','하이일드
 function usCell(name,val){
 const _n=_KR2EN[name]||name;
 const m=US_META[_n];if(!m)return pctCell(val,6);
-if(m.type==='YIELD') return yldCell(val);
+if(m.type==='YIELD') return yldCell(val,name);
 if(m.type==='VIX')   return vixCell(val);
 return pctCell(val,6);
 }
@@ -2972,7 +3014,7 @@ const m=US_META[name]||{};
 const v=usTodayMap[name];
 let c;
 if(v!==undefined&&v!==null){
-if(m.type==='YIELD')c=yldCell(v);
+if(m.type==='YIELD')c=yldCell(v,name);
 else if(m.type==='VIX')c=vixCell(v);
 else c=pctCell(v,6);
 }else{c={bg:'',fg:'var(--text-muted)',b:false,t:'-'};}
@@ -3039,7 +3081,7 @@ if(!usHasToday||usAlreadyHasToday) return '';
 const tv=usTodayHmMap[name];
 let c;
 if(tv!==undefined&&tv!==null){
-if(m.type==='YIELD') c=yldCell(tv);
+if(m.type==='YIELD') c=yldCell(tv,name);
 else if(m.type==='VIX') c=vixCell(tv);
 else c=pctCell(tv,6);
 }else{c={bg:'#ebedf2',fg:'#8a9ab5',b:false,t:''};}
@@ -3050,7 +3092,7 @@ dispRows.forEach(r=>{
 const v=r[colIdx];
 if(String(v)==='휴장'){html+=`<td style="color:var(--text-muted);font-size:8px">휴장</td>`;return;}
 let c;
-if(m.type==='YIELD') c=yldCell(v);
+if(m.type==='YIELD') c=yldCell(v,name);
 else if(m.type==='VIX') c=vixCell(v);
 else c=pctCell(v,6);
 html+=`<td style="background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||''}</td>`;
@@ -3799,7 +3841,7 @@ var wrap=document.getElementById('us-heatmap-wrap'); if(!wrap)return;
 if(today){
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'오늘';
 var html='<table class="heatmap-table"><thead><tr><th>섹터</th><th style="color:var(--accent-us);font-weight:700">'+ud+'★</th></tr></thead><tbody>';
-ah.forEach(function(n){var m=US_META[n]||{};var v=um[n];var c;if(v!==undefined&&!isNaN(v)){if(m.type==='YIELD')c=yldCell(v);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:'-'};}html+='<tr><td>'+n+'</td><td style="background:'+c.bg+';color:'+c.fg+'">'+(c.t||'-')+'</td></tr>';});
+ah.forEach(function(n){var m=US_META[n]||{};var v=um[n];var c;if(v!==undefined&&!isNaN(v)){if(m.type==='YIELD')c=yldCell(v,n);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:'-'};}html+='<tr><td>'+n+'</td><td style="background:'+c.bg+';color:'+c.fg+'">'+(c.t||'-')+'</td></tr>';});
 wrap.innerHTML=html+'</tbody></table>'; return;
 }
 var disp=usHeatmapReverse?[...cr].reverse():cr;
@@ -3810,8 +3852,8 @@ var tTh=hasT&&!alT?'<th style="color:var(--accent-us);font-weight:700">'+ud.slic
 if(usHeatmapReverse)html+=tTh; disp.forEach(function(r){html+='<th>'+r[0].slice(5)+'</th>';}); if(!usHeatmapReverse)html+=tTh;
 html+='</tr></thead><tbody>';
 ah.forEach(function(n){var ci=H.indexOf(n);var m=US_META[n]||{}; html+='<tr><td>'+n+'</td>';
-function td2(){if(!hasT||alT)return'';var tv=um[n];var c;if(tv!==undefined&&!isNaN(tv)){if(m.type==='YIELD')c=yldCell(tv);else if(m.type==='VIX')c=vixCell(tv);else c=pctCell(tv,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:''};}return'<td style="background:'+c.bg+';color:'+c.fg+';border-left:2px solid rgba(239,83,80,.5)">'+(c.t||'')+'</td>';}
-if(usHeatmapReverse)html+=td2(); disp.forEach(function(r){var v=r[ci];if(String(v)==='휴장'){html+='<td style="color:var(--text-muted);font-size:8px">휴장</td>';return;}var c;if(m.type==='YIELD')c=yldCell(v);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);html+='<td style="background:'+c.bg+';color:'+c.fg+'">'+(c.t||'')+'</td>';}); if(!usHeatmapReverse)html+=td2();
+function td2(){if(!hasT||alT)return'';var tv=um[n];var c;if(tv!==undefined&&!isNaN(tv)){if(m.type==='YIELD')c=yldCell(tv,n);else if(m.type==='VIX')c=vixCell(tv);else c=pctCell(tv,6);}else{c={bg:'',fg:'var(--text-muted)',b:false,t:''};}return'<td style="background:'+c.bg+';color:'+c.fg+';border-left:2px solid rgba(239,83,80,.5)">'+(c.t||'')+'</td>';}
+if(usHeatmapReverse)html+=td2(); disp.forEach(function(r){var v=r[ci];if(String(v)==='휴장'){html+='<td style="color:var(--text-muted);font-size:8px">휴장</td>';return;}var c;if(m.type==='YIELD')c=yldCell(v,n);else if(m.type==='VIX')c=vixCell(v);else c=pctCell(v,6);html+='<td style="background:'+c.bg+';color:'+c.fg+'">'+(c.t||'')+'</td>';}); if(!usHeatmapReverse)html+=td2();
 html+='</tr>';});
 wrap.innerHTML=html+'</tbody></table>';
 }
