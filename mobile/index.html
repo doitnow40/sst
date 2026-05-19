@@ -1393,44 +1393,30 @@ function _naverStockUrl(ticker, type) {
   if (colon < 0) return null;
   const exchange = t.slice(0, colon).toUpperCase();
   const code = t.slice(colon + 1);
-  // 한국 주식
   if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
     const numCode = code.replace(/[^0-9]/g, '');
     if (!numCode) return null;
     return 'https://m.stock.naver.com/domestic/stock/' + numCode + '/total';
   }
-  // ETF 거래소 (항상 ETF, 접미사 없음)
   if (['NYSEARCA','NYSEMKT','AMEX','BATS'].includes(exchange)) {
     return 'https://m.stock.naver.com/worldstock/etf/' + code + '/total';
   }
-  // NYSE (항상 개별주, 접미사 없음)
   if (exchange === 'NYSE') {
     return 'https://m.stock.naver.com/worldstock/stock/' + code + '/total';
   }
-  // NASDAQ: type 필드로 ETF/STOCK 구분
   if (exchange === 'NASDAQ') {
-    const isEtf = (type || '').toUpperCase() === 'ETF';
-    const path = isEtf ? 'etf' : 'stock';
-    return 'https://m.stock.naver.com/worldstock/' + path + '/' + code + '.O/total';
+    const isEtf = (String(type||'')).toUpperCase() === 'ETF';
+    return 'https://m.stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/total';
   }
   return null;
 }
 function _openNaverStock(ticker, type, e) {
+  if (typeof type === 'object' || type === undefined) { e = type; type = ''; }
   if (e && e.preventDefault) { e.preventDefault(); e.stopPropagation(); }
-  else if (typeof type === 'object') { e = type; type = null; }
   const url = _naverStockUrl(ticker, type);
   if (url) window.open(url, '_blank', 'noopener');
 }
-function _openNaverStock(ticker, e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  const url = _naverStockUrl(ticker);
-  if (url) window.open(url, '_blank', 'noopener');
-}
-function _openNaverStock(ticker, e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  const url = _naverStockUrl(ticker);
-  if (url) window.open(url, '_blank', 'noopener');
-}
+
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1800,7 +1786,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
       const _mUrl = _naverStockUrl(ticker);
-      const _mAttr = _mUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',event)" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _mAttr = _mUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}','${(st.type||'')}',event)" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
       html += `<div class="sp-stock-row">
         <span class="sp-stock-name"${_mAttr}>${st.name}${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" style="margin-left:4px">ℹ</span>` : ''}</span>
         <span class="sp-stock-ticker"${_mAttr}>${ticker}</span>
@@ -4235,7 +4221,7 @@ const stChg=_rawChg!==null&&_rawChg!==undefined&&!isNaN(_rawChg)?parseFloat(_raw
 const stStr=stChg!==null?(stChg>=0?'+':'')+stChg.toFixed(2)+'%':'-';
 const stColor=stChg>0?'#ef5350':stChg<0?'#42a5f5':'var(--text-muted)';
 const _uwUrl=_naverStockUrl(st.ticker||'',st.type||'');
-const _uwAttr=_uwUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _uwAttr=_uwUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
 wh+=`<div class="stock-item"><span class="stock-name"${_uwAttr}>${st.name||st}</span><span class="stock-ticker"${_uwAttr}>${st.ticker||''}</span><span class="sp-stock-chg" style="color:${stColor};font-size:10px;font-weight:700">${stStr}</span></div>`;
 });
 if(sec.stocks.length>8) wh+=`<div style="font-size:9px;color:var(--text-muted);padding:4px 0">외 ${sec.stocks.length-8}개 종목</div>`;
@@ -4282,7 +4268,7 @@ chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};f
 }
 const _ugTicker=m.symbol||'';const _ugType=m.type||'';
 const _ugUrl=_naverStockUrl(_ugTicker,_ugType);
-const _ugAttr=_ugUrl?` onclick="_openNaverStock('${_ugTicker.replace(/'/g,"\'")}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _ugAttr=_ugUrl?` onclick="_openNaverStock('${_ugTicker.replace(/'/g,"\'")}','${_ugType}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
 h+=`<div class="stock-item"><span class="stock-name"${_ugAttr} style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
 });
 h+=`</div></div>`;});
@@ -4768,7 +4754,7 @@ chgHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--tex
 const memo=s.memo||'';
 const memoIconHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const _msUrl=_naverStockUrl(s.ticker||'',s.type||'');
-const _msAttr=_msUrl?` onclick="_openNaverStock('${(s.ticker||'').replace(/'/g,"\'")}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _msAttr=_msUrl?` onclick="_openNaverStock('${(s.ticker||'').replace(/'/g,"\'")}','${s.type||''}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
 h+=`<div class="stock-item"><span class="stock-name"${_msAttr}>${s.name}</span><span class="stock-ticker"${_msAttr}>${s.ticker||'KR'}</span>${chgHtml}${memoIconHtml}</div>`;
 });
 h+=`</div></div>`;
