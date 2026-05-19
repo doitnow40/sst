@@ -1088,12 +1088,6 @@ const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:fa
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
 // ── 네이버 증권 URL 생성 (PC) ────────────────────────────────────────
-// type: 'ETF' | 'STOCK' | null (없으면 거래소로 자동 추론)
-// 거래소별 규칙:
-//   NYSEARCA / BATS        → ETF  → etf/{code}        (접미사 없음)
-//   NYSE                   → 주식 → stock/{code}       (접미사 없음)
-//   NASDAQ (STOCK)         → 주식 → stock/{code}.O
-//   NASDAQ (ETF)           → ETF  → etf/{code}.O
 function _naverStockUrl(ticker, type) {
   if (!ticker) return null;
   const t = String(ticker).trim();
@@ -1101,44 +1095,31 @@ function _naverStockUrl(ticker, type) {
   if (colon < 0) return null;
   const exchange = t.slice(0, colon).toUpperCase();
   const code = t.slice(colon + 1);
-  // 한국 주식
   if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
     const numCode = code.replace(/[^0-9]/g, '');
     if (!numCode) return null;
     return 'https://stock.naver.com/domestic/stock/' + numCode + '/price';
   }
-  // ETF 거래소 (항상 ETF, 접미사 없음)
   if (['NYSEARCA','NYSEMKT','AMEX','BATS'].includes(exchange)) {
     return 'https://stock.naver.com/worldstock/etf/' + code + '/price';
   }
-  // NYSE (항상 개별주, 접미사 없음)
   if (exchange === 'NYSE') {
     return 'https://stock.naver.com/worldstock/stock/' + code + '/price';
   }
-  // NASDAQ: type 필드로 ETF/STOCK 구분
   if (exchange === 'NASDAQ') {
-    const isEtf = (type || '').toUpperCase() === 'ETF';
-    const path = isEtf ? 'etf' : 'stock';
-    return 'https://stock.naver.com/worldstock/' + path + '/' + code + '.O/price';
+    const isEtf = (String(type||'')).toUpperCase() === 'ETF';
+    return 'https://stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/price';
   }
   return null;
 }
 function _openNaverStock(ticker, type, e) {
+  // type은 선택적: 문자열 'ETF'/'STOCK' 또는 생략 가능
+  if (typeof type === 'object' || type === undefined) { e = type; type = ''; }
   if (e && e.preventDefault) { e.preventDefault(); e.stopPropagation(); }
-  else if (typeof type === 'object') { e = type; type = null; }
   const url = _naverStockUrl(ticker, type);
   if (url) window.open(url, '_blank', 'noopener');
 }
-function _openNaverStock(ticker, e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  const url = _naverStockUrl(ticker);
-  if (url) window.open(url, '_blank', 'noopener');
-}
-function _openNaverStock(ticker, e) {
-  if (e) { e.preventDefault(); e.stopPropagation(); }
-  const url = _naverStockUrl(ticker);
-  if (url) window.open(url, '_blank', 'noopener');
-}
+
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1539,7 +1520,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : '';
             const isEtf = idx === 0;
             const _usPopUrl = _naverStockUrl(st.ticker||'', st.type||'');
-            const _usPopAttr = _usPopUrl ? ` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"` : '';
+            const _usPopAttr = _usPopUrl ? ` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"` : '';
             stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
               <span style="color:var(--text-primary)"${_usPopAttr}>${st.name}${memoHtml}</span>
               <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px"${_usPopAttr}>${tkrShort}</span>
@@ -1657,7 +1638,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
       const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}','${(st.type||'')}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
       html += '<div class="sp-stock-row">'
         + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
         + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
@@ -4289,7 +4270,7 @@ const memo=st.memo||'';
 const memoHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const isEtf=idx===0;
 const _lnUrl=_naverStockUrl(st.ticker||'',st.type||'');
-const _lnAttr=_lnUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _lnAttr=_lnUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
 h+=`<div class="stock-item">`;
 h+=`<span class="stock-name"${_lnAttr}>${st.name}</span>`;
 h+=`<span class="stock-ticker" style="font-size:9px"${_lnAttr}>${tkrShort||'US'}</span>`;
