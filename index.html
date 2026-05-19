@@ -4788,7 +4788,9 @@ chgHtml=`<span style="font-family:var(--font-mono);font-size:9px;color:var(--tex
 }
 const memo=s.memo||'';
 const memoIconHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
-h+=`<div class="stock-item"><span class="stock-name">${s.name}</span><span class="stock-ticker">${s.ticker||'KR'}</span>${chgHtml}${memoIconHtml}</div>`;
+const _krLUrl=_naverStockUrl(s.ticker||'',s.type||'');
+const _krLAttr=_krLUrl?` onclick="_openNaverStock('${(s.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+h+=`<div class="stock-item"><span class="stock-name"${_krLAttr}>${s.name}</span><span class="stock-ticker"${_krLAttr}>${s.ticker||'KR'}</span>${chgHtml}${memoIconHtml}</div>`;
 });
 h+=`</div></div>`;
 });
