@@ -1087,6 +1087,26 @@ const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
+// ── Yahoo Finance URL 생성 ───────────────────────────────────────────
+// NASDAQ:NVDA → https://finance.yahoo.com/quote/NVDA
+// NYSE:JNJ    → https://finance.yahoo.com/quote/JNJ
+// NYSEARCA:IWM→ https://finance.yahoo.com/quote/IWM
+function _yahooStockUrl(ticker) {
+  if (!ticker) return null;
+  const colon = ticker.indexOf(':');
+  if (colon < 0) return null;
+  const exchange = ticker.slice(0, colon).toUpperCase();
+  const code = ticker.slice(colon + 1);
+  // 한국 주식은 Yahoo Finance 미지원
+  if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) return null;
+  return 'https://finance.yahoo.com/quote/' + code;
+}
+function _openYahooStock(ticker, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const url = _yahooStockUrl(ticker);
+  if (url) window.open(url, '_blank', 'noopener');
+}
+
 // ── 네이버 증권 URL 생성 (PC) ────────────────────────────────────────
 function _naverStockUrl(ticker, type) {
   if (!ticker) return null;
@@ -1520,9 +1540,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : '';
             const isEtf = idx === 0;
             const _usPopUrl = _naverStockUrl(st.ticker||'', st.type||'');
-            const _usPopAttr = _usPopUrl ? ` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"` : '';
-            stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
-              <span style="color:var(--text-primary)"${_usPopAttr}>${st.name}${memoHtml}</span>
+            const _usPopAttr = _usPopUrl ? ` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"` : '';
+            const _usPopYUrl = _yahooStockUrl(st.ticker||'');
+            const _usPopYIcon = _usPopYUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
+            stocksHtml += `<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
+              ${_usPopYIcon}<span style="color:var(--text-primary)"${_usPopAttr}>${st.name}${memoHtml}</span>
               <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px"${_usPopAttr}>${tkrShort}</span>
               ${mcap}
               ${chgHtml}
@@ -1638,8 +1660,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
       const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}','${(st.type||'')}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _yUrlP = !isKr ? _yahooStockUrl(ticker) : null;
+      const _yIconP = _yUrlP ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
       html += '<div class="sp-stock-row">'
+        + _yIconP
         + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
         + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
         + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
@@ -4270,9 +4295,11 @@ const memo=st.memo||'';
 const memoHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const isEtf=idx===0;
 const _lnUrl=_naverStockUrl(st.ticker||'',st.type||'');
-const _lnAttr=_lnUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _lnAttr=_lnUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+const _lnYUrl=_yahooStockUrl(st.ticker||'');
+const _lnYIcon=_lnYUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
 h+=`<div class="stock-item">`;
-h+=`<span class="stock-name"${_lnAttr}>${st.name}</span>`;
+h+=`${_lnYIcon}<span class="stock-name"${_lnAttr}>${st.name}</span>`;
 h+=`<span class="stock-ticker" style="font-size:9px"${_lnAttr}>${tkrShort||'US'}</span>`;
 if(mcap) h+=mcap;
 h+=`${chgHtml}${memoHtml}</div>`;
