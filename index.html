@@ -934,6 +934,7 @@ oninput="filterUsAdminSectors(this.value)">
 <div class="admin-input-row" style="margin-bottom:6px">
 <input class="admin-input" id="us-add-stock-name" placeholder="종목명 (예: NVIDIA)" style="flex:2">
 <input class="admin-input" id="us-add-stock-ticker" placeholder="티커 (예: NASDAQ:NVDA)" style="flex:2">
+<select class="admin-input" id="us-add-stock-type" style="flex:0 0 90px;cursor:pointer" title="종목 유형"><option value="STOCK" selected>STOCK</option><option value="ETF">ETF</option></select>
 </div>
 <div class="admin-input-row" style="margin-top:2px">
 <input class="admin-input" id="us-add-stock-memo" placeholder="📝 메모 (선택사항)" style="flex:1">
@@ -1085,6 +1086,59 @@ const US_STATS_EXCLUDE = new Set([
 const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
+
+// ── 네이버 증권 URL 생성 (PC) ────────────────────────────────────────
+// type: 'ETF' | 'STOCK' | null (없으면 거래소로 자동 추론)
+// 거래소별 규칙:
+//   NYSEARCA / BATS        → ETF  → etf/{code}        (접미사 없음)
+//   NYSE                   → 주식 → stock/{code}       (접미사 없음)
+//   NASDAQ (STOCK)         → 주식 → stock/{code}.O
+//   NASDAQ (ETF)           → ETF  → etf/{code}.O
+function _naverStockUrl(ticker, type) {
+  if (!ticker) return null;
+  const t = String(ticker).trim();
+  const colon = t.indexOf(':');
+  if (colon < 0) return null;
+  const exchange = t.slice(0, colon).toUpperCase();
+  const code = t.slice(colon + 1);
+  // 한국 주식
+  if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
+    const numCode = code.replace(/[^0-9]/g, '');
+    if (!numCode) return null;
+    return 'https://stock.naver.com/domestic/stock/' + numCode + '/price';
+  }
+  // ETF 거래소 (항상 ETF, 접미사 없음)
+  if (['NYSEARCA','NYSEMKT','AMEX','BATS'].includes(exchange)) {
+    return 'https://stock.naver.com/worldstock/etf/' + code + '/price';
+  }
+  // NYSE (항상 개별주, 접미사 없음)
+  if (exchange === 'NYSE') {
+    return 'https://stock.naver.com/worldstock/stock/' + code + '/price';
+  }
+  // NASDAQ: type 필드로 ETF/STOCK 구분
+  if (exchange === 'NASDAQ') {
+    const isEtf = (type || '').toUpperCase() === 'ETF';
+    const path = isEtf ? 'etf' : 'stock';
+    return 'https://stock.naver.com/worldstock/' + path + '/' + code + '.O/price';
+  }
+  return null;
+}
+function _openNaverStock(ticker, type, e) {
+  if (e && e.preventDefault) { e.preventDefault(); e.stopPropagation(); }
+  else if (typeof type === 'object') { e = type; type = null; }
+  const url = _naverStockUrl(ticker, type);
+  if (url) window.open(url, '_blank', 'noopener');
+}
+function _openNaverStock(ticker, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const url = _naverStockUrl(ticker);
+  if (url) window.open(url, '_blank', 'noopener');
+}
+function _openNaverStock(ticker, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const url = _naverStockUrl(ticker);
+  if (url) window.open(url, '_blank', 'noopener');
+}
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1484,9 +1538,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             const memo = st.memo || '';
             const memoHtml = memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>` : '';
             const isEtf = idx === 0;
+            const _usPopUrl = _naverStockUrl(st.ticker||'', st.type||'');
+            const _usPopAttr = _usPopUrl ? ` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"` : '';
             stocksHtml += `<div style="display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.2);font-size:12px">
-              <span style="color:var(--text-primary)">${st.name}${memoHtml}</span>
-              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">${tkrShort}</span>
+              <span style="color:var(--text-primary)"${_usPopAttr}>${st.name}${memoHtml}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px"${_usPopAttr}>${tkrShort}</span>
               ${mcap}
               ${chgHtml}
             </div>`;
@@ -1600,9 +1656,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
       const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
+      const _nUrl = _naverStockUrl(ticker, st.type||'');
+      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
       html += '<div class="sp-stock-row">'
-        + '<span class="sp-stock-name">'+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
-        + '<span class="sp-stock-ticker">'+ticker+'</span>'
+        + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
+        + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
         + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
         + '</div>';
     });
@@ -4230,9 +4288,11 @@ const mcap=st.marketCap!==null&&st.marketCap!==undefined
 const memo=st.memo||'';
 const memoHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const isEtf=idx===0;
+const _lnUrl=_naverStockUrl(st.ticker||'',st.type||'');
+const _lnAttr=_lnUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
 h+=`<div class="stock-item">`;
-h+=`<span class="stock-name">${st.name}</span>`;
-h+=`<span class="stock-ticker" style="font-size:9px">${tkrShort||'US'}</span>`;
+h+=`<span class="stock-name"${_lnAttr}>${st.name}</span>`;
+h+=`<span class="stock-ticker" style="font-size:9px"${_lnAttr}>${tkrShort||'US'}</span>`;
 if(mcap) h+=mcap;
 h+=`${chgHtml}${memoHtml}</div>`;
 });
@@ -5194,15 +5254,17 @@ const memo=(document.getElementById('us-add-stock-memo')?.value||'').trim();
 if(!name){showUsAdminMsg('err','종목명을 입력하세요');return;}
 if(!_usAdminSelSector){showUsAdminMsg('err','좌측에서 섹터를 먼저 선택하세요');return;}
 try{
-const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||'',memo:memo||''});
+const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||'',memo:memo||'',type:(document.getElementById('us-add-stock-type')?.value||'STOCK')});
 if(!r.ok)throw new Error(r.error||'실패');
 showUsAdminMsg('ok',`"${name}" 추가 완료`);
 const nameEl=document.getElementById('us-add-stock-name');
 const tickerEl=document.getElementById('us-add-stock-ticker');
 const memoEl=document.getElementById('us-add-stock-memo');
+const typeEl=document.getElementById('us-add-stock-type');
 if(nameEl) nameEl.value='';
 if(tickerEl) tickerEl.value='';
 if(memoEl) memoEl.value='';
+if(typeEl) typeEl.value='STOCK';
 await _usRefreshWatchList();
 }catch(e){showUsAdminMsg('err',e.message);}
 }
