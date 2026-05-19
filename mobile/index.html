@@ -1385,6 +1385,26 @@ const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:fa
 const US_WATCHED_KEY_EARLY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));
 
+// ── Yahoo Finance URL 생성 ───────────────────────────────────────────
+// NASDAQ:NVDA → https://finance.yahoo.com/quote/NVDA
+// NYSE:JNJ    → https://finance.yahoo.com/quote/JNJ
+// NYSEARCA:IWM→ https://finance.yahoo.com/quote/IWM
+function _yahooStockUrl(ticker) {
+  if (!ticker) return null;
+  const colon = ticker.indexOf(':');
+  if (colon < 0) return null;
+  const exchange = ticker.slice(0, colon).toUpperCase();
+  const code = ticker.slice(colon + 1);
+  // 한국 주식은 Yahoo Finance 미지원
+  if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) return null;
+  return 'https://finance.yahoo.com/quote/' + code;
+}
+function _openYahooStock(ticker, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  const url = _yahooStockUrl(ticker);
+  if (url) window.open(url, '_blank', 'noopener');
+}
+
 // ── 네이버 증권 URL 생성 (모바일) ───────────────────────────────────
 function _naverStockUrl(ticker, type) {
   if (!ticker) return null;
@@ -1730,11 +1750,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         const mainColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'var(--text-muted)';
         const tkrShort  = st.ticker?st.ticker.split(':').pop():'';
         const memo = st.memo||'';
-        const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+        const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}">ℹ</span>`:'';
         const _url  = _naverStockUrl(st.ticker||'', st.type||'');
-        const _attr = _url?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+        const _attr = _url?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+        const _yUrl = _yahooStockUrl(st.ticker||'');
+        const _yIcon = _yUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
         html += `<div class="sp-stock-row">
-          <span class="sp-stock-name"${_attr}>${st.name}${memoHtml}</span>
+          ${_yIcon}<span class="sp-stock-name"${_attr}>${st.name}${memoHtml}</span>
           <span class="sp-stock-ticker"${_attr}>${tkrShort}</span>
           <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}</span>
         </div>`;
@@ -1821,10 +1843,12 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const mainStr = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
       const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
 
-      const _mUrl = _naverStockUrl(ticker);
-      const _mAttr = _mUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}','${(st.type||'')}',event)" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _mUrl = _naverStockUrl(ticker, st.type||'');
+      const _mAttr = _mUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}',event)" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      const _mYUrl = !isKr ? _yahooStockUrl(ticker) : null;
+      const _mYIcon = _mYUrl ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
       html += `<div class="sp-stock-row">
-        <span class="sp-stock-name"${_mAttr}>${st.name}${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" style="margin-left:4px">ℹ</span>` : ''}</span>
+        ${_mYIcon}<span class="sp-stock-name"${_mAttr}>${st.name}${memo ? `<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" style="margin-left:4px" onclick="event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}">ℹ</span>` : ''}</span>
         <span class="sp-stock-ticker"${_mAttr}>${ticker}</span>
         <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}${subHtml}</span>
       </div>`;
@@ -4258,7 +4282,9 @@ const stStr=stChg!==null?(stChg>=0?'+':'')+stChg.toFixed(2)+'%':'-';
 const stColor=stChg>0?'#ef5350':stChg<0?'#42a5f5':'var(--text-muted)';
 const _uwUrl=_naverStockUrl(st.ticker||'',st.type||'');
 const _uwAttr=_uwUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-wh+=`<div class="stock-item"><span class="stock-name"${_uwAttr}>${st.name||st}</span><span class="stock-ticker"${_uwAttr}>${st.ticker||''}</span><span class="sp-stock-chg" style="color:${stColor};font-size:10px;font-weight:700">${stStr}</span></div>`;
+const _uwYUrl=_yahooStockUrl(st.ticker||'');
+const _uwYIcon=_uwYUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
+wh+=`<div class="stock-item"><span class="stock-name"${_uwAttr}>${_uwYIcon}${st.name||st}</span><span class="stock-ticker"${_uwAttr}>${st.ticker||''}</span><span class="sp-stock-chg" style="color:${stColor};font-size:10px;font-weight:700">${stStr}</span></div>`;
 });
 if(sec.stocks.length>8) wh+=`<div style="font-size:9px;color:var(--text-muted);padding:4px 0">외 ${sec.stocks.length-8}개 종목</div>`;
 }else{
@@ -4305,7 +4331,9 @@ chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};f
 const _ugTicker=m.symbol||'';const _ugType=m.type||'';
 const _ugUrl=_naverStockUrl(_ugTicker,_ugType);
 const _ugAttr=_ugUrl?` onclick="_openNaverStock('${_ugTicker.replace(/'/g,"\'")}','${_ugType}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-h+=`<div class="stock-item"><span class="stock-name"${_ugAttr} style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
+const _ugYUrl=_yahooStockUrl(_ugTicker);
+const _ugYIcon=_ugYUrl?`<span onclick="_openYahooStock('${_ugTicker.replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
+h+=`<div class="stock-item"><span class="stock-name"${_ugAttr}>${_ugYIcon} style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;background:${m.bg};border-radius:2px;flex-shrink:0;display:inline-block"></span>${n}</span>${chgHtml}<span style="width:14px;flex-shrink:0;display:inline-block"></span></div>`;
 });
 h+=`</div></div>`;});
 h+='</div>';
@@ -5778,12 +5806,27 @@ document.addEventListener('mouseout',function(e){
 (function(){
 var tooltip=document.getElementById('global-memo-tooltip');
 if(!tooltip) return;
-// ★ 모바일: mouseover/mousemove/mouseout 이벤트 없음 → tooltip 완전 비활성화
-// touchstart 시 tooltip 강제 숨김
-document.addEventListener('touchstart',function(){
-  tooltip.style.display='none';
-  tooltip.style.opacity='0';
-},{passive:true,capture:true});
+// ★ 모바일: memo-icon 터치 시 툴팁 표시, 다른 곳 터치 시 닫기
+document.addEventListener('touchstart', function(e) {
+  const icon = e.target.closest('.memo-icon');
+  if (icon) {
+    e.preventDefault(); e.stopPropagation();
+    const memoText = icon.getAttribute('data-memo');
+    if (!memoText) return;
+    tooltip.textContent = memoText;
+    tooltip.style.display = 'block';
+    tooltip.style.opacity = '0';
+    // 위치 계산 후 표시
+    requestAnimationFrame(function() {
+      updateMemoPosition(icon);
+      tooltip.style.opacity = '1';
+    });
+    return;
+  }
+  // 다른 곳 터치 시 닫기
+  tooltip.style.opacity = '0';
+  setTimeout(function(){ tooltip.style.display='none'; }, 150);
+}, {capture: true});
 
 function updateMemoPosition(icon){
 var rect=icon.getBoundingClientRect();
