@@ -3,10 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-  
 <title>Stock Sector Tracker Map | 한국·미국 섹터 등락률 트래커</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -152,21 +148,6 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 .h-scrollbar-thumb:active{cursor:grabbing;background:linear-gradient(90deg,#e0f7fa,#4fc3f7);box-shadow:0 0 14px rgba(79,195,247,.8);}
 .h-scrollbar-thumb-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:radial-gradient(circle,#fff 30%,#4fc3f7 100%);border-radius:50%;box-shadow:0 0 6px rgba(79,195,247,.7),0 1px 3px rgba(0,0,0,.5);pointer-events:none;}
 </style>
-
-<script>
-window.addEventListener('error',function(e){
-
-  console.error('global error',e.error);
-
-  const page=document.getElementById('page-kr-history');
-
-  if(page){
-    page.style.display='block';
-  }
-
-});
-</script>
-  
 </head>
 <body>
 <div id="sidebar-overlay" onclick="closeSidebarIfFloating()"></div>
@@ -252,7 +233,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </nav>
 <main class="main">
-<div id="page-kr-history" style="display:block">
+<div id="page-kr-history" style="display:none">
 <div class="page-header">
 <div class="page-flag">🇰🇷</div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -1477,22 +1458,11 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         const hIdx = S.usD.headers.indexOf(sectorName);
         if (hIdx > 0) { const v = parseFloat(S.usD.rows[0][hIdx]); if (!isNaN(v)) _usDispAvg = v; }
       }
-      // ★ ET 장중/마감후: 오늘 실시간값 우선 사용
-      const _etNow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-      const _etDow = _etNow.getDay();
-      const _etHhmm = _etNow.getHours()*100 + _etNow.getMinutes();
-      const _etMarketHours = _etDow>=1&&_etDow<=5&&_etHhmm>=930&&_etHhmm<1600;
-      const _etAfterClose  = _etDow>=1&&_etDow<=5&&_etHhmm>=1600;
-      const _usUseToday = _etMarketHours || _etAfterClose;
-      const _usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-      if (_usUseToday && _usDispAvg === null) {
-        const _tv = _usTodayMap[sectorName];
-        if (_tv !== undefined && _tv !== null && !isNaN(_tv)) _usDispAvg = parseFloat(_tv);
-      }
       if (_usDispAvg === null) {
-        // 장전·주말: rows[0] fallback
-        const _tv2 = _usTodayMap[sectorName];
-        if (_tv2 !== undefined && _tv2 !== null && !isNaN(_tv2)) _usDispAvg = parseFloat(_tv2);
+        // rows[0]에 없으면 오늘 실시간 fallback
+        const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+        const sectorAvg = todayMap[sectorName];
+        if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) _usDispAvg = parseFloat(sectorAvg);
       }
       if (_usDispAvg !== null) {
         avgEl.textContent = (_usDispAvg >= 0 ? '+' : '') + _usDispAvg.toFixed(2) + '%';
@@ -6399,68 +6369,6 @@ document.addEventListener('click', function(e) {
   var _origRenderUsTableOnly = window.renderUsTableOnly;
   // MutationObserver가 처리하므로 별도 후킹 불필요
 })();
-
-/* =========================================================
-   모바일 blank 방지 패치
-   ========================================================= */
-
-(function(){
-
-  function safeInitPage(){
-
-    const firstPage=document.getElementById('page-kr-history');
-
-    if(firstPage){
-      firstPage.style.display='block';
-      firstPage.style.visibility='visible';
-      firstPage.style.opacity='1';
-    }
-
-    const main=document.querySelector('.main');
-
-    if(main){
-      main.style.display='block';
-      main.style.visibility='visible';
-    }
-
-  }
-
-  function safeGoInit(){
-
-    try{
-
-      if(typeof go==='function'){
-        go('kr-history',document.getElementById('nav-kr-history'));
-      }else{
-        safeInitPage();
-      }
-
-    }catch(err){
-
-      console.error('mobile init fail:',err);
-
-      safeInitPage();
-
-    }
-
-  }
-
-  if(document.readyState==='loading'){
-
-    document.addEventListener('DOMContentLoaded',function(){
-
-      setTimeout(safeGoInit,120);
-
-    });
-
-  }else{
-
-    setTimeout(safeGoInit,120);
-
-  }
-
-})();
-  
 </script>
 
 </body>
