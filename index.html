@@ -3373,6 +3373,16 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
 }
 
+// ★ 시가총액 데이터 미로드 시 API 선호출 후 트리맵 재렌더
+if(!(S.krSectors&&S.krSectors.length)){
+  wrap.style.height='80px';
+  wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">⏳ 시총 데이터 로딩 중...</div>';
+  api('kr_list').then(function(d){
+    if(d&&d.sectors&&d.sectors.length){S.krSectors=d.sectors;S.krLOk=true;S.krListAt=Date.now();}
+    renderKrAnalytics();
+  }).catch(function(){renderKrAnalytics();});
+  return;
+}
 var W=wrap.clientWidth||700, H2=Math.round(W*0.68); // 가로형: W > H
 wrap.style.height=H2+'px';wrap.style.overflowY='hidden';
 // 시가총액 매핑: S.krSectors에서 섹터별 종목 시가총액 합산
