@@ -1437,6 +1437,29 @@ function _openNaverStock(ticker, type, e) {
   if (url) window.open(url, '_blank', 'noopener');
 }
 
+
+// ── 공통 US 종목 한 줄 렌더링 (모바일) ──────────────────────────
+function _renderStockItem(st, useChg, isKr) {
+  const mainRaw = useChg ? (st.chg??st.prevChg) : (st.prevChg??st.chg);
+  const chg = (mainRaw!==null&&mainRaw!==undefined&&mainRaw!==''&&!isNaN(parseFloat(mainRaw)))?parseFloat(mainRaw):null;
+  const chgStr = chg!==null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'-';
+  const chgColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'#8a9ab5';
+  const tkrShort = (st.ticker||'').split(':').pop();
+  const memo = st.memo||'';
+  const memoOnclick = "event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}";
+  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="${memoOnclick}">ℹ</span>`:'';
+  let yIcon='', nameAttr='';
+  if (!isKr) {
+    const yUrl=_yahooStockUrl(st.ticker||'');
+    if(yUrl) yIcon=`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);user-select:none">Y</span>`;
+    const nUrl=_naverStockUrl(st.ticker||'',st.type||'');
+    if(nUrl) nameAttr=` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`;
+  } else {
+    const nUrl=_naverStockUrl(st.ticker||'','');
+    if(nUrl) nameAttr=` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`;
+  }
+  return `<div class="stock-item">${yIcon}<span class="stock-name"${nameAttr} style="flex:1;min-width:0">${st.name}</span>${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${chgStr}</span></div>`;
+}
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -1743,26 +1766,9 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const modeLabel_us = `총 ${usStocks.length}개 종목 · 오늘 등락률 ${validCount_us}개 · 등락률 높은 순`;
 
       let html = '';
-      sorted_us.forEach(st => {
-        const mainRaw = _usUseChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
-        const chg = (mainRaw!==null&&mainRaw!==undefined&&!isNaN(mainRaw))?parseFloat(mainRaw):null;
-        const mainStr   = chg!==null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'-';
-        const mainColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'var(--text-muted)';
-        const tkrShort  = st.ticker?st.ticker.split(':').pop():'';
-        const memo = st.memo||'';
-        const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}">ℹ</span>`:'';
-        const _url  = _naverStockUrl(st.ticker||'', st.type||'');
-        const _attr = _url?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-        const _yUrl = _yahooStockUrl(st.ticker||'');
-        const _yIcon = _yUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
-        html += `<div class="sp-stock-row">
-          ${_yIcon}<span class="sp-stock-name"${_attr}>${st.name}</span>${memoHtml}
-          <span class="sp-stock-ticker">${tkrShort}</span>
-          <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}</span>
-        </div>`;
-      });
+      sorted_us.forEach(st => { html += _renderStockItem(st, _usUseChg, false); });
 
-      const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel_us}</div>`;
+            const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel_us}</div>`;
       body.innerHTML = _renderSectorNoteHeader(sectorName, false) + header + html;
       return;
     }
@@ -4276,19 +4282,7 @@ if(sec.stocks&&sec.stocks.length){
 // ★ 최근영업일 클릭(_usIsPrevMode): prevChg(전일), 그 외: chg(오늘)
 const _mUsePrev=!!(typeof _usIsPrevMode!=='undefined'&&_usIsPrevMode);
 sec.stocks.slice(0,8).forEach(st=>{
-const _rawChg=_mUsePrev?(st.prevChg??st.chg):(st.chg??st.prevChg);
-const stChg=_rawChg!==null&&_rawChg!==undefined&&!isNaN(_rawChg)?parseFloat(_rawChg):null;
-const stStr=stChg!==null?(stChg>=0?'+':'')+stChg.toFixed(2)+'%':'-';
-const stColor=stChg>0?'#ef5350':stChg<0?'#42a5f5':'var(--text-muted)';
-const _uwUrl=_naverStockUrl(st.ticker||'',st.type||'');
-const _uwAttr=_uwUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-const _uwYUrl=_yahooStockUrl(st.ticker||'');
-const _uwYIcon=_uwYUrl?`<span onclick="_openYahooStock('${(st.ticker||'').replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
-const _uwMemo=st.memo||'';
-const _uwMemoHtml=_uwMemo?`<span class="memo-icon" data-memo="${_uwMemo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}">ℹ</span>`:'';
-const _uwTkrShort=(st.ticker||'').split(':').pop();
-wh+=`<div class="stock-item">${_uwYIcon}<span class="stock-name"${_uwAttr} style="flex:1;min-width:0">${st.name||st}</span>${_uwMemoHtml}<span class="stock-ticker">${_uwTkrShort}</span><span style="font-family:var(--font-mono);font-size:10px;color:${stColor};font-weight:700;flex-shrink:0">${stStr}</span></div>`;
-});
+wh+=_renderStockItem(st,!_mUsePrev,false);
 if(sec.stocks.length>8) wh+=`<div style="font-size:9px;color:var(--text-muted);padding:4px 0">외 ${sec.stocks.length-8}개 종목</div>`;
 }else{
 wh+=`<div style="font-size:10px;color:var(--text-muted);padding:8px 0;text-align:center">종목 없음</div>`;
@@ -4332,14 +4326,8 @@ const sign=chg>0?'+':'';
 chgHtml=`<span style="font-family:var(--font-mono);font-size:10px;color:${col};font-weight:${Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${sign}${chg.toFixed(2)}%</span>`;
 }
 const _ugTicker=m.symbol||'';const _ugType=m.type||'';
-const _ugUrl=_naverStockUrl(_ugTicker,_ugType);
-const _ugAttr=_ugUrl?` onclick="_openNaverStock('${_ugTicker.replace(/'/g,"\'")}','${_ugType}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-const _ugYUrl=_yahooStockUrl(_ugTicker);
-const _ugYIcon=_ugYUrl?`<span onclick="_openYahooStock('${_ugTicker.replace(/'/g,"\\'")}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);margin-right:3px;user-select:none;vertical-align:middle">Y</span>`:'';
-const _ugMemo=m.memo||'';
-const _ugMemoHtml=_ugMemo?`<span class="memo-icon" data-memo="${_ugMemo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();var t=document.getElementById('mob-memo-tooltip');if(t){t.textContent=this.getAttribute('data-memo');t.style.display='block';t.style.opacity='1';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none'},150)},2500);}">ℹ</span>`:'';
-const _ugTkrShort=_ugTicker.split(':').pop();
-h+=`<div class="stock-item">${_ugYIcon}<span class="stock-name"${_ugAttr} style="flex:1;min-width:0">${n}</span>${_ugMemoHtml}<span class="stock-ticker">${_ugTkrShort}</span>${chgHtml}</div>`;
+const _ugSt={name:n,ticker:_ugTicker,type:_ugType,chg:typeof chg==='number'?chg:null,prevChg:typeof chg==='number'?chg:null,memo:m.memo||''};
+h+=_renderStockItem(_ugSt,true,false);
 });
 h+=`</div></div>`;});
 h+='</div>';
@@ -4825,8 +4813,7 @@ const memo=s.memo||'';
 const memoIconHtml=memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
 const _msUrl=_naverStockUrl(s.ticker||'',s.type||'');
 const _msAttr=_msUrl?` onclick="_openNaverStock('${(s.ticker||'').replace(/'/g,"\'")}','${s.type||''}',event)" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-const _msTkrShort=(s.ticker||'KR').split(':').pop();
-h+=`<div class="stock-item"><span class="stock-name"${_msAttr} style="flex:1;min-width:0">${s.name}</span>${memoIconHtml}<span class="stock-ticker">${_msTkrShort}</span>${chgHtml}</div>`;
+h+=_renderStockItem(s,useToday,true);
 });
 h+=`</div></div>`;
 });
