@@ -1458,11 +1458,22 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         const hIdx = S.usD.headers.indexOf(sectorName);
         if (hIdx > 0) { const v = parseFloat(S.usD.rows[0][hIdx]); if (!isNaN(v)) _usDispAvg = v; }
       }
+      // ★ ET 장중/마감후: 오늘 실시간값 우선 사용
+      const _etNow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+      const _etDow = _etNow.getDay();
+      const _etHhmm = _etNow.getHours()*100 + _etNow.getMinutes();
+      const _etMarketHours = _etDow>=1&&_etDow<=5&&_etHhmm>=930&&_etHhmm<1600;
+      const _etAfterClose  = _etDow>=1&&_etDow<=5&&_etHhmm>=1600;
+      const _usUseToday = _etMarketHours || _etAfterClose;
+      const _usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+      if (_usUseToday && _usDispAvg === null) {
+        const _tv = _usTodayMap[sectorName];
+        if (_tv !== undefined && _tv !== null && !isNaN(_tv)) _usDispAvg = parseFloat(_tv);
+      }
       if (_usDispAvg === null) {
-        // rows[0]에 없으면 오늘 실시간 fallback
-        const todayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-        const sectorAvg = todayMap[sectorName];
-        if (sectorAvg !== undefined && sectorAvg !== null && !isNaN(sectorAvg)) _usDispAvg = parseFloat(sectorAvg);
+        // 장전·주말: rows[0] fallback
+        const _tv2 = _usTodayMap[sectorName];
+        if (_tv2 !== undefined && _tv2 !== null && !isNaN(_tv2)) _usDispAvg = parseFloat(_tv2);
       }
       if (_usDispAvg !== null) {
         avgEl.textContent = (_usDispAvg >= 0 ? '+' : '') + _usDispAvg.toFixed(2) + '%';
