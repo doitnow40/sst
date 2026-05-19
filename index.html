@@ -970,8 +970,20 @@ oninput="filterUsAdminSectors(this.value)">
 </div>
 <div id="scrollTop" onclick="document.querySelector('.main').scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</div>
 <div id="fab-group">
-<div class="fab-btn" id="fab-rate-sort" onclick="toggleRateSort()" title="등락률 순 정렬">📊</div>
-<div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬">🔤</div>
+<div class="fab-btn" id="fab-rate-sort" onclick="toggleRateSort()" title="등락률 높은순 정렬"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="4" width="3" height="11" rx="1" fill="#ff9800"/>
+  <rect x="5.5" y="7" width="3" height="8" rx="1" fill="#ff9800" opacity=".8"/>
+  <rect x="10" y="10" width="3" height="5" rx="1" fill="#ff9800" opacity=".6"/>
+  <rect x="14.5" y="12" width="3" height="3" rx="1" fill="#ff9800" opacity=".4"/>
+  <polyline points="14,2 16,4.5 18,2" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="1" x2="16" y2="4.5" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round"/>
+</svg></div>
+<div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="1" y="8" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7">A</text>
+  <text x="1" y="17" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7" opacity=".65">Z</text>
+  <line x1="14" y1="2" x2="14" y2="15" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
+  <polyline points="10,11 14,16 18,11" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg></div>
 <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
 </div>
 <script>if(window.ChartDataLabels) Chart.register(ChartDataLabels);
@@ -4581,7 +4593,14 @@ listSorted=false; watchedOnly=false; rateSort=0;
 document.getElementById('fab-sort')?.classList.remove('active');
 document.getElementById('fab-watch')?.classList.remove('active');
 const rb=document.getElementById('fab-rate-sort');
-if(rb){rb.classList.remove('active');rb.textContent='📊';rb.title='등락률 순 정렬';}
+if(rb){rb.classList.remove('active');rb.innerHTML=`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="4" width="3" height="11" rx="1" fill="#ff9800"/>
+  <rect x="5.5" y="7" width="3" height="8" rx="1" fill="#ff9800" opacity=".8"/>
+  <rect x="10" y="10" width="3" height="5" rx="1" fill="#ff9800" opacity=".6"/>
+  <rect x="14.5" y="12" width="3" height="3" rx="1" fill="#ff9800" opacity=".4"/>
+  <polyline points="14,2 16,4.5 18,2" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="1" x2="16" y2="4.5" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;rb.title='등락률 높은순 정렬';}
 }
 }
 let listSorted=false;
@@ -4607,7 +4626,14 @@ rerenderCurrentList();
 }
 let watchedOnly=false;
 function toggleListSort(){
-if(rateSort!==0){ rateSort=0; const rb=document.getElementById('fab-rate-sort'); if(rb){rb.classList.remove('active');rb.textContent='📊';rb.title='등락률 순 정렬';} }
+if(rateSort!==0){ rateSort=0; const rb=document.getElementById('fab-rate-sort'); if(rb){rb.classList.remove('active');rb.innerHTML=`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="4" width="3" height="11" rx="1" fill="#ff9800"/>
+  <rect x="5.5" y="7" width="3" height="8" rx="1" fill="#ff9800" opacity=".8"/>
+  <rect x="10" y="10" width="3" height="5" rx="1" fill="#ff9800" opacity=".6"/>
+  <rect x="14.5" y="12" width="3" height="3" rx="1" fill="#ff9800" opacity=".4"/>
+  <polyline points="14,2 16,4.5 18,2" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="16" y1="1" x2="16" y2="4.5" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;rb.title='등락률 높은순 정렬';} }
 listSorted=!listSorted;
 document.getElementById('fab-sort').classList.toggle('active',listSorted);
 rerenderCurrentList();
