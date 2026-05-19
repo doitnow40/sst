@@ -1637,11 +1637,9 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       }
     }
 
-    // US 섹터: 종목 리스트 없음 → US_META 정보 표시
+    // US 섹터: KR과 동일한 구조 — 섹터메모 + 종목리스트
     if (!isKr) {
-      const meta = (typeof US_META !== 'undefined' && US_META[sectorName]) ? US_META[sectorName] : null;
-      const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
-      // ★ 채권 섹터 설명 팝업
+      // ★ 채권 섹터는 별도 설명 팝업 유지
       const _bondInfoM = {
         '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리.\n금리 상승 = 성장·인플레 기대 신호', source:'CBOE: INDEXCBOE:TNX', link:'https://finance.yahoo.com/quote/%5ETNX/' },
         '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준 정책금리에 가장 민감한 금리.\n장단기 스프레드 계산에 활용', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://finance.yahoo.com/quote/%5ETWOYEAR/' },
@@ -1652,7 +1650,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         const _hiM = S.usD && S.usD.headers && S.usD.rows && S.usD.rows.length > 0
           ? (()=>{ const hi=S.usD.headers.indexOf(sectorName); return hi>=0?parseFloat(S.usD.rows[0][hi]):NaN; })()
           : NaN;
-        wh = `<div style="padding:14px">
+        body.innerHTML = `<div style="padding:14px">
           <div style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:6px">${_bim.title}</div>
           ${!isNaN(_hiM)?'<div style="font-size:20px;font-weight:700;color:#cfd8dc;margin-bottom:8px">'+_hiM.toFixed(3)+'%</div>':''}
           <div style="font-size:10px;color:#8a9ab5;line-height:1.7;margin-bottom:10px">${_bim.desc}</div>
@@ -1660,47 +1658,10 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             📌 ${_bim.source}<br>
             <a href="${_bim.link}" target="_blank" style="color:#4fc3f7">🔗 원본 데이터 보기 →</a>
           </div></div>`;
-        document.getElementById('sp-popup-body').innerHTML = wh;
-        document.getElementById('sp-popup-title').textContent = sectorName;
-        document.getElementById('sp-popup-avg').textContent = !isNaN(_hiM)?_hiM.toFixed(3)+'%':'';
-        document.getElementById('sp-popup-flag').textContent = '🇺🇸';
-        document.getElementById('sp-popup-overlay').style.display = 'flex';
         return;
       }
-      const usTodayVal = usTodayMap[sectorName];
-      const usPrevMap = (S.usD && S.usD.rows && S.usD.rows[0]) ? S.usD.rows[0] : null;
-      const usHeaders = S.usD ? S.usD.headers : [];
-      const prevIdx = usHeaders.indexOf(sectorName);
-      const prevVal = (usPrevMap && prevIdx > 0) ? parseFloat(usPrevMap[prevIdx]) : null;
 
-      // 최근 5일 추이
-      let trend5 = '';
-      if (S.usD && S.usD.rows) {
-        const rows5 = S.usD.rows.slice(0, 5);
-        // 오래된 날짜 순(과거→최신)으로 표시: rows5는 최신순이므로 reverse
-        const rows5Asc = [...rows5].reverse();
-        const pairs5 = rows5Asc
-          .map(r => ({ date: r[0], val: prevIdx > 0 ? parseFloat(r[prevIdx]) : NaN }))
-          .filter(p => !isNaN(p.val));
-        if (pairs5.length) {
-          trend5 = '<div style="margin-top:10px"><div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">최근 5일 등락률 (과거→최신)</div>';
-          pairs5.forEach(p => {
-            const c = p.val > 0 ? '#ef5350' : p.val < 0 ? '#42a5f5' : 'var(--text-muted)';
-            const dow = dateToDow(p.date, false);
-            const dowColor = (dow==='Sat')?'#64b5f6':(dow==='Sun')?'#ef9a9a':'var(--text-muted)';
-            trend5 += `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 6px;font-size:10px;border-bottom:1px solid rgba(46,58,80,.2)">
-              <span style="color:var(--text-secondary)">${p.date} <span style="font-size:8px;color:${dowColor}">(${dow})</span></span>
-              <span style="color:${c};font-weight:700">${p.val>=0?'+':''}${p.val.toFixed(2)}%</span>
-            </div>`;
-          });
-          trend5 += '</div>';
-        }
-      }
-
-      const sym = meta ? (meta.symbol || '') : '';
-      const grp = meta ? (meta.group || '') : '';
-
-      // ── US 종목 리스트: S.usWatchL에서 해당 섹터 종목 로드 ──────
+      // ── US 종목 로드: S.usWatchL 캐시 우선 ──────────────────────
       let usStocks = null;
       if (S.usWatchL && S.usWatchL.sectors) {
         const usSec = S.usWatchL.sectors.find(s => s.sector === sectorName);
@@ -1717,51 +1678,70 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         } catch(e) {}
       }
 
-      // 종목 리스트 HTML
-      let usStockHtml = '';
-      if (usStocks && usStocks.length > 0) {
-        const _usNowEt = new Date(new Date().toLocaleString('en-US', {timeZone:'America/New_York'}));
-        const _etHhmm = _usNowEt.getHours()*100 + _usNowEt.getMinutes();
-        const _etDow  = _usNowEt.getDay();
-        const _usMarketOpen = _etDow>=1&&_etDow<=5&&_etHhmm>=930&&_etHhmm<1600;
-        const _usAfterClose = _etDow>=1&&_etDow<=5&&_etHhmm>=1600;
-        const _useChg = _usMarketOpen || _usAfterClose;
-        const sorted_us = [...usStocks].sort((a,b)=>{
-          const va = _useChg?(a.chg??a.prevChg):(a.prevChg??a.chg);
-          const vb = _useChg?(b.chg??b.prevChg):(b.prevChg??b.chg);
-          if(va===null||va===undefined) return 1;
-          if(vb===null||vb===undefined) return -1;
-          return vb-va;
-        });
-        const modeLabel_us = _useChg ? '오늘 등락률 기준' : '전일 확정 등락률 기준';
-        usStockHtml = `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
-          <div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">총 ${usStocks.length}개 종목 · ${modeLabel_us}</div>`;
-        sorted_us.forEach(st => {
-          const mainRaw = _useChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
-          const chg = (mainRaw!==null&&mainRaw!==undefined&&!isNaN(mainRaw))?parseFloat(mainRaw):null;
-          const mainStr = chg!==null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'-';
-          const mainColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'var(--text-muted)';
-          const tkrShort = st.ticker?st.ticker.split(':').pop():'';
-          const memo = st.memo||'';
-          const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
-          const _usPopUrl = _naverStockUrl(st.ticker||'', st.type||'');
-          const _usPopAttr = _usPopUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
-          usStockHtml += `<div class="sp-stock-row">
-            <span class="sp-stock-name"${_usPopAttr}>${st.name}${memoHtml}</span>
-            <span class="sp-stock-ticker"${_usPopAttr}>${tkrShort}</span>
-            <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}</span>
-          </div>`;
-        });
-        usStockHtml += '</div>';
+      if (!usStocks || usStocks.length === 0) {
+        body.innerHTML = _renderSectorNoteHeader(sectorName, false) +
+          '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">종목 정보가 없습니다.</div>';
+        return;
       }
 
-      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
-        <div style="padding:4px 2px">
-          ${sym ? `<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px">📌 심볼: <span style="font-family:var(--font-mono);color:var(--accent-us)">${sym}</span> &nbsp;|&nbsp; 그룹: <span style="color:var(--accent-gold)">${grp}</span></div>` : ''}
-          ${usTodayVal !== undefined ? `<div style="font-size:12px;margin-bottom:6px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(usTodayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(usTodayVal)>=0?'+':''}${parseFloat(usTodayVal).toFixed(2)}%</span></div>` : ''}
-          ${prevVal !== null && !isNaN(prevVal) ? `<div style="font-size:11px;margin-bottom:4px;color:var(--text-secondary)">최근 확정: <span style="color:${prevVal>0?'#ef5350':'#42a5f5'}">${prevVal>=0?'+':''}${prevVal.toFixed(2)}%</span></div>` : ''}
-          ${trend5}
-        </div>` + usStockHtml;
+      // ── ET 장 상태 판단 ──────────────────────────────────────────
+      const _usNowEt = new Date(new Date().toLocaleString('en-US', {timeZone:'America/New_York'}));
+      const _etHhmm  = _usNowEt.getHours()*100 + _usNowEt.getMinutes();
+      const _etDow   = _usNowEt.getDay();
+      const _usMarketOpen  = _etDow>=1&&_etDow<=5&&_etHhmm>=930&&_etHhmm<1600;
+      const _usAfterClose  = _etDow>=1&&_etDow<=5&&_etHhmm>=1600;
+      const _usUseChg = _usMarketOpen || _usAfterClose;
+
+      // ── 섹터 평균 표시 ───────────────────────────────────────────
+      const usTodayMap = S.usToday && S.usToday.sectors ? S.usToday.sectors : {};
+      const usHeaders  = S.usD ? S.usD.headers : [];
+      const prevIdx    = usHeaders.indexOf(sectorName);
+      const usPrevMap  = (S.usD && S.usD.rows && S.usD.rows[0]) ? S.usD.rows[0] : null;
+      const prevVal    = (usPrevMap && prevIdx > 0) ? parseFloat(usPrevMap[prevIdx]) : null;
+      const usTodayVal = usTodayMap[sectorName];
+      let dispAvgUs = null;
+      if (prevDate && S.usD && S.usD.rows) {
+        const row = S.usD.rows.find(r => String(r[0]).startsWith(prevDate));
+        if (row && prevIdx > 0) { const v = parseFloat(row[prevIdx]); if (!isNaN(v)) dispAvgUs = v; }
+      }
+      if (dispAvgUs === null && usTodayVal !== undefined && !isNaN(usTodayVal)) dispAvgUs = parseFloat(usTodayVal);
+      if (dispAvgUs === null && prevVal !== null && !isNaN(prevVal)) dispAvgUs = prevVal;
+      if (dispAvgUs !== null) {
+        avgEl.textContent = (dispAvgUs>=0?'+':'') + dispAvgUs.toFixed(2) + '%';
+        avgEl.style.color = dispAvgUs>0?'#ef5350':dispAvgUs<0?'#42a5f5':'var(--text-muted)';
+      }
+
+      // ── 종목 정렬 및 렌더링 ─────────────────────────────────────
+      const sorted_us = [...usStocks].sort((a,b)=>{
+        const va = _usUseChg?(a.chg??a.prevChg):(a.prevChg??a.chg);
+        const vb = _usUseChg?(b.chg??b.prevChg):(b.prevChg??b.chg);
+        if(va===null||va===undefined) return 1;
+        if(vb===null||vb===undefined) return -1;
+        return vb-va;
+      });
+      const validCount_us = sorted_us.filter(s=>(_usUseChg?s.chg:s.prevChg)!==null).length;
+      const modeLabel_us = `총 ${usStocks.length}개 종목 · 오늘 등락률 ${validCount_us}개 · 등락률 높은 순`;
+
+      let html = '';
+      sorted_us.forEach(st => {
+        const mainRaw = _usUseChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
+        const chg = (mainRaw!==null&&mainRaw!==undefined&&!isNaN(mainRaw))?parseFloat(mainRaw):null;
+        const mainStr   = chg!==null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'-';
+        const mainColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'var(--text-muted)';
+        const tkrShort  = st.ticker?st.ticker.split(':').pop():'';
+        const memo = st.memo||'';
+        const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+        const _url  = _naverStockUrl(st.ticker||'', st.type||'');
+        const _attr = _url?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+        html += `<div class="sp-stock-row">
+          <span class="sp-stock-name"${_attr}>${st.name}${memoHtml}</span>
+          <span class="sp-stock-ticker"${_attr}>${tkrShort}</span>
+          <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}</span>
+        </div>`;
+      });
+
+      const header = `<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">${modeLabel_us}</div>`;
+      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + header + html;
       return;
     }
 
