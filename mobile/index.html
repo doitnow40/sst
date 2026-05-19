@@ -1699,13 +1699,69 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
       const sym = meta ? (meta.symbol || '') : '';
       const grp = meta ? (meta.group || '') : '';
+
+      // ── US 종목 리스트: S.usWatchL에서 해당 섹터 종목 로드 ──────
+      let usStocks = null;
+      if (S.usWatchL && S.usWatchL.sectors) {
+        const usSec = S.usWatchL.sectors.find(s => s.sector === sectorName);
+        if (usSec) usStocks = usSec.stocks;
+      }
+      if (!usStocks) {
+        try {
+          const ud = await api('us_watch_list', 0);
+          if (ud && ud.sectors) {
+            S.usWatchL = ud;
+            const usSec = ud.sectors.find(s => s.sector === sectorName);
+            if (usSec) usStocks = usSec.stocks;
+          }
+        } catch(e) {}
+      }
+
+      // 종목 리스트 HTML
+      let usStockHtml = '';
+      if (usStocks && usStocks.length > 0) {
+        const _usNowEt = new Date(new Date().toLocaleString('en-US', {timeZone:'America/New_York'}));
+        const _etHhmm = _usNowEt.getHours()*100 + _usNowEt.getMinutes();
+        const _etDow  = _usNowEt.getDay();
+        const _usMarketOpen = _etDow>=1&&_etDow<=5&&_etHhmm>=930&&_etHhmm<1600;
+        const _usAfterClose = _etDow>=1&&_etDow<=5&&_etHhmm>=1600;
+        const _useChg = _usMarketOpen || _usAfterClose;
+        const sorted_us = [...usStocks].sort((a,b)=>{
+          const va = _useChg?(a.chg??a.prevChg):(a.prevChg??a.chg);
+          const vb = _useChg?(b.chg??b.prevChg):(b.prevChg??b.chg);
+          if(va===null||va===undefined) return 1;
+          if(vb===null||vb===undefined) return -1;
+          return vb-va;
+        });
+        const modeLabel_us = _useChg ? '오늘 등락률 기준' : '전일 확정 등락률 기준';
+        usStockHtml = `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">총 ${usStocks.length}개 종목 · ${modeLabel_us}</div>`;
+        sorted_us.forEach(st => {
+          const mainRaw = _useChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
+          const chg = (mainRaw!==null&&mainRaw!==undefined&&!isNaN(mainRaw))?parseFloat(mainRaw):null;
+          const mainStr = chg!==null?(chg>=0?'+':'')+chg.toFixed(2)+'%':'-';
+          const mainColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'var(--text-muted)';
+          const tkrShort = st.ticker?st.ticker.split(':').pop():'';
+          const memo = st.memo||'';
+          const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+          const _usPopUrl = _naverStockUrl(st.ticker||'', st.type||'');
+          const _usPopAttr = _usPopUrl?` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}','${st.type||''}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`:'';
+          usStockHtml += `<div class="sp-stock-row">
+            <span class="sp-stock-name"${_usPopAttr}>${st.name}${memoHtml}</span>
+            <span class="sp-stock-ticker"${_usPopAttr}>${tkrShort}</span>
+            <span class="sp-stock-chg" style="color:${mainColor}">${mainStr}</span>
+          </div>`;
+        });
+        usStockHtml += '</div>';
+      }
+
       body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
         <div style="padding:4px 2px">
           ${sym ? `<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px">📌 심볼: <span style="font-family:var(--font-mono);color:var(--accent-us)">${sym}</span> &nbsp;|&nbsp; 그룹: <span style="color:var(--accent-gold)">${grp}</span></div>` : ''}
           ${usTodayVal !== undefined ? `<div style="font-size:12px;margin-bottom:6px">오늘(실시간): <span style="font-weight:700;color:${parseFloat(usTodayVal)>0?'#ef5350':'#42a5f5'}">${parseFloat(usTodayVal)>=0?'+':''}${parseFloat(usTodayVal).toFixed(2)}%</span></div>` : ''}
           ${prevVal !== null && !isNaN(prevVal) ? `<div style="font-size:11px;margin-bottom:4px;color:var(--text-secondary)">최근 확정: <span style="color:${prevVal>0?'#ef5350':'#42a5f5'}">${prevVal>=0?'+':''}${prevVal.toFixed(2)}%</span></div>` : ''}
           ${trend5}
-        </div>`;
+        </div>` + usStockHtml;
       return;
     }
 
@@ -3434,7 +3490,7 @@ var _panel=document.getElementById('kr-analytics-panels');
 var _wasHidden=_panel&&_panel.style.display==='none';
 if(_wasHidden){_panel.style.visibility='hidden';_panel.style.display='';}
 var H=S.krD.headers, rows=S.krD.rows;
-var ex=new Set(['날짜','ADR피','ADR닥','코스피','코스닥']);
+var ex=KR_STATS_EXCLUDE; // KR_STATS_EXCLUDE 사용 (F&G 포함)
 var sn=H.slice(1).filter(function(h){return!ex.has(h);});
 var pLabel=periodText(krAnalyticsPeriod);
 var el=document.getElementById('kr-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
