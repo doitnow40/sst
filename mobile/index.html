@@ -1088,7 +1088,7 @@ function _renderStockItem(st, useChg, isKr) {
   const chgColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'#8a9ab5';
   const tkrShort = (st.ticker||'').split(':').pop();
   const memo = st.memo||'';
-  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();(function(el){var t=document.getElementById('global-memo-tooltip');if(!t)return;var m=el.getAttribute('data-memo');if(!m)return;t.textContent=m;t.style.display='block';t.style.opacity='1';var r=el.getBoundingClientRect(),w=t.offsetWidth||200,x=r.left+r.width/2,y=r.top-12;if(x-w/2<10)x=10+w/2;if(x+w/2>window.innerWidth-10)x=window.innerWidth-10-w/2;if(y-t.offsetHeight<10)y=r.bottom+12;t.style.left=Math.round(x-w/2)+'px';t.style.top=Math.round(y-t.offsetHeight)+'px';setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.style.display='none';},200);},2500);})(this)">ℹ</span>`:'';
   let yIcon='', nameAttr='';
   if (!isKr) {
     const yUrl=_yahooStockUrl(st.ticker||'');
@@ -1121,6 +1121,14 @@ function openSectorPopup(sectorName, isKr, prevDate) {
   flagEl.textContent = isKr ? '🇰🇷' : '🇺🇸';
   avgEl.textContent = '';
   body.innerHTML = '<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>';
+
+  // ★ 주목섹터면 헤더 색상 변경 (List와 동일)
+  const _hdr = document.getElementById('sector-popup-header');
+  const _isWatchedHdr = isKr ? WATCHED_SECTORS.has(sectorName) : US_WATCHED_SECTORS.has(sectorName);
+  if (_hdr) {
+    _hdr.style.background = _isWatchedHdr ? 'rgba(249,201,0,.12)' : '';
+    _hdr.style.borderBottomColor = _isWatchedHdr ? 'rgba(249,201,0,.4)' : '';
+  }
 
   popup.classList.add('open');
   backdrop.classList.add('active');
@@ -1495,15 +1503,31 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       // 메타 정보 + 오늘 실시간 + 종목 목록 + 최근 5일
       const todayVal = usTodayMap[sectorName];
       const grpLabel = meta.group ? ({'INDEX':'주요지수','SECTOR':'GICS섹터','THEMATIC':'테마ETF','BOND':'채권·달러'}[meta.group]||meta.group) : '';
-      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
-        <div style="padding:4px 2px">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap">
-            ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
-            ${grpLabel?`<span>그룹: <span style="color:var(--accent-gold)">${grpLabel}</span></span>`:''}
-          </div>
-          ${''/* 오늘 실시간 제거 - 타이틀에 이미 표시됨 */}
-          ${stocksHtml}
-        </div>`;
+      // ★ 주목섹터 배지 + 바 그래프
+      const _usIsWatched = US_WATCHED_SECTORS.has(sectorName);
+      const _usWatchBadge = _usIsWatched
+        ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#f9c900;background:rgba(249,201,0,.15);border:1px solid rgba(249,201,0,.4);border-radius:4px;padding:2px 7px;margin-bottom:8px">⭐ 주목 섹터</span>'
+        : '';
+      const _usAvgVal = parseFloat(avgEl.textContent);
+      let _usBarHtml = '';
+      if (!isNaN(_usAvgVal) && avgEl.textContent) {
+        const BAR_MAX=15,BARS=10;
+        const filled=Math.round(Math.min(Math.abs(_usAvgVal)/BAR_MAX,1)*BARS);
+        const isUp=_usAvgVal>=0;
+        const bs='width:7px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0';
+        _usBarHtml='<div style="display:flex;align-items:center;gap:0;margin-bottom:8px">';
+        for(let i=0;i<BARS;i++){
+          const active=isUp?(i<filled):(BARS-1-i<filled);
+          _usBarHtml+=`<span style="${bs};background:${active?(isUp?'#e53935':'#1e88e5'):'rgba(255,255,255,.1)'}"></span>`;
+        }
+        _usBarHtml+='</div>';
+      }
+      // ★ 종목수 안내
+      const _usCountLabel = stocksHtml
+        ? `<div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">${meta.etf?'📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">'+meta.etf+'</span>&nbsp;&nbsp;':''}${grpLabel?'그룹: <span style="color:var(--accent-gold)">'+grpLabel+'</span>':''}</div>`
+        : '';
+      body.innerHTML = _usWatchBadge + _usBarHtml + _renderSectorNoteHeader(sectorName, false)
+        + `<div style="padding:4px 2px">${_usCountLabel}${stocksHtml}</div>`;
       return;
     }
 
@@ -1579,10 +1603,34 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       : _useToday
         ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
         : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
+    // ★ 주목섹터 표시
+    const _isWatched = isKr ? WATCHED_SECTORS.has(sectorName) : US_WATCHED_SECTORS.has(sectorName);
+    const watchedBadge = _isWatched
+      ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#f9c900;background:rgba(249,201,0,.15);border:1px solid rgba(249,201,0,.4);border-radius:4px;padding:2px 7px;margin-bottom:8px">⭐ 주목 섹터</span>'
+      : '';
+
+    // ★ 섹터 평균 등락률 바 그래프
+    const _avgVal = parseFloat(avgEl.textContent);
+    let barHtml2 = '';
+    if (!isNaN(_avgVal) && avgEl.textContent && avgEl.textContent !== '') {
+      const BAR_MAX=15, BARS=10;
+      const filled = Math.round(Math.min(Math.abs(_avgVal)/BAR_MAX,1)*BARS);
+      const isUp = _avgVal >= 0;
+      const filledColor = isUp ? '#e53935' : '#1e88e5';
+      const emptyColor = 'rgba(255,255,255,.1)';
+      const barStyle = 'width:7px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0';
+      barHtml2 = '<div style="display:flex;align-items:center;gap:0;margin-bottom:8px">';
+      for(let i=0;i<BARS;i++){
+        const active = isUp ? (i<filled) : (BARS-1-i<filled);
+        barHtml2 += `<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
+      }
+      barHtml2 += '</div>';
+    }
+
     const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
-    // ★ 섹터 메모/링크 헤더 prepend
-    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + header + html;
+    // ★ 섹터 메모/링크 헤더 prepend + 주목 + 바
+    body.innerHTML = watchedBadge + barHtml2 + _renderSectorNoteHeader(sectorName, isKr) + header + html;
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;color:#ef9a9a;font-size:12px">❌ 로드 실패: ${e.message}</div>`;
   }
