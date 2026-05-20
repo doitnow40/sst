@@ -224,8 +224,9 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 .sector-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
 .sector-count{margin-left:auto;font-size:10px;color:var(--text-muted);font-family:var(--font-mono);}
 .sector-stocks{padding:6px 10px;}
-.stock-item{display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:10px;position:relative;}
+.stock-item{display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:10px;position:relative;transition:background .1s;border-radius:4px;}
 .stock-item:last-child{border-bottom:none;}
+.stock-item:hover{background:rgba(255,255,255,.04);}
 .stock-name{color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .stock-ticker{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 4px;border-radius:3px;white-space:nowrap;}
 .watch-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:3px;}
@@ -1568,46 +1569,10 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       return getV(b) - getV(a);
     });
 
+    // ★ _renderStockItem 공통 함수로 통일 (List와 동일한 디자인)
     let html = '';
     sorted.forEach(st => {
-      const chg     = (st.chg     !== null && st.chg     !== undefined && !isNaN(st.chg))     ? parseFloat(st.chg)     : null;
-      const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
-      const ticker  = st.ticker || '';
-      const memo    = st.memo || '';
-
-      let mainVal, subHtml = '';
-      if (_usePrev) {
-        // ★ 최근 영업일 박스 클릭: prevChg(전일 확정) 메인, chg 보조
-        mainVal = prevChg !== null ? prevChg : chg;
-        if (chg !== null && prevChg !== null) {
-          const tc = chg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
-        }
-      } else if (_useToday) {
-        // 장중/마감후: chg(네이버) 메인 + prevChg 보조
-        mainVal = chg !== null ? chg : prevChg;
-        if (chg !== null && prevChg !== null) {
-          const pc = prevChg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
-        }
-      } else {
-        // 장전·주말·공휴일: prevChg(최근 확정) 메인
-        mainVal = prevChg !== null ? prevChg : chg;
-      }
-
-      const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
-      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
-
-      const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
-      const _yUrlP = !isKr ? _yahooStockUrl(ticker) : null;
-      const _yIconP = _yUrlP ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
-      html += '<div class="sp-stock-row">'
-        + _yIconP
-        + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
-        + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
-        + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
-        + '</div>';
+      html += _renderStockItem(st, _useToday || !_usePrev, isKr);
     });
 
     // 헤더 안내 (갱신 시각 포함)
@@ -1968,6 +1933,8 @@ updateSheetReadTime(d.sheetReadAt);
 S.krD=d; S.krOk=true;
 renderKr();
 loadSectorNotes('kr'); // ★ 섹터 메모/링크 비동기 로드
+// ★ watched 이미 로드됐으면 재렌더 (⭐ 주목섹터 표시)
+if(watchedLoaded && WATCHED_SECTORS.size > 0) renderKr();
 }catch(e){
 document.getElementById('kr-status').textContent='❌ 오류';
 document.getElementById('kr-table').innerHTML=
@@ -6222,8 +6189,6 @@ tooltip.style.top=Math.round(y-h)+'px';
   };
 })();
 
-// 초기 페이지 → KR History
-go('kr-history', null);
 </script>
 </body>
 </html>
