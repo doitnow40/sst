@@ -4290,12 +4290,9 @@ if(sec.stocks&&sec.stocks.length){
 const _mUsePrev=!!(typeof _usIsPrevMode!=='undefined'&&_usIsPrevMode);
 sec.stocks.slice(0,8).forEach(st=>{
 wh+=_renderStockItem(st,!_mUsePrev,false);
-if(sec.stocks.length>8) wh+=`<div style="font-size:9px;color:var(--text-muted);padding:4px 0">외 ${sec.stocks.length-8}개 종목</div>`;
-}else{
-wh+=`<div style="font-size:10px;color:var(--text-muted);padding:8px 0;text-align:center">종목 없음</div>`;
-}
-wh+='</div></div>';
 });
+if(sec.stocks.length>8) wh+=`<div style="font-size:9px;color:var(--text-muted);padding:4px 0">외 ${sec.stocks.length-8}개 종목</div>`;
+wh+='</div></div>';
 wh+='</div>';
 document.getElementById('us-list').innerHTML=wh;
 return;
