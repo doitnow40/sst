@@ -938,6 +938,8 @@ const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
 
 // Worker로 라우팅할 type 목록
 const REALTIME_TYPES = new Set(['kr_today', 'kr_stocks', 'us_watch_stocks']);
+// ★ kr_history는 Worker KV가 아닌 GAS CacheService를 사용 (대용량)
+// → flush() 제거로 캐시 히트 시 빠름, 캐시 미스 시 GAS 직접 읽기
 
 const IS_DEMO = false;
 const US_META = {
@@ -1910,7 +1912,7 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
 const [histData, todayData, watchedData] = await Promise.all([
-api('kr_history', rangeOverride || Math.max(S.krR||22, 65)),
+api('kr_history', rangeOverride || S.krR || 22),
 api('kr_today', 0).catch(()=>null),
 !watchedLoaded ? api('watched_sectors', 0).catch(()=>null) : Promise.resolve(null),
 ]);
@@ -4315,8 +4317,9 @@ b.classList.add('active-kr');
 applyTableScroll('kr-table', d);
 // ★ 요청 범위가 현재 로드된 데이터보다 크면 GAS 재호출
 const loadedRows = S.krD ? S.krD.rows.length : 0;
-if(S.krOk && d > loadedRows) {
-  // 새 범위로 재로드
+if(S.krOk && d > loadedRows + 5) { // +5: 주말 제외 여유
+  // 새 범위로 재로드 (기존 캐시 유지하면서 로딩)
+  document.getElementById('kr-table').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">'+d+'일치 로딩 중...</div></div>';
   S.krOk = false;
   loadKr(d);
 } else if(S.krOk) {
