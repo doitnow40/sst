@@ -1901,8 +1901,8 @@ function separatorRow(colCount){
 // colCount = 섹터 수. 실제 열 = 날짜(1) + 섹터들(colCount) + 메모(1) = colCount+2
 return `<tr style="height:3px;background:var(--bg-card2)"><td colspan="${colCount+2}" style="background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.2));padding:0;height:3px"></td></tr>`;
 }
-async function loadKr(rangeOverride){
-if(S.krOk&&!rangeOverride){renderKr();return;}
+async function loadKr(){
+if(S.krOk){renderKr();return;}
 try{
 let d;
 if(IS_DEMO){
@@ -1912,7 +1912,7 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
 const [histData, todayData, watchedData] = await Promise.all([
-api('kr_history', rangeOverride || S.krR || 22),
+api('kr_history', rangeOverride || 365),
 api('kr_today', 0).catch(()=>null),
 !watchedLoaded ? api('watched_sectors', 0).catch(()=>null) : Promise.resolve(null),
 ]);
@@ -4315,16 +4315,8 @@ S.krR=d;
 document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
 b.classList.add('active-kr');
 applyTableScroll('kr-table', d);
-// ★ 요청 범위가 현재 로드된 데이터보다 크면 GAS 재호출
-const loadedRows = S.krD ? S.krD.rows.length : 0;
-if(S.krOk && d > loadedRows + 5) { // +5: 주말 제외 여유
-  // 새 범위로 재로드 (기존 캐시 유지하면서 로딩)
-  document.getElementById('kr-table').innerHTML = '<div class="loading-state"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:var(--text-muted)">'+d+'일치 로딩 중...</div></div>';
-  S.krOk = false;
-  loadKr(d);
-} else if(S.krOk) {
-  renderKrTableOnly();
-}
+// 365일치 데이터를 이미 로드했으므로 항상 재렌더만으로 충분
+if(S.krOk) renderKrTableOnly();
 }
 function setUsRange(d,b){
 S.usR=d;
