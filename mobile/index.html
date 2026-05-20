@@ -6092,10 +6092,12 @@ document.addEventListener('click', function(e) {
 </script>
 
 <script>
-window.onerror=function(msg,src,line,col,error){
-  console.log(msg,line,error);
-  const badge=document.getElementById('kr-status');
-  if(badge) badge.innerText='오류 발생';
+window.onerror = function(msg, src, line, col, error) {
+  alert('JS 오류:\n' + msg + '\nline:' + line);
+};
+
+window.onunhandledrejection = function(e) {
+  alert('Promise 오류:\n' + (e.reason?.message || e.reason || 'unknown'));
 };
 
 (function(){
