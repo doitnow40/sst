@@ -4156,6 +4156,8 @@ H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usL
 const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
 if(hasWatchList){
 let sectors=[...S.usWatchL.sectors];
+// ★ 지수형 섹터 제외 (US_STATS_EXCLUDE: 채권/달러/VIX/주요지수)
+sectors=sectors.filter(s=>!US_STATS_EXCLUDE.has(s.sector));
 // ★ 주목 섹터 필터
 if(watchedOnly) sectors=sectors.filter(s=>US_WATCHED_SECTORS.has(s.sector));
 // 정렬
@@ -4179,10 +4181,10 @@ if(!sec.stocks||sec.stocks.length===0)return;
 const meta=US_META[sec.sector]||{};
 const c=C[i%C.length];
 const isWatched=US_WATCHED_SECTORS&&US_WATCHED_SECTORS.has(sec.sector);
-// 섹터 평균 등락률: today=usToday 맵, lastbiz=usLastBiz
-const secAvg=useToday
-?(usTodayMap[sec.sector]!==undefined?parseFloat(usTodayMap[sec.sector]):null)
-:(usLastBiz[sec.sector]!==undefined?parseFloat(usLastBiz[sec.sector]):null);
+// ★ 방법B: 섹터 평균을 종목 등락률에서 직접 계산 (항상 종목과 일치)
+const _stocks=sec.stocks||[];
+const _vals=_stocks.map(st=>useToday?parseFloat(st.chg):parseFloat(st.prevChg)).filter(v=>!isNaN(v));
+const secAvg=_vals.length>0?(_vals.reduce((a,b)=>a+b,0)/_vals.length):null;
 const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
 const avgHtml=secAvg!==null
 ?`<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:auto">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
