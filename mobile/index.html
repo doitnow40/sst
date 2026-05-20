@@ -8,9 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="섹터 트래커">
 <meta name="theme-color" content="#161b27">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
@@ -458,20 +455,6 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 .h-scrollbar-thumb:active{cursor:grabbing;}
 .h-scrollbar-thumb-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:radial-gradient(circle,#fff 30%,#4fc3f7 100%);border-radius:50%;box-shadow:0 0 6px rgba(79,195,247,.7),0 1px 3px rgba(0,0,0,.5);pointer-events:none;}
 </style>
-<script>
-window.addEventListener('error',function(e){
-
-  console.error('global error',e.error);
-
-  const page=document.getElementById('page-kr-history');
-
-  if(page){
-    page.style.display='block';
-  }
-
-});
-</script>
-  
 </head>
 <body>
 <div id="sidebar-overlay" onclick="closeSidebarIfFloating()"></div>
@@ -592,7 +575,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div id="sidebar-adfit-wrap" style="display:none"></div>
 </nav>
 <main class="main">
-<div id="page-kr-history" style="display:block">
+<div id="page-kr-history" style="display:none">
 <div class="page-header">
 <div class="page-flag">🇰🇷</div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -5678,7 +5661,7 @@ btn.disabled=false; btn.innerHTML='💾 저장';
   window.addEventListener('scroll', updateScrollTop, {passive:true});
 })();
 
-
+go('kr-history',document.getElementById('nav-kr-history'));
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 if(!IS_DEMO) loadWatchedSectors();
 (function(){
@@ -6092,14 +6075,6 @@ document.addEventListener('click', function(e) {
 </script>
 
 <script>
-window.onerror = function(msg, src, line, col, error) {
-  alert('JS 오류:\n' + msg + '\nline:' + line);
-};
-
-window.onunhandledrejection = function(e) {
-  alert('Promise 오류:\n' + (e.reason?.message || e.reason || 'unknown'));
-};
-
 (function(){
   function initHScroll(tableId, thumbId, trackId){
     var table=document.getElementById(tableId);
@@ -6137,8 +6112,6 @@ window.onunhandledrejection = function(e) {
     },500);
   });
 })();
-
-
 </script>
 
 </body>
