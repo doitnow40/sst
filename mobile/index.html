@@ -1899,8 +1899,8 @@ function separatorRow(colCount){
 // colCount = 섹터 수. 실제 열 = 날짜(1) + 섹터들(colCount) + 메모(1) = colCount+2
 return `<tr style="height:3px;background:var(--bg-card2)"><td colspan="${colCount+2}" style="background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.2));padding:0;height:3px"></td></tr>`;
 }
-async function loadKr(){
-if(S.krOk){renderKr();return;}
+async function loadKr(rangeOverride){
+if(S.krOk&&!rangeOverride){renderKr();return;}
 try{
 let d;
 if(IS_DEMO){
@@ -1909,11 +1909,19 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
-const [histData, todayData] = await Promise.all([
-api('kr_history', 365),
+const [histData, todayData, watchedData] = await Promise.all([
+api('kr_history', rangeOverride || Math.max(S.krR||22, 65)),
 api('kr_today', 0).catch(()=>null),
+!watchedLoaded ? api('watched_sectors', 0).catch(()=>null) : Promise.resolve(null),
 ]);
 d = histData;
+// ★ watched_sectors 병렬 로드 결과 반영 (renderKr 전에 확실히 세팅)
+if (watchedData && watchedData.sectors) {
+  const fresh = new Set(watchedData.sectors);
+  WATCHED_SECTORS = fresh;
+  watchedLoaded = true;
+  try { localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(watchedData.sectors)); } catch(e) {}
+}
 document.getElementById('kr-status').textContent='누적 '+d.count+'일치';
 if(todayData){
 // ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음, S.krToday를 null로 유지
@@ -4305,7 +4313,15 @@ S.krR=d;
 document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
 b.classList.add('active-kr');
 applyTableScroll('kr-table', d);
-if(S.krOk) renderKrTableOnly();
+// ★ 요청 범위가 현재 로드된 데이터보다 크면 GAS 재호출
+const loadedRows = S.krD ? S.krD.rows.length : 0;
+if(S.krOk && d > loadedRows) {
+  // 새 범위로 재로드
+  S.krOk = false;
+  loadKr(d);
+} else if(S.krOk) {
+  renderKrTableOnly();
+}
 }
 function setUsRange(d,b){
 S.usR=d;
