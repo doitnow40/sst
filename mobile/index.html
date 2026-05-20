@@ -1048,6 +1048,7 @@ function _openYahooStock(ticker, e) {
 
 // ── 네이버 증권 URL 생성 (PC) ────────────────────────────────────────
 function _naverStockUrl(ticker, type) {
+  // 모바일용 URL: m.stock.naver.com, /total
   if (!ticker) return null;
   const t = String(ticker).trim();
   const colon = t.indexOf(':');
@@ -1057,17 +1058,17 @@ function _naverStockUrl(ticker, type) {
   if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
     const numCode = code.replace(/[^0-9]/g, '');
     if (!numCode) return null;
-    return 'https://stock.naver.com/domestic/stock/' + numCode + '/price';
+    return 'https://m.stock.naver.com/domestic/stock/' + numCode + '/total';
   }
   if (['NYSEARCA','NYSEMKT','AMEX','BATS'].includes(exchange)) {
-    return 'https://stock.naver.com/worldstock/etf/' + code + '/price';
+    return 'https://m.stock.naver.com/worldstock/etf/' + code + '/total';
   }
   if (exchange === 'NYSE') {
-    return 'https://stock.naver.com/worldstock/stock/' + code + '/price';
+    return 'https://m.stock.naver.com/worldstock/stock/' + code + '/total';
   }
   if (exchange === 'NASDAQ') {
     const isEtf = (String(type||'')).toUpperCase() === 'ETF';
-    return 'https://stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/price';
+    return 'https://m.stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/total';
   }
   return null;
 }
@@ -5928,7 +5929,9 @@ alert('❌ 저장 실패: '+e.message);
 btn.disabled=false; btn.innerHTML='💾 저장';
 }
 document.getElementById('mob-main').addEventListener('scroll',()=>{
-document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
+  const _st=document.getElementById('scrollTop');
+  const _mobMain=document.getElementById('mob-main');
+  if(_st&&_mobMain) _st.classList.toggle('visible',_mobMain.scrollTop>200);
 });
 
 go('kr-history', null);
