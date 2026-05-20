@@ -3873,10 +3873,16 @@ document.getElementById('us-status').textContent='⚠️ 데모 모드';
 // ★ 단일 소스: us_watch_history만 사용 (오늘 행 포함)
 // updateUsSheetToday()가 5분마다 시트 7행을 갱신 + 캐시 무효화
 // → 히스토리가 단일 진실 공급원
-const [watchHistData, watchListData] = await Promise.all([
+const [watchHistData, watchListData, usWatchedData] = await Promise.all([
 api('us_watch_history', 365),
 api('us_watch_list', 0).catch(()=>null),
+!usWatchedLoaded ? api('us_watched_sectors',0).catch(()=>null) : Promise.resolve(null),
 ]);
+if(usWatchedData&&usWatchedData.sectors){
+  US_WATCHED_SECTORS=new Set(usWatchedData.sectors);
+  usWatchedLoaded=true;
+  try{localStorage.setItem(US_WATCHED_KEY,JSON.stringify(usWatchedData.sectors));}catch(e){}
+}
 d = watchHistData;
 document.getElementById('us-status').textContent='누적 '+d.count+'일치';
 // us_watch_history의 첫 행(rows[0])이 오늘 데이터
@@ -5221,7 +5227,18 @@ const US_WATCHED_KEY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(
   JSON.parse(localStorage.getItem(US_WATCHED_KEY)||'[]')
 );
-// ★ US 주목섹터는 localStorage에서 즉시 로드 (PC와 동일)
+let usWatchedLoaded = US_WATCHED_SECTORS.size > 0;
+async function loadUsWatchedSectors(){
+  try{
+    const d = await api('us_watched_sectors', 0);
+    const fresh = new Set(d.sectors||[]);
+    const changed = fresh.size!==US_WATCHED_SECTORS.size||[...fresh].some(s=>!US_WATCHED_SECTORS.has(s));
+    US_WATCHED_SECTORS = fresh;
+    usWatchedLoaded = true;
+    localStorage.setItem(US_WATCHED_KEY, JSON.stringify(d.sectors||[]));
+    if(changed){ if(S.usOk) renderUs(); }
+  }catch(e){ usWatchedLoaded=true; }
+}
 function renderUsWatchSectorList(){
 const wrap=document.getElementById('us-watch-sector-list');
 if(!wrap)return;
@@ -5268,9 +5285,11 @@ if(el&&el.checked) selected.push(sec.sector);
 const btn=document.getElementById('us-watch-save-btn');
 btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중';
 try{
-// localStorage에 저장 (PC와 동일 방식)
+// GAS ScriptProperties 저장 (기기 간 공유) + localStorage 캐시
+await adminPost('save_us_watched',{sectors:selected.join(',')});
 localStorage.setItem(US_WATCHED_KEY, JSON.stringify(selected));
 US_WATCHED_SECTORS=new Set(selected);
+usWatchedLoaded=true;
 // US History 표 & US List 즉시 갱신
 if(S.usOk) renderUs();
 if(S.usWatchL) renderUsList(listSorted);
@@ -5959,6 +5978,7 @@ const _st=document.getElementById('scrollTop');const _mm=document.getElementById
 go('kr-history', null);
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 if(!IS_DEMO) loadWatchedSectors();
+if(!IS_DEMO) loadUsWatchedSectors();
 (function(){
 const STORAGE_KEY = 'sidebarPinned';
 const SIDEBAR_KEY = 'sidebarOpen';
