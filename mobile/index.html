@@ -1933,8 +1933,6 @@ updateSheetReadTime(d.sheetReadAt);
 S.krD=d; S.krOk=true;
 renderKr();
 loadSectorNotes('kr'); // ★ 섹터 메모/링크 비동기 로드
-// ★ watched 이미 로드됐으면 재렌더 (⭐ 주목섹터 표시)
-if(watchedLoaded && WATCHED_SECTORS.size > 0) renderKr();
 }catch(e){
 document.getElementById('kr-status').textContent='❌ 오류';
 document.getElementById('kr-table').innerHTML=
@@ -5819,21 +5817,30 @@ renderUsList(listSorted);
 }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
 }
-let WATCHED_SECTORS = new Set();
-let watchedLoaded = false;
+const KR_WATCHED_KEY = 'kr_watched_sectors_v1';
+// ★ localStorage에서 즉시 동기 초기화 (US_WATCHED_SECTORS와 동일 방식)
+let WATCHED_SECTORS = new Set(
+  JSON.parse(localStorage.getItem(KR_WATCHED_KEY)||'[]')
+);
+let watchedLoaded = WATCHED_SECTORS.size > 0; // 캐시 있으면 이미 로드된 것으로 간주
 async function loadWatchedSectors(){
-if(watchedLoaded) return;
+// 캐시가 있어도 백그라운드로 GAS에서 최신값 동기화
 try{
 const d = await api('watched_sectors', 0);
-WATCHED_SECTORS = new Set(d.sectors||[]);
+const fresh = new Set(d.sectors||[]);
+// 변경됐을 때만 업데이트 + 재렌더
+const changed = fresh.size !== WATCHED_SECTORS.size ||
+  [...fresh].some(s => !WATCHED_SECTORS.has(s));
+WATCHED_SECTORS = fresh;
 watchedLoaded = true;
-}catch(e){
-WATCHED_SECTORS = new Set();
-watchedLoaded = true;
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(d.sectors||[]));
+if(changed){
+  if(S.krOk) renderKr();
+  if(S.usOk) renderUs();
 }
-// ★ 주목 섹터 로드 후 현재 페이지 재렌더 (헤더 별표 표시)
-if(S.krOk) renderKr();
-if(S.usOk) renderUs();
+}catch(e){
+watchedLoaded = true; // 실패해도 캐시값 유지
+}
 }
 function renderWatchSectorList(){
 const wrap=document.getElementById('watch-sector-list');
@@ -5884,6 +5891,7 @@ btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중'
 try{
 await adminPost('save_watched',{sectors:selected.join(',')});
 WATCHED_SECTORS=new Set(selected);
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(selected)); // ★ 캐시 업데이트
 S.krLoaded=false; S.krListAt=0; // 주목 섹터 변경 → 다음 kr-list 진입 시 갱신
 const msg=document.getElementById('watch-save-msg');
 msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
