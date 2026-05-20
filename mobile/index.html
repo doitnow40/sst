@@ -575,7 +575,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div id="sidebar-adfit-wrap" style="display:none"></div>
 </nav>
 <main class="main">
-<div id="page-kr-history" style="display:none">
+<div id="page-kr-history" style="display:block">
 <div class="page-header">
 <div class="page-flag">🇰🇷</div>
 <div style="display:flex;align-items:center;gap:8px">
@@ -1298,8 +1298,8 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 </div>
 <script>// ★ 전역 함수 최상단 선언 (호이스팅 보장)
 function tmColorUs(v){var MAX=3,t=Math.min(1,Math.abs(v)/MAX);if(v>0){return'rgb('+Math.round(255-77*t)+','+Math.round(255-255*t)+','+Math.round(255-255*t)+')';}else if(v<0){return'rgb('+Math.round(255-255*t)+','+Math.round(255-184*t)+','+Math.round(255-84*t)+')';}return'rgb(255,255,255)';}
-if(window.ChartDataLabels) Chart.register(ChartDataLabels);
-Chart.defaults.plugins.datalabels = { display: false };
+try{if(window.ChartDataLabels) Chart.register(ChartDataLabels);}catch(e){}
+try{Chart.defaults.plugins.datalabels = { display: false };}catch(e){}
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
 // 예: 'https://script.google.com/macros/s/AKfycbXXXXXX/exec'
 const REALTIME_WORKER_URL = 'https://realtime-proxy.doitnow40.workers.dev';
@@ -1383,7 +1383,7 @@ BOND:    {label:'Bond / USD',            bg:'#37474F',fg:'#fff'},
 };
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,krNotes:{},usNotes:{}};
 const US_WATCHED_KEY_EARLY = 'us_watched_sectors_v1';
-let US_WATCHED_SECTORS = new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));
+let US_WATCHED_SECTORS = new Set(); try{US_WATCHED_SECTORS=new Set(JSON.parse(localStorage.getItem(US_WATCHED_KEY_EARLY)||'[]'));}catch(e){}
 
 // ── Yahoo Finance URL 생성 ───────────────────────────────────────────
 // NASDAQ:NVDA → https://finance.yahoo.com/quote/NVDA
@@ -5033,7 +5033,7 @@ document.querySelectorAll('[data-us-sec]').forEach(cb=>cb.checked=val);
 function saveUsWatchSectors(){
 const checks=document.querySelectorAll('[data-us-sec]:checked');
 US_WATCHED_SECTORS=new Set([...checks].map(c=>c.getAttribute('data-us-sec')));
-localStorage.setItem(US_WATCHED_KEY_EARLY, JSON.stringify([...US_WATCHED_SECTORS]));
+try{localStorage.setItem(US_WATCHED_KEY_EARLY, JSON.stringify([...US_WATCHED_SECTORS]));}catch(e){}
 const btn=document.getElementById('us-watch-save-btn');
 const msg=document.getElementById('us-watch-save-msg');
 if(msg){msg.textContent='✅ 저장됨';msg.style.display='';setTimeout(()=>msg.style.display='none',2000);}
@@ -5661,9 +5661,26 @@ btn.disabled=false; btn.innerHTML='💾 저장';
   window.addEventListener('scroll', updateScrollTop, {passive:true});
 })();
 
-go('kr-history',document.getElementById('nav-kr-history'));
-if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
-if(!IS_DEMO) loadWatchedSectors();
+// ── 초기 페이지 렌더링 (JS 에러로 인한 블랙스크린 방지) ──────
+(function initFirstPage() {
+  function _run() {
+    try {
+      go('kr-history', document.getElementById('nav-kr-history'));
+    } catch(e) {
+      // go() 실패해도 page-kr-history는 display:block이므로 화면이 보임
+      console.error('[init] go() 실패:', e);
+      // 데이터 로딩만 직접 시도
+      try { loadKr(); } catch(e2) { console.error('[init] loadKr() 실패:', e2); }
+    }
+    try { if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{}); } catch(e) {}
+    try { if(!IS_DEMO) loadWatchedSectors(); } catch(e) {}
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _run);
+  } else {
+    _run();
+  }
+})();
 (function(){
 const STORAGE_KEY = 'sidebarPinned';
 const SIDEBAR_KEY = 'sidebarOpen';
@@ -5671,8 +5688,8 @@ const sidebar  = document.getElementById('main-sidebar');
 const overlay  = document.getElementById('sidebar-overlay');
 const pinBtn   = document.getElementById('sidebar-pin-btn');
 const pinLabel = document.getElementById('pin-label');
-let pinned = localStorage.getItem(STORAGE_KEY) !== 'false';
-let open   = localStorage.getItem(SIDEBAR_KEY) !== 'false';
+let pinned = true; try{pinned = localStorage.getItem(STORAGE_KEY) !== 'false';}catch(e){}
+let open   = true; try{open   = localStorage.getItem(SIDEBAR_KEY) !== 'false';}catch(e){}
 function applyState(animate) {
 if (!animate) {
 sidebar.style.transition = 'none';
@@ -5715,7 +5732,7 @@ window.toggleSidebar = function() {
   // 모바일에서는 사이드바 대신 하단 내비 사용
   if(window.matchMedia('(max-width:768px)').matches) return;
 open = !open;
-localStorage.setItem(SIDEBAR_KEY, open);
+try{localStorage.setItem(SIDEBAR_KEY, open);}catch(e){}
 applyState(true);
 };
 window.toggleSidebarPin = function() {
@@ -5726,14 +5743,14 @@ open   = true;
 pinned = false;
 open   = false;
 }
-localStorage.setItem(STORAGE_KEY, pinned);
-localStorage.setItem(SIDEBAR_KEY, open);
+try{localStorage.setItem(STORAGE_KEY, pinned);}catch(e){}
+try{localStorage.setItem(SIDEBAR_KEY, open);}catch(e){}
 applyState(true);
 };
 window.closeSidebarIfFloating = function() {
 if (!pinned) {
 open = false;
-localStorage.setItem(SIDEBAR_KEY, open);
+try{localStorage.setItem(SIDEBAR_KEY, open);}catch(e){}
 applyState(true);
 }
 };
@@ -5945,7 +5962,7 @@ window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstallPrompt = e;
   // 한 번 닫은 적 있으면 다시 안 보여줌
-  if (!localStorage.getItem('pwa-banner-dismissed')) {
+  if (!(() => { try { return localStorage.getItem('pwa-banner-dismissed'); } catch(e) { return true; } })()) {
     setTimeout(() => {
       const banner = document.getElementById('pwa-install-banner');
       if (banner) banner.classList.add('show');
@@ -5970,7 +5987,7 @@ function pwaBannerInstall() {
   });
 }
 function pwaBannerDismiss() {
-  localStorage.setItem('pwa-banner-dismissed', '1');
+try{localStorage.setItem('pwa-banner-dismissed', '1');}catch(e){}
   document.getElementById('pwa-install-banner').classList.remove('show');
 }
 
@@ -6021,12 +6038,14 @@ window.addEventListener('DOMContentLoaded', () => {
 const _origRefreshAll = window.refreshAllData;
 window.refreshAllData = function() {
   // SW 캐시도 함께 클리어
-  if (navigator.serviceWorker.controller) {
-    const ch = new MessageChannel();
-    navigator.serviceWorker.controller.postMessage(
-      { type: 'CLEAR_API_CACHE' }, [ch.port2]
-    );
-  }
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      const ch = new MessageChannel();
+      navigator.serviceWorker.controller.postMessage(
+        { type: 'CLEAR_API_CACHE' }, [ch.port2]
+      );
+    }
+  } catch(e) {}
   if (typeof _origRefreshAll === 'function') _origRefreshAll();
 };
 
