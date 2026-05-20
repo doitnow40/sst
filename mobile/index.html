@@ -1057,17 +1057,17 @@ function _naverStockUrl(ticker, type) {
   if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
     const numCode = code.replace(/[^0-9]/g, '');
     if (!numCode) return null;
-    return 'https://stock.naver.com/domestic/stock/' + numCode + '/price';
+    return 'https://m.stock.naver.com/domestic/stock/' + numCode + '/total';
   }
   if (['NYSEARCA','NYSEMKT','AMEX','BATS'].includes(exchange)) {
-    return 'https://stock.naver.com/worldstock/etf/' + code + '/price';
+    return 'https://m.stock.naver.com/worldstock/etf/' + code + '/total';
   }
   if (exchange === 'NYSE') {
-    return 'https://stock.naver.com/worldstock/stock/' + code + '/price';
+    return 'https://m.stock.naver.com/worldstock/stock/' + code + '/total';
   }
   if (exchange === 'NASDAQ') {
     const isEtf = (String(type||'')).toUpperCase() === 'ETF';
-    return 'https://stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/price';
+    return 'https://m.stock.naver.com/worldstock/' + (isEtf?'etf':'stock') + '/' + code + '.O/total';
   }
   return null;
 }
@@ -1569,44 +1569,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
     let html = '';
     sorted.forEach(st => {
-      const chg     = (st.chg     !== null && st.chg     !== undefined && !isNaN(st.chg))     ? parseFloat(st.chg)     : null;
-      const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
-      const ticker  = st.ticker || '';
-      const memo    = st.memo || '';
-
-      let mainVal, subHtml = '';
-      if (_usePrev) {
-        // ★ 최근 영업일 박스 클릭: prevChg(전일 확정) 메인, chg 보조
-        mainVal = prevChg !== null ? prevChg : chg;
-        if (chg !== null && prevChg !== null) {
-          const tc = chg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
-        }
-      } else if (_useToday) {
-        // 장중/마감후: chg(네이버) 메인 + prevChg 보조
-        mainVal = chg !== null ? chg : prevChg;
-        if (chg !== null && prevChg !== null) {
-          const pc = prevChg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
-        }
-      } else {
-        // 장전·주말·공휴일: prevChg(최근 확정) 메인
-        mainVal = prevChg !== null ? prevChg : chg;
-      }
-
-      const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
-      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
-
-      const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
-      const _yUrlP = !isKr ? _yahooStockUrl(ticker) : null;
-      const _yIconP = _yUrlP ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
-      html += '<div class="sp-stock-row">'
-        + _yIconP
-        + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
-        + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
-        + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
-        + '</div>';
+      html += _renderStockItem(st, _useToday || !_usePrev, isKr);
     });
 
     // 헤더 안내 (갱신 시각 포함)
@@ -1943,11 +1906,17 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
-const [histData, todayData] = await Promise.all([
+const [histData, todayData, watchedData] = await Promise.all([
 api('kr_history', 365),
 api('kr_today', 0).catch(()=>null),
+!watchedLoaded ? api('watched_sectors', 0).catch(()=>null) : Promise.resolve(null),
 ]);
 d = histData;
+if(watchedData && watchedData.sectors){
+  WATCHED_SECTORS = new Set(watchedData.sectors);
+  watchedLoaded = true;
+  try{localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(watchedData.sectors));}catch(e){}
+}
 document.getElementById('kr-status').textContent='누적 '+d.count+'일치';
 if(todayData){
 // ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음, S.krToday를 null로 유지
@@ -5851,21 +5820,27 @@ renderUsList(listSorted);
 }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
 }
-let WATCHED_SECTORS = new Set();
-let watchedLoaded = false;
+const KR_WATCHED_KEY = 'kr_watched_sectors_v1';
+let WATCHED_SECTORS = new Set(
+  JSON.parse(localStorage.getItem(KR_WATCHED_KEY)||'[]')
+);
+let watchedLoaded = WATCHED_SECTORS.size > 0;
 async function loadWatchedSectors(){
-if(watchedLoaded) return;
 try{
 const d = await api('watched_sectors', 0);
-WATCHED_SECTORS = new Set(d.sectors||[]);
+const fresh = new Set(d.sectors||[]);
+const changed = fresh.size !== WATCHED_SECTORS.size ||
+  [...fresh].some(s => !WATCHED_SECTORS.has(s));
+WATCHED_SECTORS = fresh;
 watchedLoaded = true;
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(d.sectors||[]));
+if(changed){
+  if(S.krOk) renderKr();
+  if(S.usOk) renderUs();
+}
 }catch(e){
-WATCHED_SECTORS = new Set();
 watchedLoaded = true;
 }
-// ★ 주목 섹터 로드 후 현재 페이지 재렌더 (헤더 별표 표시)
-if(S.krOk) renderKr();
-if(S.usOk) renderUs();
 }
 function renderWatchSectorList(){
 const wrap=document.getElementById('watch-sector-list');
@@ -5916,6 +5891,7 @@ btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중'
 try{
 await adminPost('save_watched',{sectors:selected.join(',')});
 WATCHED_SECTORS=new Set(selected);
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(selected));
 S.krLoaded=false; S.krListAt=0; // 주목 섹터 변경 → 다음 kr-list 진입 시 갱신
 const msg=document.getElementById('watch-save-msg');
 msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
@@ -5928,7 +5904,7 @@ alert('❌ 저장 실패: '+e.message);
 btn.disabled=false; btn.innerHTML='💾 저장';
 }
 document.getElementById('mob-main').addEventListener('scroll',()=>{
-document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
+const _st=document.getElementById('scrollTop');const _mm=document.getElementById('mob-main');if(_st&&_mm)_st.classList.toggle('visible',_mm.scrollTop>200);
 });
 
 go('kr-history', null);
