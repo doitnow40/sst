@@ -6138,66 +6138,7 @@ window.onunhandledrejection = function(e) {
   });
 })();
 
-/* =========================================================
-   모바일 blank 방지 패치
-   ========================================================= */
 
-(function(){
-
-  function safeInitPage(){
-
-    const firstPage=document.getElementById('page-kr-history');
-
-    if(firstPage){
-      firstPage.style.display='block';
-      firstPage.style.visibility='visible';
-      firstPage.style.opacity='1';
-    }
-
-    const main=document.querySelector('.main');
-
-    if(main){
-      main.style.display='block';
-      main.style.visibility='visible';
-    }
-
-  }
-
-  function safeGoInit(){
-
-    try{
-
-      if(typeof go==='function'){
-        go('kr-history',document.getElementById('nav-kr-history'));
-      }else{
-        safeInitPage();
-      }
-
-    }catch(err){
-
-      console.error('mobile init fail:',err);
-
-      safeInitPage();
-
-    }
-
-  }
-
-  if(document.readyState==='loading'){
-
-    document.addEventListener('DOMContentLoaded',function(){
-
-      setTimeout(safeGoInit,120);
-
-    });
-
-  }else{
-
-    setTimeout(safeGoInit,120);
-
-  }
-
-})();
 </script>
 
 </body>
