@@ -6092,6 +6092,12 @@ document.addEventListener('click', function(e) {
 </script>
 
 <script>
+window.onerror=function(msg,src,line,col,error){
+  console.log(msg,line,error);
+  const badge=document.getElementById('kr-status');
+  if(badge) badge.innerText='오류 발생';
+};
+
 (function(){
   function initHScroll(tableId, thumbId, trackId){
     var table=document.getElementById(tableId);
