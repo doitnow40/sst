@@ -1149,7 +1149,7 @@ function _renderStockItem(st, useChg, isKr) {
   const chgColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'#8a9ab5';
   const tkrShort = (st.ticker||'').split(':').pop();
   const memo = st.memo||'';
-  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();(function(el){var t=document.getElementById('global-memo-tooltip');if(!t)return;var m=el.getAttribute('data-memo');if(!m)return;t.textContent=m;t.style.display='block';t.style.opacity='1';var r=el.getBoundingClientRect(),w=t.offsetWidth||200,x=r.left+r.width/2,y=r.top-12;if(x-w/2<10)x=10+w/2;if(x+w/2>window.innerWidth-10)x=window.innerWidth-10-w/2;if(y-t.offsetHeight<10)y=r.bottom+12;t.style.left=Math.round(x-w/2)+'px';t.style.top=Math.round(y-t.offsetHeight)+'px';t._memoOpen=true;function _closeMemo(ev){if(ev.target.closest&&ev.target.closest('.memo-icon'))return;t.style.opacity='0';setTimeout(function(){t.style.display='none';},150);t._memoOpen=false;document.removeEventListener('touchstart',_closeMemo,true);document.removeEventListener('click',_closeMemo,true);}setTimeout(function(){document.addEventListener('touchstart',_closeMemo,true);document.addEventListener('click',_closeMemo,true);},100);})(this)">ℹ</span>`:'';
   let yIcon='', nameAttr='';
   if (!isKr) {
     const yUrl=_yahooStockUrl(st.ticker||'');
@@ -1160,7 +1160,7 @@ function _renderStockItem(st, useChg, isKr) {
     const nUrl=_naverStockUrl(st.ticker||'','');
     if(nUrl) nameAttr=` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`;
   }
-  return `<div class="stock-item">${yIcon}<span class="stock-name"${nameAttr} style="flex:1;min-width:0">${st.name}</span>${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${chgStr}</span></div>`;
+  return `<div class="stock-item" style="gap:0">${yIcon?'<span style="margin-right:4px;flex-shrink:0">'+yIcon+'</span>':''}<span class="stock-name"${nameAttr} style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.name}</span><span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;padding-left:6px">${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};min-width:50px;text-align:right">${chgStr}</span></span></div>`;
 }
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
