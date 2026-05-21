@@ -7,9 +7,10 @@
   var ua = navigator.userAgent || '';
   if (/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
     // 이미 /mobile/ 이면 리다이렉트 안 함
-    if (window.location.pathname.indexOf('/mobile') === -1) {
-      window.location.replace('/mobile/' + window.location.search + window.location.hash);
-    }
+    if (window.location.pathname.indexOf('/mobile') !== -1) return;
+    // 사용자가 의도적으로 PC 버전을 선택한 경우 리다이렉트 안 함
+    if (localStorage.getItem('preferPC') === 'true') return;
+    window.location.replace('/mobile/' + window.location.search + window.location.hash);
   }
 })();
 </script>
