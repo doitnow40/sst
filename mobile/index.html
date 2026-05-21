@@ -696,7 +696,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       이 서비스에서 제공하는 모든 정보는 <strong>투자 참고용</strong>으로만 제공되며, 특정 종목이나 섹터에 대한 투자를 권유하거나 조언하지 않습니다.
     </div>
     <div style="text-align:center;padding:16px 0 8px">
-      <a href="/" style="font-size:11px;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card)">🖥️ PC 버전으로 보기</a>
+      <a href="/" onclick="localStorage.setItem('preferPC','true')" style="font-size:11px;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card)">🖥️ PC 버전으로 보기</a>
     </div>
   </div>
 
@@ -5990,6 +5990,7 @@ const _st=document.getElementById('scrollTop');const _mm=document.getElementById
 });
 
 go('kr-history', null);
+localStorage.removeItem('preferPC'); // 모바일 페이지 진입 시 preferPC 초기화
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 if(!IS_DEMO) loadWatchedSectors();
 if(!IS_DEMO) loadUsWatchedSectors();
