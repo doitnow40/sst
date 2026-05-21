@@ -273,8 +273,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 /* ── 분석 패널 레이아웃 (모바일: 세로 스택) ── */
 .analytics-panels-wrap{display:flex;flex-direction:column;gap:8px;}
 .analytics-center-col{display:flex;flex-direction:column;gap:8px;}
-.analytics-main-col{display:flex;flex-direction:column;gap:8px;}
-.analytics-rank-col-rise,.analytics-rank-col-fall{width:100%;}
+.analytics-main-col{display:flex;flex-direction:column;gap:8px;order:1;}
+/* ★ 상승/하락 랭킹을 트리맵 아래 좌우 배치 */
+.analytics-rank-row{display:flex;flex-direction:row;gap:8px;order:2;}
+.analytics-rank-col-rise,.analytics-rank-col-fall{flex:1;min-width:0;}
 
 /* ── 로딩 ── */
 .loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;}
@@ -386,7 +388,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 <header id="mob-header">
   <div class="mob-logo-icon" onclick="go('kr-history',null)" style="cursor:pointer">📡</div>
   <div onclick="go('kr-history',null)" style="cursor:pointer">
-    <div class="mob-logo-text">STOCK SECTOR TRACKER</div>
+    <div class="mob-logo-text">STOCK SECTOR TRACKER MAP</div>
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
@@ -459,12 +461,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
         <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
       </div>
       <div id="kr-analytics-panels" class="analytics-panels-wrap">
-        <div class="analytics-rank-col-rise">
-          <div class="chart-section" style="margin:0" id="kr-rise-panel">
-            <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 등락률 랭킹</div></div>
-            <div style="padding:5px 8px 8px"><div id="kr-rise-bars"></div></div>
-          </div>
-        </div>
         <div class="analytics-center-col">
           <div class="analytics-main-col">
             <div class="chart-section" style="margin:0" id="kr-trend-panel">
@@ -491,9 +487,17 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
               <div style="padding:5px 8px 8px;overflow:auto;max-height:260px"><div id="kr-heatmap-wrap"></div></div>
             </div>
           </div>
+        </div>
+        <div class="analytics-rank-row">
+          <div class="analytics-rank-col-rise">
+            <div class="chart-section" style="margin:0" id="kr-rise-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="kr-rise-bars"></div></div>
+            </div>
+          </div>
           <div class="analytics-rank-col-fall">
             <div class="chart-section" style="margin:0" id="kr-fall-panel">
-              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 등락률 랭킹</div></div>
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 랭킹</div></div>
               <div style="padding:5px 8px 8px"><div id="kr-fall-bars"></div></div>
             </div>
           </div>
@@ -577,12 +581,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
         <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
       </div>
       <div id="us-analytics-panels" class="analytics-panels-wrap">
-        <div class="analytics-rank-col-rise">
-          <div class="chart-section" style="margin:0" id="us-rise-panel">
-            <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 등락률 랭킹</div></div>
-            <div style="padding:5px 8px 8px"><div id="us-rise-bars"></div></div>
-          </div>
-        </div>
         <div class="analytics-center-col">
           <div class="analytics-main-col">
             <div class="chart-section" style="margin:0" id="us-trend-panel">
@@ -609,9 +607,17 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
               <div style="padding:5px 8px 8px;overflow:auto;max-height:260px"><div id="us-heatmap-wrap"></div></div>
             </div>
           </div>
+        </div>
+        <div class="analytics-rank-row">
+          <div class="analytics-rank-col-rise">
+            <div class="chart-section" style="margin:0" id="us-rise-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="us-rise-bars"></div></div>
+            </div>
+          </div>
           <div class="analytics-rank-col-fall">
             <div class="chart-section" style="margin:0" id="us-fall-panel">
-              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 등락률 랭킹</div></div>
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 랭킹</div></div>
               <div style="padding:5px 8px 8px"><div id="us-fall-bars"></div></div>
             </div>
           </div>
