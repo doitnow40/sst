@@ -4189,17 +4189,17 @@ const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
 const avgHtml=secAvg!==null
 ?`<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:auto">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
 :'';
-// 막대 그래프
-const BAR_MAX=10,BARS=10;
+// 막대 그래프 (5칸)
+const BAR_MAX=10,BARS=5;
 let barHtml='';
 if(secAvg!==null){
 const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
 const isUp=secAvg>=0;
 const fc=isUp?'#e53935':'#1e88e5';
-barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+barHtml='<div style="display:flex;align-items:center;gap:0">';
 for(let bi=0;bi<BARS;bi++){
 const active=isUp?(bi<filled):(BARS-1-bi<filled);
-barHtml+=`<span style="width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0;background:${active?fc:'rgba(255,255,255,.1)'}"></span>`;
+barHtml+=`<span style="width:9px;height:13px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0;background:${active?fc:'rgba(255,255,255,.1)'}"></span>`;
 }
 barHtml+='</div>';
 }
@@ -4238,10 +4238,12 @@ if(_usNoteL.memo||_usNoteL.link){
     onclick="event.stopPropagation()">${_usNoteL.link}</a></div>`;
   h+=`</div>`;
 }
-h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
-h+=`<span class="sector-count">${sec.stocks.length} 종목</span>`;
+h+=`<div class="sector-card-meta" style="padding:4px 12px 2px;flex-direction:column;align-items:stretch;gap:2px">`;
+h+=`<div style="display:flex;align-items:center;gap:6px">${barHtml}${avgHtml}</div>`;
+h+=`<div style="display:flex;align-items:center;gap:4px;margin-top:1px">`;
+h+=`<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
 if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-h+=`${barHtml}${avgHtml}</div></div>`;
+h+=`</div></div></div>`;
 h+=`<div class="sector-stocks">`;
 sec.stocks.forEach((st,idx)=>{
 if(!st.name)return;
@@ -4732,26 +4734,27 @@ if(_krNoteL.memo||_krNoteL.link){
     onclick="event.stopPropagation()">${_krNoteL.link}</a></div>`;
   h+=`</div>`;
 }
-const BAR_MAX=15, BARS=10;
+const BAR_MAX=15, BARS=5;
 let barHtml='';
 if(secAvg!==null){
 const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
 const isUp=secAvg>=0;
 const filledColor=isUp?'#e53935':'#1e88e5';
 const emptyColor='rgba(255,255,255,.1)';
-const barStyle=`width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0`;
-barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+const barStyle=`width:9px;height:13px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0`;
+barHtml='<div style="display:flex;align-items:center;gap:0">';
 for(let i=0;i<BARS;i++){
 const active = isUp ? (i < filled) : (BARS-1-i < filled);
 barHtml+=`<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
 }
 barHtml+='</div>';
 }
-h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
-h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
+h+=`<div class="sector-card-meta" style="padding:4px 12px 2px;flex-direction:column;align-items:stretch;gap:2px">`;
+h+=`<div style="display:flex;align-items:center;gap:6px">${barHtml}${avgHtml}</div>`;
+h+=`<div style="display:flex;align-items:center;gap:4px;margin-top:1px">`;
+h+=`<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
 if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-h+=`${barHtml}`;
-h+=`${avgHtml}</div></div><div class="sector-stocks">`;
+h+=`</div></div></div><div class="sector-stocks">`;
 sec.stocks.forEach(s=>{
 const chg=useToday?s.chg:s.prevChg;
 let chgHtml='';
