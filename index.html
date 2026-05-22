@@ -1,1003 +1,940 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<script>
-// ★ 모바일 접속 시 /mobile/ 로 자동 리다이렉트
-(function(){
-  var ua = navigator.userAgent || '';
-  if (/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
-    if (window.location.pathname.indexOf('/mobile') !== -1) return;
-    if (localStorage.getItem('preferPC') === 'true') return;
-    window.location.replace('/mobile/' + window.location.search + window.location.hash);
-  }
-})();
-</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Sector Tracker Map | 한국·미국 섹터 등락률 트래커</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SST Map | 한국·미국 섹터 트래커</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
-<script>window.dataLayer=window.dataLayer||[];
-function gtag(){dataLayer.push(arguments);}
-gtag('js',new Date());
-gtag('config','G-3PTKMRYZZ3');</script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- Google GSI: 관리자 로그인이 비밀번호 방식으로 변경되어 사용하지 않음 -->
-<style>:root{--bg-darkest:#0f1117;--bg-dark:#161b27;--bg-card:#1e2535;--bg-card2:#252d40;--border:#2e3a50;--border-light:#3a4a65;--text-primary:#f0f4fc;--text-secondary:#c8d8ee;--text-muted:#9db3cc;--accent-kr:#4fc3f7;--accent-us:#ef5350;--accent-gold:#ffc107;--sidebar-w:220px;--header-h:56px;--font-body:'Noto Sans KR',sans-serif;--font-mono:'Inter','Helvetica Neue',sans-serif;--font-display:'Bebas Neue',sans-serif;--tbl-font-size:8px;--tbl-cell-pad:3px 4px}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font-body);background:var(--bg-darkest);color:var(--text-primary);height:100vh;overflow:hidden;display:flex;flex-direction:column}header{height:var(--header-h);background:var(--bg-dark);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100}.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent-kr),var(--accent-us));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}.logo-text{font-family:var(--font-display);font-size:16px;letter-spacing:2px;background:linear-gradient(90deg,var(--accent-kr),#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}.logo-sub{font-size:9px;color:var(--text-muted);margin-left:-4px;white-space:nowrap}.header-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}.hdr-badge{display:flex;align-items:center;gap:5px;font-size:9px;color:#aac4e0;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;position:relative;cursor:default}.hdr-badge[data-tooltip]:hover::after{display:none}.sheet-read-badge{display:flex;align-items:center;gap:5px;font-size:9px;color:#aac4e0;font-family:var(--font-mono);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:3px 8px;white-space:nowrap;cursor:help;position:relative}.sheet-read-badge[data-tooltip]:hover::after{display:none}.sheet-read-dot{width:5px;height:5px;background:#66bb6a;border-radius:50%}.clock{font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}.layout{display:flex;flex:1;overflow:hidden}.sidebar{width:var(--sidebar-w);background:var(--bg-dark);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0}.sidebar::-webkit-scrollbar{width:3px}.sidebar::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}.nav-group-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);padding:10px 14px 3px;text-transform:uppercase}.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;transition:all .15s;position:relative;font-size:12px;color:var(--text-secondary);user-select:none}.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text-primary)}.nav-item.active{background:rgba(79,195,247,.1);color:var(--accent-kr)}.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent-kr)}.nav-item.sub{padding-left:34px;font-size:11px}.nav-item.us-active{background:rgba(239,83,80,.1);color:var(--accent-us)}.nav-item.us-active::before{background:var(--accent-us)}.nav-icon{font-size:13px;width:17px;text-align:center;flex-shrink:0}.nav-chevron{margin-left:auto;font-size:9px;color:var(--text-muted);transition:transform .2s}.nav-item.open .nav-chevron{transform:rotate(90deg)}.sub-menu{display:none;background:rgba(0,0,0,.12)}.sub-menu.open{display:block}.sidebar-divider{height:1px;background:var(--border);margin:6px 14px}.main{flex:1;overflow-y:auto;background:var(--bg-darkest);padding:20px}.main::-webkit-scrollbar{width:5px}.main::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}.page-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}.page-flag{font-size:20px}.page-title{font-family:var(--font-display);font-size:24px;letter-spacing:2px}.page-subtitle{font-size:11px;color:var(--text-muted);margin-top:1px}.page-badge{margin-left:auto;font-size:10px;padding:3px 9px;border-radius:20px;font-family:var(--font-mono);white-space:nowrap}.badge-kr{background:rgba(79,195,247,.15);color:var(--accent-kr);border:1px solid rgba(79,195,247,.3)}.badge-us{background:rgba(239,83,80,.15);color:var(--accent-us);border:1px solid rgba(239,83,80,.3)}.controls-bar{display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap}.range-btn{padding:4px 10px;border-radius:5px;font-size:10px;font-family:var(--font-mono);border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer;transition:all .15s}.range-btn:hover{border-color:var(--border-light);color:var(--text-primary)}.range-btn.active-kr{background:rgba(79,195,247,.15);border-color:var(--accent-kr);color:var(--accent-kr)}.range-btn.active-us{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us)}.font-ctrl{display:flex;align-items:center;gap:4px;margin-left:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:2px 4px}.font-ctrl-label{font-size:9px;color:var(--text-muted);padding:0 4px;white-space:nowrap}.font-btn{width:22px;height:22px;border:none;background:transparent;color:var(--text-secondary);cursor:pointer;border-radius:3px;font-size:13px;display:flex;align-items:center;justify-content:center;transition:background .15s}.font-btn:hover{background:var(--bg-card2);color:var(--text-primary)}.font-size-display{font-size:9px;color:var(--text-secondary);font-family:var(--font-mono);min-width:22px;text-align:center}.stats-row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-bottom:14px}.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;white-space:nowrap}.stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;white-space:nowrap}.stat-val{font-family:var(--font-mono);font-size:16px;font-weight:600;white-space:nowrap}.stat-val.up{color:#ef5350}.stat-val.dn{color:#42a5f5}.stat-val.neu{color:var(--text-secondary)}.stat-sub{font-size:9px;color:var(--text-muted);margin-top:1px}.table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative}.table-today-notice{position:absolute;top:6px;right:14px;font-size:9px;color:#ffb74d;font-family:var(--font-mono);background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);border-radius:4px;padding:2px 7px;z-index:10;display:flex;align-items:center;gap:4px}.table-scroll{overflow-x:auto;overflow-y:auto}.table-scroll::-webkit-scrollbar{height:6px;width:6px}.table-scroll::-webkit-scrollbar-track{background:transparent;border-radius:10px}.table-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.4));border-radius:10px;transition:background .2s}.table-scroll::-webkit-scrollbar-thumb:hover{background:linear-gradient(90deg,#81d4fa,var(--accent-kr))}.table-scroll::-webkit-scrollbar-corner{background:transparent}.table-scroll{scrollbar-color:rgba(79,195,247,.5) transparent;scrollbar-width:thin}table{border-collapse:collapse;width:max-content;min-width:100%}thead{position:sticky;top:0;z-index:10;background:var(--bg-card2)}th{background:var(--bg-card2);padding:6px 4px;font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);white-space:normal;word-break:keep-all;line-height:1.25;border-bottom:1px solid var(--border);text-align:center;vertical-align:top}th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:60px}td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1,'case' 1;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4)}th,td{font-feature-settings:'tnum' 1,'case' 1,'kern' 1}td:first-child{text-align:left;position:sticky;left:0;z-index:5;background:var(--bg-card);color:var(--text-secondary);min-width:60px}tr:hover td{filter:brightness(1.15)}tr:hover td:first-child{color:var(--text-primary)}.avg-row td{font-weight:600;background:var(--bg-card2)}.avg-row td:first-child{background:var(--bg-card2) !important;z-index:6 !important}.avg-row-label{font-weight:700!important;color:var(--text-secondary)!important;font-family:var(--font-body)!important;letter-spacing:.3px}.sector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.sector-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:visible;transition:border-color .2s,transform .2s;position:relative;z-index:1}.sector-card:hover{border-color:var(--border-light);transform:translateY(-1px)}.sector-card-header{padding:0;border-bottom:1px solid var(--border);display:flex;flex-direction:column}.sector-card-title{padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;box-sizing:border-box;letter-spacing:-.2px}.sector-card-meta{padding:4px 12px 6px;display:flex;align-items:center;gap:6px;border-top:1px solid rgba(255,255,255,.06)}.sector-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px}.sector-count{margin-left:auto;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}.sector-card.avg-up{background:rgba(239,83,80,.18);border-color:rgba(239,83,80,.7);border-width:1.5px}.sector-card.avg-up .sector-stocks{background:rgba(239,83,80,.15)}.sector-card.avg-up .sector-card-header{background:rgba(239,83,80,.12)}.sector-card.avg-dn{background:rgba(66,165,245,.18);border-color:rgba(66,165,245,.7);border-width:1.5px}.sector-card.avg-dn .sector-stocks{background:rgba(66,165,245,.15)}.sector-card.avg-dn .sector-card-header{background:rgba(66,165,245,.12)}.sector-stocks{padding:8px 14px}.stock-item{display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:11px;position:relative}.stock-item:last-child{border-bottom:none}.stock-name{color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}.stock-ticker{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}#fab-group{position:fixed;bottom:20px;right:62px;display:flex;flex-direction:row;gap:7px;align-items:center;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none}#fab-group.visible{opacity:1;pointer-events:auto}.fab-btn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(79,195,247,.4);background:rgba(30,37,53,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text-secondary);transition:all .2s;user-select:none}.fab-btn:hover{border-color:var(--accent-kr);color:var(--text-primary);background:rgba(79,195,247,.18)}.fab-btn.active{border-color:#ff6f00;color:#ff6f00;background:rgba(255,111,0,.18)}.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;color:var(--text-muted);gap:14px}.spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent-kr);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.notice-box{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent-gold);border-radius:7px;padding:12px 16px;margin-bottom:14px;font-size:11px;color:var(--text-secondary);line-height:1.8}.notice-box strong{color:var(--accent-gold)}.notice-box code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px;color:#b0bec5}.ad-slot{background:var(--bg-card);border:1px dashed var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:10px;margin-bottom:14px}.ad-slot-top{min-height:90px}.ad-slot-btm{min-height:90px;margin-top:14px}td[data-tip]{cursor:default;position:relative}td[data-tip]:hover::after{display:none}#scrollTop{position:fixed;bottom:20px;right:20px;width:34px;height:34px;background:var(--bg-card2);border:1px solid var(--border-light);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text-secondary);opacity:0;transition:opacity .2s;z-index:200}#scrollTop.visible{opacity:1}#scrollTop:hover{color:var(--text-primary)}.chart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}.chart-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}.chart-title{font-size:12px;font-weight:700;color:var(--text-primary);letter-spacing:.5px}.chart-subtitle{font-size:10px;color:var(--text-muted)}.chart-toggle-all{margin-left:0;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer;transition:all .15s}.chart-toggle-all:hover{border-color:var(--border-light);color:var(--text-primary)}.chart-body{padding:8px 14px 12px;position:relative}.chart-canvas-wrap{position:relative;height:280px}.chart-ctrl-group{display:flex;border:1px solid var(--border);border-radius:5px;overflow:hidden}.chart-period-btn,.chart-type-btn{padding:3px 9px;font-size:9px;font-family:var(--font-mono);border:none;background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;border-right:1px solid var(--border)}.chart-period-btn:last-child,.chart-type-btn:last-child{border-right:none}.chart-period-btn:hover,.chart-type-btn:hover{color:var(--text-primary);background:var(--bg-card)}.chart-period-btn.kr.active{background:var(--accent-kr);color:#0a1628;font-weight:800;box-shadow:0 0 8px rgba(79,195,247,.5)}.chart-period-btn.us.active{background:var(--accent-us);color:#fff;font-weight:800;box-shadow:0 0 8px rgba(239,83,80,.5)}.chart-type-btn.active{background:rgba(79,195,247,.2);color:var(--accent-kr);font-weight:700}.chart-type-btn.active{background:rgba(255,255,255,.08);color:var(--text-primary)}.heatmap-wrap{overflow-x:auto;overflow-y:auto;max-height:340px}.heatmap-wrap::-webkit-scrollbar{height:4px;width:4px}.heatmap-wrap::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}.heatmap-table{border-collapse:collapse;width:max-content;min-width:100%}.heatmap-table th{background:var(--bg-card2);padding:4px 6px;font-size:9px;color:var(--text-muted);white-space:nowrap;font-weight:600;border-bottom:1px solid var(--border);text-align:center;position:sticky;top:0;z-index:5}.heatmap-table th:first-child{text-align:left;position:sticky;left:0;z-index:10;background:var(--bg-card2);min-width:70px}.heatmap-table td{padding:3px 5px;font-size:9px;font-family:var(--font-mono);text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.3)}.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--bg-card);color:var(--text-secondary);font-size:9px;min-width:70px;z-index:3}.rank-bar-row{display:flex;align-items:center;gap:5px;padding:2px 0;border-bottom:1px solid rgba(46,58,80,.25);border-radius:3px;transition:background .12s}.rank-bar-row:hover{background:rgba(255,255,255,.06)}.rank-bar-label{width:68px;flex-shrink:0;font-size:9px;color:var(--text-secondary);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rank-bar-track{flex:1;min-width:30px;max-width:120px;position:relative;height:13px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden}.rank-bar-fill{position:absolute;top:0;height:100%;border-radius:2px}.rank-bar-fill.up{background:rgba(239,83,80,.25);left:0}.rank-bar-fill.dn{background:rgba(66,165,245,.25);right:0}.rank-bar-pct{width:46px;flex-shrink:0;font-size:9px;font-weight:700;font-family:var(--font-mono);text-align:right}.rank-bar-pct.up{color:#ef5350}.rank-bar-pct.dn{color:#4fc3f7}.rank-ticks{display:flex;justify-content:space-between;padding:0 0 4px;margin-bottom:2px;border-bottom:1px solid var(--border)}.rank-ticks span{font-size:8px;color:var(--text-muted);font-family:var(--font-mono)}
-/* ── analytics panels 반응형 레이아웃 ── */
-/* 전체 패널: 최대 너비 고정 → 이 이상 넓어지지 않음 */
-.analytics-panels-wrap{
-  display:grid;
-  grid-template-columns:200px 1fr;
-  gap:10px;
-  align-items:start;
-  max-width:1380px;  /* ← 전체 통계 섹션 최대 너비 */
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-3PTKMRYZZ3');</script>
+<style>
+:root {
+  --bg-darkest:#0f1117;
+  --bg-dark:#161b27;
+  --bg-card:#1e2535;
+  --bg-card2:#252d40;
+  --border:#2e3a50;
+  --border-light:#3a4a65;
+  --text-primary:#f0f4fc;
+  --text-secondary:#c8d8ee;
+  --text-muted:#9db3cc;
+  --accent-kr:#4fc3f7;
+  --accent-us:#ef5350;
+  --accent-gold:#ffc107;
+  --tab-h:56px;
+  --header-h:48px;
+  --font-body:'Noto Sans KR',sans-serif;
+  --font-mono:'Inter','Helvetica Neue',sans-serif;
+  --font-display:'Bebas Neue',sans-serif;
+  --tbl-font-size:8px;
+  --tbl-cell-pad:3px 4px;
 }
-/* 중앙 컬럼: 차트·히트맵·하락랭킹을 가로로 나란히 */
-.analytics-center-col{
-  display:grid;
-  grid-template-columns:1fr 200px;
-  gap:10px;
-  min-width:0;
-  align-items:start;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg-darkest);}
+body{font-family:var(--font-body);color:var(--text-primary);display:flex;flex-direction:column;}
+
+/* ── 상단 헤더 ── */
+#mob-header {
+  height:var(--header-h);
+  background:var(--bg-dark);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 12px;gap:8px;
+  flex-shrink:0;z-index:100;
+  position:relative;
 }
-/* 차트+히트맵을 세로로 쌓는 내부 컬럼 */
-.analytics-main-col{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  min-width:0;
+.mob-logo-icon{
+  width:28px;height:28px;
+  background:linear-gradient(135deg,var(--accent-kr),var(--accent-us));
+  border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
 }
-/* 중간 화면(~900px): 하락랭킹을 center-col 아래로 */
-@media(max-width:900px){
-  .analytics-panels-wrap{grid-template-columns:1fr 1fr}
-  .analytics-rank-col-rise{grid-column:1;grid-row:1}
-  .analytics-center-col{grid-column:1 / span 2;grid-row:2;grid-template-columns:1fr 1fr}
-  .analytics-main-col{grid-column:1 / span 2;grid-row:1}
-  .analytics-rank-col-fall{grid-column:1 / span 2;grid-row:2}
+.mob-logo-text{
+  font-family:var(--font-display);font-size:15px;letter-spacing:1.5px;
+  background:linear-gradient(90deg,var(--accent-kr),#81d4fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;
 }
-/* 좁은 화면(~599px): 1열 세로 */
-@media(max-width:599px){
-  .analytics-panels-wrap{grid-template-columns:1fr}
-  .analytics-rank-col-rise{grid-column:1;grid-row:1}
-  .analytics-center-col{grid-column:1;grid-row:2;grid-template-columns:1fr}
-  .analytics-main-col{grid-column:1;grid-row:1}
-  .analytics-rank-col-fall{grid-column:1;grid-row:2}
-}@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}.deploy-guide{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:11px;line-height:1.9;color:var(--text-secondary)}.deploy-guide h3{color:var(--accent-kr);font-size:13px;margin-bottom:8px}.deploy-guide ol{padding-left:18px}.deploy-guide li{margin-bottom:4px}.deploy-guide code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px;color:#90caf9}.about-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}.about-section-title{padding:11px 16px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:.3px}.about-section-body{padding:14px 18px;font-size:12px;color:var(--text-secondary);line-height:2.0}.about-section-body strong{color:var(--text-primary)}.admin-login-box{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:20px}.admin-login-title{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--text-primary)}.admin-login-sub{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7}.admin-user-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:16px}.admin-user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}.admin-user-name{font-size:12px;color:var(--text-primary);font-weight:600}.admin-user-email{font-size:10px;color:var(--text-muted)}.admin-logout-btn{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}.admin-logout-btn:hover{border-color:var(--accent-us);color:var(--accent-us)}.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px}.admin-tab{padding:8px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}.admin-tab:hover{color:var(--text-primary)}.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}.stats-embed-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;min-height:200px}.ga-notice{font-size:12px;color:var(--text-secondary);line-height:1.9}.ga-notice code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px;color:#90caf9}.ga-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:10px;transition:opacity .15s}.ga-btn:hover{opacity:.85}.admin-mgmt-layout{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}.admin-sector-list{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-sector-list-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;justify-content:space-between}.admin-sector-item{display:flex;align-items:center;padding:8px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-bottom:1px solid rgba(46,58,80,.3);transition:all .15s;gap:8px}.admin-sector-item:hover{background:rgba(255,255,255,.03);color:var(--text-primary)}.admin-sector-item.selected{background:rgba(79,195,247,.1);color:var(--accent-kr)}.admin-sector-item:last-child{border-bottom:none}.admin-del-btn{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer;flex-shrink:0;transition:all .15s}.admin-del-btn:hover{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us)}.admin-stock-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-panel-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)}.admin-panel-body{padding:14px}.admin-stock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;background:var(--bg-card2);border:1px solid var(--border);margin-bottom:6px}.admin-stock-name{flex:1;color:var(--text-primary)}.admin-stock-ticker{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px}.admin-input-row{display:flex;gap:6px;margin-top:10px}.admin-input{flex:1;background:var(--bg-darkest);border:1px solid var(--border);color:var(--text-primary);padding:6px 10px;border-radius:6px;font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .15s}.admin-input:focus{border-color:var(--accent-kr)}.admin-add-btn{padding:6px 14px;border-radius:6px;border:none;background:var(--accent-kr);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}.admin-add-btn:hover{opacity:.85}.admin-add-btn:disabled{opacity:.4;cursor:not-allowed}.admin-msg{font-size:11px;padding:6px 10px;border-radius:5px;margin-top:8px;display:none}.admin-msg.ok{background:rgba(102,187,106,.15);color:#a5d6a7;border:1px solid rgba(102,187,106,.3)}.admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}.admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}.memo-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(79,195,247,.25);color:var(--accent-kr);font-size:10px;flex-shrink:0;cursor:help;border:1px solid rgba(79,195,247,.4);transition:all .15s;font-weight:700;user-select:none}.memo-icon:hover{background:rgba(79,195,247,.5);transform:scale(1.15)}.watch-checkbox{display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 0}.watch-checkbox input{width:14px;height:14px;accent-color:#ff6f00;cursor:pointer}.watch-check-label{font-size:10px;color:var(--text-muted)}.sector-card.watched{border:2px solid #ff6f00 !important;box-shadow:0 0 12px rgba(255,111,0,.35)}.sector-card.watched .sector-card-header{background:rgba(255,111,0,.12) !important;border-bottom-color:rgba(255,111,0,.4) !important}.watch-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:4px}th.watched-col{background:#7b3a00 !important;color:#ffd180 !important;outline:2px solid #ff6f00;outline-offset:-1px}.hb-line{display:block;width:18px;height:2px;background:var(--text-secondary);border-radius:2px;transition:all .2s}#sidebar-toggle-btn:hover .hb-line{background:var(--text-primary)}.layout{display:flex;flex:1;overflow:hidden;transition:none}.sidebar{width:var(--sidebar-w);background:var(--bg-dark);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0;transition:width .25s ease,opacity .25s ease;overflow-x:hidden;display:flex;flex-direction:column}.sidebar.collapsed{width:0;opacity:0;padding:0;border-right:none}#sidebar-adfit-wrap{margin-top:auto;padding:10px 0 6px;display:flex;justify-content:center;flex-shrink:0}.adfit-btm-wrap{margin:14px 0;display:flex;justify-content:center;max-width:1380px}#sidebar-overlay{display:none;position:fixed;inset:0;top:var(--header-h);background:rgba(0,0,0,.45);z-index:90;cursor:pointer}#sidebar-overlay.active{display:block}.sidebar.floating{position:fixed;left:0;top:var(--header-h);bottom:0;z-index:100;box-shadow:4px 0 20px rgba(0,0,0,.5)}.sidebar.floating.collapsed{transform:translateX(-100%);width:var(--sidebar-w);opacity:0;pointer-events:none}#sidebar-pin-btn.pinned{color:var(--accent-kr);border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.1)}td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px}.page-info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(176,196,222,.15);color:var(--text-muted);font-size:11px;font-weight:700;cursor:help;border:1px solid var(--border-light);position:relative;flex-shrink:0;transition:all .15s;font-family:var(--font-mono)}.page-info-icon:hover{background:rgba(79,195,247,.2);color:var(--accent-kr);border-color:var(--accent-kr)}.page-info-icon::after{display:none}#info-tooltip{position:fixed;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:10px 14px;font-size:10px;color:#b0d4f1;white-space:pre;line-height:1.8;z-index:99999;pointer-events:none;min-width:260px;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.7);font-family:var(--font-body);font-weight:400;display:none}.tm-cell{border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:default;box-sizing:border-box;transition:filter .12s}.tm-cell:hover{filter:brightness(1.25)}
-.tm-mode-btn{padding:3px 9px;font-size:9px;font-family:var(--font-mono);border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap}.grp-border-l th,.grp-border-l td{border-left:3px solid #000 !important}
-.tm-mode-btn:hover{border-color:var(--border-light);color:var(--text-primary)}
-.tm-mode-btn.active-kr{background:rgba(79,195,247,.15);border-color:var(--accent-kr);color:var(--accent-kr);font-weight:700}
-.tm-mode-btn.active-watch{background:rgba(255,111,0,.15);border-color:#ff6f00;color:#ff6f00;font-weight:700}
-.tm-no-watch{display:flex;align-items:center;justify-content:center;height:120px;color:var(--text-muted);font-size:12px;flex-direction:column;gap:8px}
-/* ── 버튼 커스텀 툴팁 ── */
-[title]{position:relative}
-button[title]:hover::after{
-  display:none; /* JS 통합 툴팁으로 대체 */
+.mob-logo-sub{font-size:8px;color:var(--text-muted);margin-left:2px;white-space:nowrap;}
+.mob-header-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.mob-hdr-btn{
+  display:flex;align-items:center;gap:4px;
+  font-size:9px;color:#aac4e0;font-family:var(--font-mono);
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:5px;padding:3px 7px;white-space:nowrap;cursor:pointer;
+  transition:all .15s;
 }
-/* ── F&G 전용 팝업 ── */
-#fng-popup{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
-  width:320px;max-height:82vh;overflow-y:auto;
-  background:var(--bg-card);border:1px solid #4A235A44;
-  border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.75);
-  display:flex;flex-direction:column;
-  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:3002;
+.mob-hdr-btn:hover{border-color:var(--accent-kr);color:var(--text-primary);}
+.mob-live-dot{width:5px;height:5px;border-radius:50%;background:#66bb6a;flex-shrink:0;}
+.mob-live-dot.pulse{background:var(--accent-kr);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 메인 스크롤 영역 ── */
+#mob-main{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  background:var(--bg-darkest);
+  padding:12px 10px;
+  padding-bottom:calc(var(--tab-h) + 12px);
+  -webkit-overflow-scrolling:touch;
 }
-#fng-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
-#fng-popup::-webkit-scrollbar{width:4px}
-#fng-popup::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
-#fng-popup-header{
+#mob-main::-webkit-scrollbar{width:3px;}
+#mob-main::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px;}
+
+/* ── 하단 탭바 ── */
+#mob-tabbar{
+  height:var(--tab-h);
+  background:var(--bg-dark);
+  border-top:1px solid var(--border);
+  display:flex;align-items:stretch;
+  flex-shrink:0;z-index:100;
+  position:fixed;bottom:0;left:0;right:0;
+}
+.mob-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;
+  cursor:pointer;transition:all .15s;
+  font-size:9px;color:var(--text-muted);
+  border-top:2px solid transparent;
+  user-select:none;-webkit-tap-highlight-color:transparent;
+  padding:4px 2px 6px;
+}
+.mob-tab .tab-icon{font-size:18px;line-height:1;}
+.mob-tab.kr-active{color:var(--accent-kr);border-top-color:var(--accent-kr);}
+.mob-tab.us-active{color:var(--accent-us);border-top-color:var(--accent-us);}
+.mob-tab:active{background:rgba(255,255,255,.06);}
+
+/* ── 페이지 헤더 ── */
+.mob-page-header{
   display:flex;align-items:center;gap:8px;
-  padding:10px 14px;border-bottom:1px solid var(--border-light);
-  background:linear-gradient(90deg,#2a1a35,#1a1a2e);flex-shrink:0;border-radius:14px 14px 0 0;
+  margin-bottom:10px;
 }
-#fng-popup-title{font-size:13px;font-weight:700;color:#E8DAEF;flex:1}
-#fng-popup-close{
-  background:none;border:none;color:var(--text-muted);font-size:14px;
-  cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .15s,color .15s;
+.mob-page-flag{font-size:18px;}
+.mob-page-title{
+  font-family:var(--font-display);font-size:20px;letter-spacing:1.5px;
 }
-#fng-popup-close:hover{background:rgba(239,83,80,.3);color:#ef5350}
-/* ── 섹터 종목 팝업 ── */
-#sector-popup-overlay{position:fixed;inset:0;z-index:3000;pointer-events:none}
-#sector-popup-overlay.active{pointer-events:auto}
+.mob-page-badge{
+  margin-left:auto;font-size:9px;padding:2px 8px;border-radius:12px;
+  font-family:var(--font-mono);white-space:nowrap;
+}
+.badge-kr{background:rgba(79,195,247,.15);color:var(--accent-kr);border:1px solid rgba(79,195,247,.3);}
+.badge-us{background:rgba(239,83,80,.15);color:var(--accent-us);border:1px solid rgba(239,83,80,.3);}
+
+/* ── 알림 바 ── */
+.mob-notice-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;padding:5px 10px;
+  border-radius:6px;font-size:9px;font-family:var(--font-mono);
+}
+.mob-notice-bar.kr{background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);color:#ffb74d;}
+.mob-notice-bar.us{background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);color:#ef9a9a;}
+
+/* ── 컨트롤 바 ── */
+.mob-controls{display:flex;align-items:center;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.range-btn{
+  padding:5px 10px;border-radius:6px;font-size:10px;font-family:var(--font-mono);
+  border:1px solid var(--border);background:var(--bg-card);
+  color:var(--text-secondary);cursor:pointer;transition:all .15s;
+}
+.range-btn:hover,.range-btn:active{border-color:var(--border-light);color:var(--text-primary);}
+.range-btn.active-kr{background:rgba(79,195,247,.15);border-color:var(--accent-kr);color:var(--accent-kr);}
+.range-btn.active-us{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us);}
+.font-ctrl{
+  display:flex;align-items:center;gap:3px;margin-left:auto;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:2px 4px;
+}
+.font-ctrl-label{font-size:9px;color:var(--text-muted);padding:0 3px;white-space:nowrap;}
+.font-btn{
+  width:22px;height:22px;border:none;background:transparent;
+  color:var(--text-secondary);cursor:pointer;border-radius:3px;font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:background .15s;
+}
+.font-btn:hover,.font-btn:active{background:var(--bg-card2);color:var(--text-primary);}
+.font-size-display{font-size:9px;color:var(--text-secondary);font-family:var(--font-mono);min-width:18px;text-align:center;}
+
+/* ── 통계 카드 ── */
+.stats-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;white-space:nowrap;flex:1;min-width:80px;}
+.stat-label{font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.stat-val{font-family:var(--font-mono);font-size:14px;font-weight:600;}
+.stat-val.up{color:#ef5350}.stat-val.dn{color:#42a5f5}.stat-val.neu{color:var(--text-secondary)}
+.stat-sub{font-size:8px;color:var(--text-muted);margin-top:1px;}
+
+/* ── 테이블 ── */
+.table-container{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.table-scroll{overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.table-scroll::-webkit-scrollbar{height:4px;width:4px;}
+.table-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,var(--accent-kr),rgba(79,195,247,.4));border-radius:10px;}
+table{border-collapse:collapse;width:max-content;min-width:100%}
+thead{position:sticky;top:0;z-index:10;background:var(--bg-card2)}
+th{
+  background:var(--bg-card2);padding:5px 3px;font-size:8px;font-weight:700;
+  letter-spacing:.3px;text-transform:uppercase;color:var(--text-secondary);
+  white-space:normal;word-break:keep-all;line-height:1.2;
+  border-bottom:1px solid var(--border);text-align:center;vertical-align:top;
+}
+th:first-child{text-align:left;position:sticky;left:0;z-index:20;background:var(--bg-card2);min-width:55px;}
+td{
+  padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.4);
+}
+td:first-child{
+  text-align:left;position:sticky;left:0;z-index:5;
+  background:var(--bg-card);color:var(--text-secondary);min-width:55px;
+}
+tr:hover td{filter:brightness(1.15);}
+.avg-row td{font-weight:600;background:var(--bg-card2);}
+.avg-row td:first-child{background:var(--bg-card2)!important;z-index:6!important;}
+.avg-row-label{font-weight:700!important;color:var(--text-secondary)!important;font-family:var(--font-body)!important;letter-spacing:.3px;}
+.group-row th{font-size:8px;padding:3px 4px;}
+th.sector-clickable{cursor:pointer;transition:filter .12s;}
+th.sector-clickable:hover{filter:brightness(1.35);}
+th.watched-col{background:#7b3a00!important;color:#ffd180!important;outline:2px solid #ff6f00;outline-offset:-1px;}
+td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
+.grp-border-l th,.grp-border-l td{border-left:3px solid #000!important;}
+
+/* ── 가로 스크롤바 ── */
+.h-scrollbar-wrap{position:relative;height:18px;margin-bottom:6px;padding:0 2px;}
+.h-scrollbar-track{position:relative;height:5px;background:rgba(46,58,80,.5);border-radius:10px;top:6px;cursor:pointer;}
+.h-scrollbar-thumb{position:absolute;height:100%;background:linear-gradient(90deg,#4fc3f7,#81d4fa);border-radius:10px;cursor:grab;box-shadow:0 0 4px rgba(79,195,247,.4);}
+.h-scrollbar-thumb-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:12px;height:12px;background:radial-gradient(circle,#fff 30%,#4fc3f7 100%);border-radius:50%;box-shadow:0 0 4px rgba(79,195,247,.7);pointer-events:none;}
+
+/* ── 섹터 카드 (List) ── */
+.sector-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;}
+.sector-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:visible;transition:border-color .2s;position:relative;}
+.sector-card.avg-up{background:rgba(239,83,80,.18);border-color:rgba(239,83,80,.7);border-width:1.5px;}
+.sector-card.avg-up .sector-stocks{background:rgba(239,83,80,.15);}
+.sector-card.avg-up .sector-card-header{background:rgba(239,83,80,.12);}
+.sector-card.avg-dn{background:rgba(66,165,245,.18);border-color:rgba(66,165,245,.7);border-width:1.5px;}
+.sector-card.avg-dn .sector-stocks{background:rgba(66,165,245,.15);}
+.sector-card.avg-dn .sector-card-header{background:rgba(66,165,245,.12);}
+.sector-card.watched{border:2px solid #ff6f00!important;box-shadow:0 0 10px rgba(255,111,0,.3);}
+.sector-card.watched .sector-card-header{background:rgba(255,111,0,.12)!important;}
+.sector-card-header{padding:0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;}
+.sector-card-title{padding:6px 10px;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;letter-spacing:-.2px;}
+.sector-card-meta{padding:3px 10px 5px;display:flex;align-items:center;gap:5px;border-top:1px solid rgba(255,255,255,.06);}
+.sector-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;}
+.sector-count{margin-left:auto;font-size:10px;color:var(--text-muted);font-family:var(--font-mono);}
+.sector-stocks{padding:6px 10px;}
+.stock-item{display:flex;align-items:center;gap:0;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.25);font-size:10px;position:relative;}
+.stock-item:last-child{border-bottom:none;}
+.stock-name{color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.stock-ticker{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.watch-badge{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:3px;}
+
+/* ── 차트 섹션 ── */
+.chart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.chart-header{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.chart-title{font-size:11px;font-weight:700;color:var(--text-primary);letter-spacing:.4px;}
+.chart-subtitle{font-size:9px;color:var(--text-muted);}
+.chart-body{padding:6px 10px 10px;position:relative;}
+.chart-canvas-wrap{position:relative;height:200px;}
+.chart-toggle-all{font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer;transition:all .15s;}
+.chart-toggle-all:hover{border-color:var(--border-light);color:var(--text-primary);}
+.chart-ctrl-group{display:flex;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+.chart-period-btn,.chart-type-btn{padding:3px 7px;font-size:9px;font-family:var(--font-mono);border:none;background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;border-right:1px solid var(--border);}
+.chart-period-btn:last-child,.chart-type-btn:last-child{border-right:none;}
+.chart-period-btn:hover,.chart-type-btn:hover{color:var(--text-primary);background:var(--bg-card);}
+.chart-period-btn.kr.active{background:var(--accent-kr);color:#0a1628;font-weight:800;}
+.chart-period-btn.us.active{background:var(--accent-us);color:#fff;font-weight:800;}
+.chart-type-btn.active{background:rgba(255,255,255,.08);color:var(--text-primary);font-weight:700;}
+
+/* ── 히트맵 ── */
+.heatmap-wrap{overflow-x:auto;overflow-y:auto;max-height:260px;-webkit-overflow-scrolling:touch;}
+.heatmap-wrap::-webkit-scrollbar{height:3px;width:3px;}
+.heatmap-wrap::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px;}
+.heatmap-table{border-collapse:collapse;width:max-content;min-width:100%}
+.heatmap-table th{background:var(--bg-card2);padding:3px 5px;font-size:8px;color:var(--text-muted);white-space:nowrap;font-weight:600;border-bottom:1px solid var(--border);text-align:center;position:sticky;top:0;z-index:5;}
+.heatmap-table th:first-child{text-align:left;position:sticky;left:0;z-index:10;background:var(--bg-card2);min-width:55px;}
+.heatmap-table td{padding:2px 4px;font-size:8px;font-family:var(--font-mono);text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.3);}
+.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--bg-card);color:var(--text-secondary);font-size:8px;min-width:55px;z-index:3;}
+
+/* ── 랭킹 바 ── */
+.rank-bar-row{display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid rgba(46,58,80,.25);border-radius:3px;transition:background .12s;cursor:pointer;}
+.rank-bar-row:hover,.rank-bar-row:active{background:rgba(255,255,255,.06);}
+.rank-bar-label{width:60px;flex-shrink:0;font-size:8px;color:var(--text-secondary);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank-bar-track{flex:1;min-width:30px;position:relative;height:12px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden;}
+.rank-bar-fill{position:absolute;top:0;height:100%;border-radius:2px;}
+.rank-bar-fill.up{background:rgba(239,83,80,.25);left:0;}
+.rank-bar-fill.dn{background:rgba(66,165,245,.25);right:0;}
+.rank-bar-pct{width:42px;flex-shrink:0;font-size:8px;font-weight:700;font-family:var(--font-mono);text-align:right;}
+.rank-bar-pct.up{color:#ef5350}.rank-bar-pct.dn{color:#4fc3f7}
+.rank-ticks{display:flex;justify-content:space-between;padding:0 0 3px;margin-bottom:2px;border-bottom:1px solid var(--border);}
+.rank-ticks span{font-size:7px;color:var(--text-muted);font-family:var(--font-mono);}
+
+/* ── 분석 패널 레이아웃 (모바일: 세로 스택) ── */
+.analytics-panels-wrap{display:flex;flex-direction:column;gap:8px;}
+.analytics-center-col{display:flex;flex-direction:column;gap:8px;}
+.analytics-main-col{display:flex;flex-direction:column;gap:8px;order:1;}
+/* ★ 상승/하락 랭킹을 트리맵 아래 좌우 배치 */
+.analytics-rank-row{display:flex;flex-direction:row;gap:8px;order:2;}
+.analytics-rank-col-rise,.analytics-rank-col-fall{flex:1;min-width:0;}
+
+/* ── 로딩 ── */
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);gap:12px;}
+.spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent-kr);border-radius:50%;animation:spin .8s linear infinite;}
+
+/* ── 알림박스 ── */
+.notice-box{background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent-gold);border-radius:7px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:var(--text-secondary);line-height:1.8;}
+.notice-box strong{color:var(--accent-gold);}
+.notice-box code{background:rgba(0,0,0,.3);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:9px;color:#b0bec5;}
+
+/* ── About 섹션 ── */
+.about-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.about-section-title{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-primary);letter-spacing:.3px;}
+.about-section-body{padding:12px 14px;font-size:11px;color:var(--text-secondary);line-height:1.9;}
+.about-section-body strong{color:var(--text-primary);}
+
+/* ── 팝업 (PC 코드에서 그대로 사용) ── */
+#sector-popup-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:3000;display:none;}
+#sector-popup-backdrop.active{display:block;}
+#sector-popup-overlay{position:fixed;inset:0;z-index:3000;pointer-events:none;}
+#sector-popup-overlay.active{pointer-events:auto;}
 #sector-popup{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
-  width:360px;max-height:75vh;
+  width:calc(100vw - 24px);max-width:400px;max-height:78vh;
   background:var(--bg-card);border:1px solid var(--border-light);
   border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.7);
   display:flex;flex-direction:column;
   opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:3001;
 }
-#sector-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
-#sector-popup-backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  z-index:3000;display:none;
-}
-#sector-popup-backdrop.active{display:block}
-#sector-popup-header{
-  display:flex;align-items:center;gap:8px;
-  padding:10px 14px;background:var(--bg-card2);
-  border-radius:12px 12px 0 0;border-bottom:1px solid var(--border);
-  flex-shrink:0;
-}
-#sector-popup-title{font-size:13px;font-weight:700;color:var(--text-primary);flex:1}
-#sector-popup-avg{font-size:12px;font-family:var(--font-mono);font-weight:700}
-#sector-popup-close{
-  width:24px;height:24px;border-radius:50%;border:none;
-  background:rgba(255,255,255,.08);color:var(--text-secondary);
-  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;flex-shrink:0;line-height:1;
-}
-#sector-popup-close:hover{background:rgba(239,83,80,.3);color:#ef5350}
-#sector-popup-body{overflow-y:auto;padding:8px 12px 12px;flex:1}
-#sector-popup-body::-webkit-scrollbar{width:4px}
-#sector-popup-body::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
-.sp-stock-row{
-  display:grid;grid-template-columns:1fr auto auto;
-  align-items:center;gap:6px;
-  padding:5px 8px;border-radius:6px;font-size:11px;
-  border-bottom:1px solid rgba(46,58,80,.25);
-  transition:background .1s;
-}
-.sp-stock-row:last-child{border-bottom:none}
-.sp-stock-row:hover{background:rgba(255,255,255,.04)}
-.sp-stock-name{color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sp-stock-ticker{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
-.sp-stock-chg{font-family:var(--font-mono);font-size:11px;font-weight:700;text-align:right;min-width:52px}
-.sp-stock-memo{font-size:9px;color:var(--text-muted);grid-column:1/-1;padding-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-th.sector-clickable{cursor:pointer;transition:filter .12s;vertical-align:top}
-th.sector-clickable:hover{filter:brightness(1.35)}
+#sector-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+#sector-popup-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg-card2);border-radius:12px 12px 0 0;border-bottom:1px solid var(--border);flex-shrink:0;}
+#sector-popup-title{font-size:13px;font-weight:700;color:var(--text-primary);flex:1;}
+#sector-popup-avg{font-size:12px;font-family:var(--font-mono);font-weight:700;}
+#sector-popup-close{width:24px;height:24px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:var(--text-secondary);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0;line-height:1;}
+#sector-popup-close:hover{background:rgba(239,83,80,.3);color:#ef5350;}
+#sector-popup-body{overflow-y:auto;padding:8px 12px 12px;flex:1;-webkit-overflow-scrolling:touch;}
+#sector-popup-body::-webkit-scrollbar{width:3px;}
+#sector-popup-body::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px;}
+.sp-stock-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:5px;padding:4px 7px;border-radius:6px;font-size:10px;border-bottom:1px solid rgba(46,58,80,.25);transition:background .1s;}
+.sp-stock-row:last-child{border-bottom:none;}
+.sp-stock-row:hover{background:rgba(255,255,255,.04);}
+.sp-stock-name{color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-stock-ticker{font-family:var(--font-mono);font-size:7px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.sp-stock-chg{font-family:var(--font-mono);font-size:10px;font-weight:700;text-align:right;min-width:46px;}
+.sp-stock-memo{font-size:8px;color:var(--text-muted);grid-column:1/-1;padding-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-.h-scrollbar-wrap{position:relative;height:20px;margin-bottom:6px;padding:0 2px;}
-.h-scrollbar-track{position:relative;height:6px;background:rgba(46,58,80,0.5);border-radius:10px;top:7px;cursor:pointer;}
-.h-scrollbar-thumb{position:absolute;height:100%;background:linear-gradient(90deg,#4fc3f7,#81d4fa);border-radius:10px;cursor:grab;transition:background .15s;box-shadow:0 0 6px rgba(79,195,247,.4);}
-.h-scrollbar-thumb:hover{background:linear-gradient(90deg,#81d4fa,#4fc3f7);box-shadow:0 0 10px rgba(79,195,247,.6);}
-.h-scrollbar-thumb:active{cursor:grabbing;background:linear-gradient(90deg,#e0f7fa,#4fc3f7);box-shadow:0 0 14px rgba(79,195,247,.8);}
-.h-scrollbar-thumb-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:radial-gradient(circle,#fff 30%,#4fc3f7 100%);border-radius:50%;box-shadow:0 0 6px rgba(79,195,247,.7),0 1px 3px rgba(0,0,0,.5);pointer-events:none;}
+/* F&G 팝업 */
+#fng-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+  width:calc(100vw - 24px);max-width:340px;max-height:82vh;overflow-y:auto;
+  background:var(--bg-card);border:1px solid #4A235A44;
+  border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.75);
+  display:flex;flex-direction:column;
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:3002;
+  -webkit-overflow-scrolling:touch;
+}
+#fng-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+#fng-popup-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border-light);background:linear-gradient(90deg,#2a1a35,#1a1a2e);flex-shrink:0;border-radius:14px 14px 0 0;}
+#fng-popup-title{font-size:13px;font-weight:700;color:#E8DAEF;flex:1;}
+#fng-popup-close{background:none;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .15s,color .15s;}
+#fng-popup-close:hover{background:rgba(239,83,80,.3);color:#ef5350;}
+
+/* ── 글로벌 메모 툴팁 ── */
+#global-memo-tooltip{position:fixed;background:rgba(26,45,69,.99);border:2px solid #4fc3f7;border-radius:8px;padding:8px 10px;font-size:10px;color:#b0d4f1;line-height:1.6;white-space:pre-wrap;min-width:140px;max-width:260px;box-shadow:0 6px 20px rgba(0,0,0,.95);opacity:0;pointer-events:none;z-index:10001;word-wrap:break-word;display:none;transition:opacity .15s ease;font-family:'Noto Sans KR',sans-serif;}
+
+/* ── FAB 버튼 ── */
+#fab-group{position:fixed;bottom:calc(var(--tab-h) + 10px);right:10px;display:flex;flex-direction:row;gap:6px;align-items:center;z-index:200;opacity:0;transition:opacity .2s;pointer-events:none;}
+#fab-group.visible{opacity:1;pointer-events:auto;}
+.fab-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(79,195,247,.4);background:rgba(30,37,53,.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text-secondary);transition:all .2s;user-select:none;}
+.fab-btn:active{border-color:var(--accent-kr);color:var(--text-primary);background:rgba(79,195,247,.18);}
+.fab-btn.active{border-color:#ff6f00;color:#ff6f00;background:rgba(255,111,0,.18);}
+
+/* ── 스크롤 탑 버튼 ── */
+#scrollTop{position:fixed;bottom:calc(var(--tab-h) + 10px);left:10px;width:32px;height:32px;background:var(--bg-card2);border:1px solid var(--border-light);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text-secondary);opacity:0;transition:opacity .2s;z-index:200;}
+#scrollTop.visible{opacity:1;}
+
+/* ── 트리맵 ── */
+.tm-cell{border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:default;box-sizing:border-box;transition:filter .12s;}
+.tm-cell:hover,.tm-cell:active{filter:brightness(1.25);}
+.tm-mode-btn{padding:3px 8px;font-size:8px;font-family:var(--font-mono);border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tm-mode-btn.active-kr{background:rgba(79,195,247,.15);border-color:var(--accent-kr);color:var(--accent-kr);font-weight:700;}
+.tm-mode-btn.active-watch{background:rgba(255,111,0,.15);border-color:#ff6f00;color:#ff6f00;font-weight:700;}
+.tm-no-watch{display:flex;align-items:center;justify-content:center;height:100px;color:var(--text-muted);font-size:11px;flex-direction:column;gap:6px;}
+
+/* ── 메모 아이콘 ── */
+.memo-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(79,195,247,.25);color:var(--accent-kr);font-size:9px;flex-shrink:0;cursor:help;border:1px solid rgba(79,195,247,.4);font-weight:700;user-select:none;}
+.page-info-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(176,196,222,.15);color:var(--text-muted);font-size:10px;font-weight:700;cursor:help;border:1px solid var(--border-light);position:relative;flex-shrink:0;transition:all .15s;font-family:var(--font-mono);}
+#info-tooltip{position:fixed;background:#1a2d45;border:1px solid var(--accent-kr);border-radius:7px;padding:10px 14px;font-size:10px;color:#b0d4f1;white-space:pre;line-height:1.8;z-index:99999;pointer-events:none;min-width:240px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,.7);font-family:var(--font-body);font-weight:400;display:none;}
+
+/* ── watch 체크박스 ── */
+.watch-checkbox{display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 0;}
+.watch-checkbox input{width:13px;height:13px;accent-color:#ff6f00;cursor:pointer;}
+.watch-check-label{font-size:9px;color:var(--text-muted);}
+
+/* ── adfit 광고 ── */
+.adfit-btm-wrap{margin:10px 0;display:flex;justify-content:center;}
+
+/* ── 오늘 공지 배지 ── */
+.table-today-notice{position:absolute;top:5px;right:10px;font-size:8px;color:#ffb74d;font-family:var(--font-mono);background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);border-radius:4px;padding:2px 6px;z-index:10;display:flex;align-items:center;gap:3px;}
 </style>
 </head>
 <body>
-<div id="sidebar-overlay" onclick="closeSidebarIfFloating()"></div>
-<div id="global-memo-tooltip" style="position:fixed;background:rgba(26,45,69,.99);border:2px solid #4fc3f7;border-radius:8px;padding:10px 12px;font-size:11px;color:#b0d4f1;line-height:1.6;white-space:pre-wrap;min-width:160px;max-width:300px;box-shadow:0 6px 20px rgba(0,0,0,.95);opacity:0;pointer-events:none;z-index:10001;word-wrap:break-word;display:none;transition:opacity .15s ease;font-family:'Noto Sans KR',sans-serif"></div>
-<header>
-<button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="메뉴 열기/닫기" style="
-background:none;border:none;cursor:pointer;padding:6px 10px;margin-right:4px;
-display:flex;flex-direction:column;justify-content:center;gap:4px;flex-shrink:0;
-border-radius:6px;transition:background .15s;
-" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">
-<span class="hb-line"></span>
-<span class="hb-line"></span>
-<span class="hb-line"></span>
-</button>
-<div class="logo-icon" onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer" title="홈으로">📡</div>
-<div onclick="go('kr-history',document.getElementById('nav-kr-history'))" style="cursor:pointer">
-<div class="logo-text">STOCK SECTOR TRACKER MAP</div>
-<div class="logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
-</div>
-<div class="header-right">
-<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 새로고침&#10;&#10;이미 서버에 저장된 최신 데이터를&#10;화면에 즉시 반영합니다.&#10;&#10;· 서버의 데이터 자체를 바꾸지는 않습니다&#10;· 화면이 오래됐거나 값이 안 바뀐 것 같을 때 사용&#10;&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:var(--border-light);transition:all .15s;" onmouseover="this.style.borderColor='var(--accent-kr)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-light)';this.style.color=''">
-<span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
-<span>새로고침</span>
-</button>
-<button id="trigger-actions-btn" onclick="triggerActionsNow()" title="📡 지금 수집&#10;&#10;서버에서 최신 데이터를 즉시 수집합니다.&#10;&#10;· 수집 완료까지 약 30~60초 소요&#10;· 완료 후 [새로고침] 버튼을 눌러 확인하세요&#10;· 장중에만 의미 있습니다&#10;&#10;※ [새로고침]: 이미 저장된 데이터를 화면에 반영&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:rgba(100,181,246,.4);color:#64b5f6;transition:all .15s;" onmouseover="this.style.borderColor='#64b5f6';this.style.color='#90caf9'" onmouseout="this.style.borderColor='rgba(100,181,246,.4)';this.style.color='#64b5f6'">
-<span style="font-size:11px">📡</span>
-<span>지금 수집</span>
-</button>
-<div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
-data-tooltip="마지막으로 스프레드시트 확정 데이터를 읽은 시각&#10;&#10;🇰🇷 섹터 확정값: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 섹터 확정값: 매일 06:00 KST 자동 업데이트">
-<div class="sheet-read-dot"></div>
-<span id="sheetReadTime">로딩 중...</span>
-</div>
-<div class="hdr-badge" id="realtimeBadge" style="display:none;cursor:help"
-data-tooltip="오늘 실시간 데이터(약 20분 지연) 마지막 갱신 시각&#10;📡 5분마다 자동 갱신됩니다">
-<div class="sheet-read-dot" style="background:var(--accent-kr);animation:pulse 2s infinite"></div>
-<span id="realtimeTime">실시간 --:--</span>
-</div>
 
-</div>
+<!-- 글로벌 툴팁 -->
+<div id="global-memo-tooltip"></div>
+<div id="info-tooltip"></div>
+
+<!-- 상단 헤더 -->
+<header id="mob-header">
+  <div class="mob-logo-icon" onclick="go('kr-history',null)" style="cursor:pointer">📡</div>
+  <div onclick="go('kr-history',null)" style="cursor:pointer">
+    <div class="mob-logo-text">STOCK SECTOR TRACKER MAP</div>
+    <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
+  </div>
+  <div class="mob-header-right">
+    <button id="refresh-all-btn" onclick="refreshAllData()" class="mob-hdr-btn" title="새로고침">
+      <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
+      <span>새로고침</span>
+    </button>
+    <div class="mob-hdr-btn" id="sheetReadBadge" style="cursor:help">
+      <div class="mob-live-dot" id="sheetReadDot"></div>
+      <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
+    </div>
+    <div class="mob-hdr-btn" id="realtimeBadge" style="display:none">
+      <div class="mob-live-dot pulse"></div>
+      <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
+    </div>
+  </div>
 </header>
-<div class="layout">
-<nav class="sidebar" id="main-sidebar">
-<div style="display:flex;justify-content:flex-end;padding:4px 10px 2px">
-<button id="sidebar-pin-btn" onclick="toggleSidebarPin()" title="메뉴 항상 표시 (고정)" style="
-background:none;border:1px solid var(--border);cursor:pointer;
-border-radius:5px;padding:3px 7px;font-size:12px;color:var(--text-muted);
-transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
-">📌 <span id="pin-label" style="font-size:9px;font-family:var(--font-mono)">고정</span>
-</button>
-</div>
-<div class="nav-item" id="nav-kr-history" onclick="go('kr-history',this)">
-<span class="nav-icon">📊</span><span>한국 섹터 History</span><span class="nav-chevron">›</span>
-</div>
-<div class="sub-menu" id="sub-kr">
-<div class="nav-item sub" id="nav-kr-list" onclick="go('kr-list',this)">
-<span class="nav-icon">📋</span><span>섹터 종목 List</span>
-</div>
-</div>
-<div class="sidebar-divider"></div>
-<div class="nav-group-label">미국 시장 🇺🇸</div>
-<div class="nav-item" id="nav-us-history" onclick="go('us-history',this)">
-<span class="nav-icon">📈</span><span>미국 섹터 History</span><span class="nav-chevron">›</span>
-</div>
-<div class="sub-menu" id="sub-us">
-<div class="nav-item sub" id="nav-us-list" onclick="go('us-list',this)">
-<span class="nav-icon">📋</span><span>섹터 종목 List</span>
-</div>
-</div>
-<div class="sidebar-divider"></div>
-<div class="nav-group-label">도움말</div>
-<div class="nav-item" id="nav-about" onclick="go('about',this)">
-<span class="nav-icon">ℹ️</span><span>이 서비스에 대해</span>
-</div>
-<div style="flex:1;min-height:20px"></div>
-<div class="sidebar-divider" style="margin-top:auto"></div>
-<!-- 관리자 메뉴: Ctrl+Shift+L 단축키로만 접근 가능 (사이드바에서 숨김) -->
-<div class="nav-item" id="nav-admin" onclick="go('admin',this)" style="display:none">
-<span class="nav-icon">⚙️</span><span>관리자 페이지</span>
-</div>
-<div id="sidebar-adfit-wrap">
-<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-9Sf32NtZ2SsvTyIZ" data-ad-width="160" data-ad-height="600"></ins>
-</div>
-</nav>
-<main class="main">
-<div id="page-kr-history" style="display:none">
-<div class="page-header">
-<div class="page-flag">🇰🇷</div>
-<div style="display:flex;align-items:center;gap:8px">
-<div class="page-title">한국 섹터 HISTORY</div>
-<div class="page-info-icon" data-tooltip="섹터별 일일 평균 등락률 · 최대 1년 · 헤더는 동적 로딩&#10;📡 오늘 실시간 Data는 약 20분 지연된 값 · 5분마다 자동 갱신">?</div>
-</div>
-<div class="page-badge badge-kr" id="kr-status">로딩 중...</div>
-</div>
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
-<span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshKrToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
-</div>
-<div class="controls-bar">
-<button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
-<button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
-<button class="range-btn" onclick="setKrRange(132,this)">6개월</button>
-<button class="range-btn" onclick="setKrRange(365,this)">1년</button>
-<div class="font-ctrl">
-<span class="font-ctrl-label">글자 크기</span>
-<button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-<span class="font-size-display" id="fontSizeLabel">8</span>
-<button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
-</div>
-</div>
-<div id="kr-stats" class="stats-row"></div>
-<div class="h-scrollbar-wrap" id="kr-hscroll-wrap"><div class="h-scrollbar-track" id="kr-hscroll-track"><div class="h-scrollbar-thumb" id="kr-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
-<div class="table-container">
-<div class="table-scroll" id="kr-table">
-<div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
-</div>
-</div>
-<div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
-🔵 -15% ←—— ⬜ 0% ——→ 🔴 +15% | 섹터 평균 등락률(%)
-</div>
-<div id="kr-analytics-section" style="margin-top:16px">
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
-<button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()">📊 통계 숨기기</button>
-<div class="chart-ctrl-group" id="kr-analytics-period-controls">
-<button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(66,this)">1개월+</button>
-</div>
-<button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
-<div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
-</div>
-<div id="kr-analytics-panels" class="analytics-panels-wrap">
-<div class="analytics-rank-col-rise">
-<div class="chart-section" style="margin:0" id="kr-rise-panel">
-<div class="chart-header" style="padding:8px 12px 6px"><div class="chart-title" style="font-size:11px">■ 상승 섹터 등락률 랭킹</div></div>
-<div style="padding:6px 10px 10px"><div id="kr-rise-bars"></div></div>
-</div>
-</div>
-<div class="analytics-center-col">
-<div class="analytics-main-col">
-<div class="chart-section" style="margin:0" id="kr-trend-panel">
-<div class="chart-header" style="padding:8px 12px 6px">
-<div><div class="chart-title" style="font-size:11px" id="kr-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
-<div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div></div>
-<div id="kr-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
-<button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
-<button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목섹터</button>
-</div>
-<button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
-</div>
-<div class="chart-body" id="kr-chart-body" style="padding:8px">
-<div id="kr-chart-wrap" class="chart-canvas-wrap" style="height:240px"><canvas id="kr-chart-canvas"></canvas></div>
-</div>
-</div>
-<div class="chart-section" style="margin:0" id="kr-heatmap-panel">
-<div class="chart-header" style="padding:8px 12px 6px">
-<div class="chart-title" style="font-size:11px" id="kr-heatmap-title">■ 섹터 히트맵 (N주)</div>
-<button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
-</div>
-<div style="padding:6px 10px 10px;overflow:auto;max-height:300px"><div id="kr-heatmap-wrap"></div></div>
-</div>
-</div>
-<div class="analytics-rank-col-fall">
-<div class="chart-section" style="margin:0" id="kr-fall-panel">
-<div class="chart-header" style="padding:8px 12px 6px"><div class="chart-title" style="font-size:11px">■ 하락 섹터 등락률 랭킹</div></div>
-<div style="padding:6px 10px 10px"><div id="kr-fall-bars"></div></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div id="adfit-kr-btm" class="adfit-btm-wrap">
-<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-zINcf9z8qJkZAR75" data-ad-width="728" data-ad-height="90"></ins>
-</div>
-</div>
-<div id="page-kr-list" style="display:none">
-<div class="page-header">
-<div class="page-flag">🇰🇷</div>
-<div><div class="page-title">한국 섹터 종목 LIST</div><div class="page-subtitle">섹터별 구성 종목 · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">5분마다 자동 갱신</span></div></div>
-<div class="page-badge badge-kr">KR STOCKS</div>
-</div>
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:10px;color:#ffb74d;font-family:var(--font-mono)">
-<span id="kr-list-mode-label">● 오늘 실시간 (약 20분 지연 · 5분 자동갱신)</span>
-<div style="display:flex;gap:5px;margin-left:auto">
-<button id="kr-list-btn-today" onclick="setKrListMode('today',this)"
-title="📡 오늘 장중 등락률로 보기&#10;&#10;각 종목의 등락률을 오늘 현재 시각 기준으로&#10;표시합니다. (약 20분 지연)&#10;&#10;· 화면은 5분마다 자동으로 갱신됩니다.&#10;· 지금 즉시 최신값으로 바꾸려면 옆의 🔄갱신 버튼을 누르세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
-style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
-<button id="kr-list-btn-lastbiz" onclick="setKrListMode('lastbiz',this)"
-title="📅 가장 최근 마감 확정값으로 보기&#10;&#10;오늘 실시간이 아닌, 가장 최근 장 마감 후&#10;확정된 종가 기준 등락률을 표시합니다.&#10;&#10;· 오늘 장중 변동이 아닌 전날 최종 결과를&#10;  확인하고 싶을 때 사용하세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
-style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer">📅 최근 영업일</button>
-<button onclick="refreshKrList(this)"
-title="🔄 종목 카드 전체 즉시 새로고침&#10;&#10;현재 선택된 보기 방식(오늘 실시간 또는 최근 마감)&#10;기준으로 모든 종목 카드를 지금 즉시&#10;최신 데이터로 업데이트합니다.&#10;&#10;· 헤더의 새로고침(전체)과 달리&#10;  이 페이지 종목 카드만 빠르게 다시 불러옵니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다."
-style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄 갱신</button>
-</div>
-</div>
-<div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-<div style="margin-bottom:14px;margin-top:14px;text-align:center">
-<div class="adfit-btm-wrap"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-zINcf9z8qJkZAR75" data-ad-width="728" data-ad-height="90"></ins></div>
-</div>
-</div>
-<div id="page-us-history" style="display:none">
-<div class="page-header">
-<div class="page-flag">🇺🇸</div>
-<div style="display:flex;align-items:center;gap:8px">
-<div class="page-title">미국 섹터 HISTORY</div>
-<div class="page-info-icon" data-tooltip="GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년&#10;📡 오늘 실시간 Data는 약 20분 지연된 값 · 5분마다 자동 갱신">?</div>
-</div>
-<div class="page-badge badge-us" id="us-status">로딩 중...</div>
-</div>
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
-<span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshUsToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
-</div>
-<div class="controls-bar">
-<button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
-<button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
-<button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
-<button class="range-btn" onclick="setUsRange(365,this)">1년</button>
-<div class="font-ctrl">
-<span class="font-ctrl-label">글자 크기</span>
-<button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
-<span class="font-size-display" id="fontSizeLabelUs">8</span>
-<button class="font-btn" onclick="changeFontSize(1)" title="크게">＋</button>
-</div>
-</div>
-<div id="us-stats" class="stats-row"></div>
-<div class="h-scrollbar-wrap" id="us-hscroll-wrap"><div class="h-scrollbar-track" id="us-hscroll-track"><div class="h-scrollbar-thumb" id="us-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
-<div class="table-container">
-<div class="table-scroll" id="us-table">
-<div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
-</div>
-</div>
-<div style="margin-top:8px;font-size:9px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
-🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
-</div>
-<div id="us-analytics-section" style="margin-top:16px">
-<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
-<button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()">📊 통계 숨기기</button>
-<div class="chart-ctrl-group" id="us-analytics-period-controls">
-<button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(66,this)">1개월+</button>
-</div>
-<button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
-<div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
-</div>
-<div id="us-analytics-panels" class="analytics-panels-wrap">
-<div class="analytics-rank-col-rise">
-<div class="chart-section" style="margin:0" id="us-rise-panel">
-<div class="chart-header" style="padding:8px 12px 6px"><div class="chart-title" style="font-size:11px">■ 상승 섹터 등락률 랭킹</div></div>
-<div style="padding:6px 10px 10px"><div id="us-rise-bars"></div></div>
-</div>
-</div>
-<div class="analytics-center-col">
-<div class="analytics-main-col">
-<div class="chart-section" style="margin:0" id="us-trend-panel">
-<div class="chart-header" style="padding:8px 12px 6px">
-<div><div class="chart-title" style="font-size:11px" id="us-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
-<div class="chart-subtitle" style="font-size:9px">범례 클릭으로 섹터 ON/OFF · 전체 섹터 포함</div></div>
-<div id="us-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
-<button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
-<button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목섹터</button>
-</div>
-<button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
-</div>
-<div class="chart-body" id="us-chart-body" style="padding:8px">
-<div id="us-chart-wrap" class="chart-canvas-wrap" style="height:240px"><canvas id="us-chart-canvas"></canvas></div>
-</div>
-</div>
-<div class="chart-section" style="margin:0" id="us-heatmap-panel">
-<div class="chart-header" style="padding:8px 12px 6px">
-<div class="chart-title" style="font-size:11px" id="us-heatmap-title">■ 섹터 히트맵 (N주)</div>
-<button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" style="font-size:8px;padding:2px 6px">⇄ 날짜반전</button>
-</div>
-<div style="padding:6px 10px 10px;overflow:auto;max-height:300px"><div id="us-heatmap-wrap"></div></div>
-</div>
-</div>
-<div class="analytics-rank-col-fall">
-<div class="chart-section" style="margin:0" id="us-fall-panel">
-<div class="chart-header" style="padding:8px 12px 6px"><div class="chart-title" style="font-size:11px">■ 하락 섹터 등락률 랭킹</div></div>
-<div style="padding:6px 10px 10px"><div id="us-fall-bars"></div></div>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div id="adfit-us-btm" class="adfit-btm-wrap">
-<ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-zINcf9z8qJkZAR75" data-ad-width="728" data-ad-height="90"></ins>
-</div>
-</div>
-<div id="page-us-list" style="display:none">
-<div class="page-header">
-<div class="page-flag">🇺🇸</div>
-<div><div class="page-title">미국 섹터 종목 LIST</div><div class="page-subtitle">GICS 11섹터 + 테마 ETF · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">5분마다 자동 갱신</span></div></div>
-<div class="page-badge badge-us">US ETF</div>
-</div>
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:10px;color:#ef9a9a;font-family:var(--font-mono)">
-<span id="us-list-mode-label">● 오늘 실시간 (약 20분 지연 · 5분 자동갱신)</span>
-<div style="display:flex;gap:5px;margin-left:auto">
-<button id="us-list-btn-today" onclick="setUsListMode('today',this)"
-title="📡 오늘 장중 등락률로 보기&#10;&#10;각 섹터의 등락률을 오늘 현재 시각 기준으로&#10;표시합니다. (약 20분 지연)&#10;&#10;· 화면은 5분마다 자동으로 갱신됩니다.&#10;· 지금 즉시 최신값으로 바꾸려면 옆의 🔄갱신 버튼을 누르세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
-style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700">📡 오늘 실시간</button>
-<button id="us-list-btn-lastbiz" onclick="setUsListMode('lastbiz',this)"
-title="📅 가장 최근 마감 확정값으로 보기&#10;&#10;오늘 실시간이 아닌, 가장 최근 장 마감 후&#10;확정된 종가 기준 등락률을 표시합니다.&#10;&#10;· 오늘 장중 변동이 아닌 전날 최종 결과를&#10;  확인하고 싶을 때 사용하세요.&#10;&#10;※ 이 버튼은 보기 방식만 바꿉니다."
-style="font-size:9px;padding:2px 9px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer">📅 최근 영업일</button>
-<button onclick="refreshUsListData(this)"
-title="🔄 섹터 카드 전체 즉시 새로고침&#10;&#10;현재 선택된 보기 방식(오늘 실시간 또는 최근 마감)&#10;기준으로 모든 섹터 카드를 지금 즉시&#10;최신 데이터로 업데이트합니다.&#10;&#10;· 헤더의 새로고침(전체)과 달리&#10;  이 페이지 섹터 카드만 빠르게 다시 불러옵니다.&#10;&#10;※ 원 소스의 데이터를 바꾸거나 저장하지 않습니다."
-style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄 갱신</button>
-</div>
-</div>
-<div id="us-list"></div>
-<div style="margin-bottom:14px;margin-top:14px;text-align:center">
-<div class="adfit-btm-wrap"><ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-zINcf9z8qJkZAR75" data-ad-width="728" data-ad-height="90"></ins></div>
-</div>
-</div>
-<div id="page-about" style="display:none">
-<div class="page-header">
-<div class="page-flag">ℹ️</div>
-<div><div class="page-title">이 서비스에 대해</div><div class="page-subtitle">Stock Sector Tracker Map 소개 및 이용 안내 · <span style="color:#80cbc4">오늘 실시간 등락률: 5분마다 자동 갱신</span></div></div>
-</div>
-<div class="about-section">
-<div class="about-section-title">📌 서비스 소개</div>
-<div class="about-section-body">
-<strong>Stock Sector Tracker Map</strong>는 한국과 미국 주식시장의 <strong>섹터별 일일 등락률 흐름</strong>을 한눈에 파악할 수 있도록 만든 무료 정보 서비스입니다.<br><br>
-어떤 섹터가 강세이고 어떤 섹터가 약세인지, 최근 시장의 자금 흐름이 어디로 향하는지를 히트맵·추이 차트·랭킹 차트로 직관적으로 확인할 수 있습니다.
-</div>
-</div>
-<div class="about-section">
-<div class="about-section-title">🇰🇷 한국 섹터 History</div>
-<div class="about-section-body">
-<strong>표시 기준</strong><br>
-각 섹터는 해당 섹터를 대표하는 주요 종목들의 당일 등락률 평균값으로 계산됩니다. 예를 들어 '반도체' 섹터의 수치는 삼성전자, SK하이닉스 등 주요 반도체 종목들의 등락률을 평균한 값입니다.<br><br>
-<strong>📅 데이터 표시 범위</strong><br>
-· 기본 표시: <strong>최근 1개월(약 22 영업일)</strong> — 한 화면에 모두 표시<br>
-· 1개월 초과분: <strong>세로 스크롤바</strong>로 확인 가능 (스크롤하면 과거 데이터 탐색)<br>
-· 최대 제공 범위: <strong>최대 1년(약 250 영업일)</strong> — 1년 이전 데이터는 표시하지 않음<br>
-· 표 하단의 <strong>1개월 / 3개월 / 6개월 / 1년</strong> 버튼으로 표시 기간을 변경할 수 있으며, 이 버튼은 하단 표에만 영향을 주고 상단 차트에는 영향을 주지 않습니다.<br><br>
-<strong>주요지수 / ADR</strong><br>
-코스피·코스닥은 당일 지수 등락률을 표시합니다. <strong>ADR(등락비율)</strong>은 상승 종목 수를 하락 종목 수로 나눈 비율로, 100% 기준으로 100 초과 시 상승 종목이 더 많음을 의미합니다. 시장의 내부 건강도를 파악하는 데 유용합니다.<br><br>
-<strong>색상 기준</strong><br>
-🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락 · ⬜ 흰색에 가까울수록 보합<br>
-섹터 등락률 기준: ±15% 범위에서 색상이 포화됩니다.
-</div>
-</div>
-<div class="about-section">
-<div class="about-section-title">🇺🇸 미국 섹터 History</div>
-<div class="about-section-body">
-<strong>표시 기준</strong><br>
-미국 섹터는 관리자가 선정·분류한 섹터별 대표 종목(주로 ETF)의 당일 등락률 평균으로 표시됩니다. 섹터 구성 종목은 관리자가 수시로 추가·변경할 수 있으며, 섹터별 종목이 1개인 경우 해당 ETF의 등락률이 그대로 섹터값이 됩니다.<br><br>
-<strong>구성 그룹</strong><br>
-아래 그룹 구분과 섹터 목록은 관리자가 언제든지 수정할 수 있으므로 실제 표시 내용과 다를 수 있습니다. 현재 기준으로는 대략 다음과 같이 구성됩니다.<br>
-· <strong>주요지수</strong>: S&P500, Nasdaq, 다우존스, 러셀2000 등 주요 지수 등락률 및 VIX(공포지수), 달러<br>
-· <strong>GICS섹터</strong>: SPDR ETF 기반 11개 섹터 (IT, 헬스케어, 금융, 임의소비재, 산업재, 통신서비스, 필수소비재, 에너지, 유틸리티, 부동산, 소재)<br>
-· <strong>테마ETF</strong>: 반도체, 소프트웨어, AI/로봇, 바이오, 방산, 클린에너지 등 테마별 ETF<br>
-· <strong>채권·달러</strong>: 장기채권(TLT, 만기 20년 이상), 단기채권(SHY, 만기 1~3년), 하이일드채권(HYG), 달러인덱스 — 모두 ETF 가격 등락률로 표시<br><br>
-<strong>채권 금리 표시 방식</strong><br>
-<strong>히스토리 표</strong><br>
-· <strong>장기채권(10년물)</strong>: 미국 10년물 국채 수익률 절대값 (예: 4.420%)<br>· <strong>단기채권(2년물)</strong>: 미국 2년물 국채 수익률 절대값 (예: 3.920%)<br>· <strong>하이일드</strong>: HYG ETF 당일 등락률(%) — 하이일드 스프레드 절대값이 아닌 ETF 가격 변동률<br><br><strong>상단 요약 박스(최근 영업일 / 오늘)</strong><br>
-위와 동일한 값을 카드 형태로 표시합니다. 금리가 오를수록 숫자가 커지며, 장단기 스프레드(10년물 - 2년물)는 직접 계산하여 참고하세요.<br><br>
-<strong>VIX</strong><br>
-공포지수로 불리며 20 이하는 안정, 20~30은 경계, 30 이상은 고변동성 구간입니다. 등락률이 아닌 <strong>절대 수치</strong>로 표시됩니다.<br><br>
-<strong>색상 기준</strong><br>
-🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락<br>
-ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다. (VIX는 별도 색상 기준 적용)
-</div>
-</div>
-<div class="about-section">
-<div class="about-section-title">📊 차트 이용 안내</div>
-<div class="about-section-body">
-<strong>📊 최근 영업일 박스 / 오늘 섹터 박스</strong><br>
-페이지 상단 요약 박스에서 <strong>최근 영업일</strong>은 장중·장마감 무관하게 항상 <strong>직전 영업일</strong>의 확정 데이터를 표시합니다. <strong>오늘 섹터</strong> 박스는 오늘 장중 실시간 데이터가 있을 때만 표시됩니다.<br><br>
-<strong>📈 추이 차트</strong><br>
-선택한 기간(1주·2주·1개월) 동안 각 섹터의 등락률 변화를 선 그래프로 표시합니다. 기본적으로 해당 기간 상위 5개 섹터와 주요 지수만 표시되며, 범례를 클릭해 원하는 섹터를 추가로 켜고 끌 수 있습니다.<br><br>
-<strong>🏆 랭킹 차트</strong><br>
-선택한 기간 동안의 평균 등락률을 기준으로 섹터를 순위별로 정렬하여 표시합니다. 어느 섹터에 시장의 관심이 집중되고 있는지 빠르게 파악할 수 있습니다.<br><br>
-<strong>🗓️ 히트맵 차트</strong><br>
-날짜×섹터 격자로 색상을 표시합니다. 특정 섹터가 어느 날 강세였는지, 시장 전체적으로 상승/하락 국면이 어떻게 분포됐는지를 한눈에 확인할 수 있습니다. <strong>⇄ 날짜반전</strong> 버튼으로 날짜 표시 순서를 바꿀 수 있습니다.
-</div>
-</div>
-<div class="about-section">
-<div class="about-section-title">🕐 데이터 업데이트 주기</div>
-<div class="about-section-body">
-<strong>📡 실시간 수집 (장중 5분 간격)</strong><br>
-장중에는 서버가 <strong>5분마다 자동으로 최신 데이터를 수집</strong>합니다.<br>
-· 🇰🇷 한국: KST 09:00~15:30 장중에 5분마다 수집<br>
-· 🇺🇸 미국: 미국 정규장 시간에 5분마다 수집<br><br>
-<strong>📋 장 마감 후 데이터 처리</strong><br>
-장 마감 후에는 마지막 수집된 값이 그대로 확정 데이터로 유지됩니다.<br>
-별도의 마감 처리 없이 장중 마지막 수집값이 해당 영업일의 최종값이 됩니다.<br><br>
-화면 우상단에는 두 가지 시각이 표시됩니다.<br>
-· <strong>"확정 데이터"</strong>: 가장 최근 확정 저장된 데이터의 기준 시각<br>
-· <strong>"실시간 갱신"</strong>: 오늘 실시간 데이터(약 20분 지연)가 마지막으로 화면에 반영된 시각<br><br>
-<strong>📡 오늘(장중) 실시간 행</strong><br>
-섹터 History 표 최상단에 <span style="color:#ffb74d">오늘 날짜로 표시된 행</span>은 현재 장중 실시간 등락률을 반영한 행입니다.<br>
-· 🇰🇷 한국: 각 종목의 현재 등락률 평균으로 계산<br>
-· 🇺🇸 미국: 각 ETF의 현재 등락률로 표시<br>
-· ⚠️ <strong>약 20분 지연된 값</strong>이 표시됩니다. 장 종료 후에는 마지막 수집값이 그대로 확정값으로 유지됩니다.<br><br>
-<strong>🔄 갱신 방식</strong><br>
-· <strong>자동 갱신</strong>: 오늘 실시간 등락률은 <strong>5분 간격으로 자동 갱신</strong>됩니다.<br>
-· <strong>📡 지금 수집</strong>: 서버에서 즉시 최신 데이터를 수집합니다. 수집 완료 후 [새로고침]을 눌러 확인하세요. 5분 쿨다운이 있어 다른 사용자가 방금 누른 경우 잠시 대기 안내가 표시됩니다.<br>
-· <strong>🔄 새로고침</strong>: 서버에 이미 저장된 최신 데이터를 화면에 즉시 반영합니다.<br>
-· <strong>🔄 오늘 데이터 갱신</strong>: 표 맨 위 오늘 행만 빠르게 갱신합니다 (전체 새로고침보다 빠름).
-</div>
-</div>
-<div class="notice-box" style="border-left-color:#4fc3f7;margin-top:4px">
-<strong>📋 데이터 정확성 안내</strong><br><br>
-본 서비스에서 제공하는 모든 정보는 정확하게 제공하는 것을 목표로 하지만, 데이터 수집 과정에서 오류가 발생할 수 있습니다.<br>
-표시되는 모든 데이터는 <strong>참고용</strong>으로만 사용하시기 바랍니다.<br><br>
-💌 <strong>건의 사항 및 오류 신고</strong>: estartooza [at] gmail.com
-</div>
-<div class="notice-box" style="border-left-color:var(--text-muted);margin-top:4px">
-<strong>⚠️ 면책 고지</strong><br><br>
-이 서비스에서 제공하는 모든 정보는 <strong>투자 참고용</strong>으로만 제공되며, 특정 종목이나 섹터에 대한 투자를 권유하거나 조언하지 않습니다.<br>
-투자 결정에 따른 모든 손익은 투자자 본인에게 귀속되며, 본 서비스는 이에 대한 어떠한 책임도 지지 않습니다.
-</div>
-</div>
-<div id="page-admin" style="display:none">
-<div class="page-header">
-<div class="page-flag">⚙️</div>
-<div><div class="page-title">관리자 페이지</div><div class="page-subtitle">방문자 통계 · 섹터/종목 관리</div></div>
-<div class="page-badge" id="admin-login-badge" style="background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3);font-family:var(--font-mono);font-size:10px;padding:3px 9px;border-radius:20px">미로그인</div>
-</div>
-<div id="admin-login-section">
-<div class="admin-login-box">
-<div class="admin-login-title">🔐 관리자 로그인</div>
-<div class="admin-login-sub">관리자 비밀번호를 입력하세요.</div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:16px;width:100%;max-width:300px">
-  <input id="admin-pw-input" type="password" placeholder="비밀번호"
-    style="width:100%;padding:9px 14px;border-radius:7px;border:1px solid var(--border);background:var(--bg-darkest);color:var(--text-primary);font-size:13px;outline:none;transition:border-color .15s;font-family:var(--font-body)"
-    onfocus="this.style.borderColor='var(--accent-kr)'"
-    onblur="this.style.borderColor='var(--border)'"
-    onkeydown="if(event.key==='Enter')adminPwLogin()">
-  <button onclick="adminPwLogin()"
-    style="width:100%;padding:9px 0;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s"
-    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-    로그인
-  </button>
-  <div id="admin-pw-error" style="color:#ef9a9a;font-size:11px;display:none">❌ 비밀번호가 올바르지 않습니다.</div>
-</div>
-</div>
-</div>
-<div id="admin-content-section" style="display:none">
-<div class="admin-user-bar">
-<span style="font-size:18px">🔐</span>
-<div>
-<div class="admin-user-name">관리자</div>
-<div class="admin-user-email" style="font-size:10px;color:var(--text-muted)">인증됨</div>
-</div>
-<div style="display:flex;gap:6px;margin-left:auto;align-items:center">
-<button id="admin-reload-btn" onclick="adminReloadData()" title="구글 스프레드시트에서 최신 데이터 강제 불러오기"
-style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;border-radius:5px;border:1px solid rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:var(--accent-kr);cursor:pointer;transition:all .15s;white-space:nowrap">
-<span id="admin-reload-icon" style="font-size:13px;display:inline-block;transition:transform .4s">🔄</span>다시 불러오기
-</button>
-<button class="admin-logout-btn" onclick="adminLogout()">로그아웃</button>
-</div>
-</div>
-<div class="admin-tabs">
-<div class="admin-tab" onclick="switchAdminTab('stats',this)">📊 방문자 통계</div>
-<div class="admin-tab" onclick="switchAdminTab('mgmt',this)">🗂️ KR 섹터/종목 관리</div>
-<div class="admin-tab" onclick="switchAdminTab('watch',this)">⭐ KR 주목 섹터</div>
-<div class="admin-tab" onclick="switchAdminTab('us-mgmt',this)">🇺🇸 US 섹터/종목 관리</div>
-<div class="admin-tab" onclick="switchAdminTab('us-watch',this)">🇺🇸 US 주목 섹터</div>
-<div class="admin-tab" onclick="switchAdminTab('memo',this)">📝 History 메모</div>
-<div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
-</div>
-<div id="admin-tab-stats">
-<div class="stats-embed-wrap">
-<div class="ga-notice">
-<strong style="color:var(--accent-kr);font-size:13px">📈 Google Analytics 방문자 통계</strong><br><br>
-방문자 통계는 <strong>Google Analytics GA4</strong>로 수집됩니다.<br>
-아래 버튼을 클릭하면 Google Analytics 대시보드로 이동합니다.<br><br>
-· <strong>실시간 방문자</strong> — 지금 이 순간 사이트를 보고 있는 사용자 수<br>
-· <strong>Today</strong> — 오늘 방문자 수 (세션 기준)<br>
-· <strong>Total</strong> — 누적 방문자 수<br>
-· <strong>국가별 · 기기별 · 시간대별</strong> 상세 통계 제공<br><br>
-GA4 측정 ID: <code id="ga-id-display">G-3PTKMRYZZ3</code>
-</div>
-<br>
-<a class="ga-btn" href="https://analytics.google.com" target="_blank" rel="noopener">
-📊 Google Analytics 열기
-</a>
-<div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border)">
-<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:12px">⚡ GAS 방문자 카운터 (Today / Total)</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px">
-<div class="stat-card">
-<div class="stat-label">Today</div>
-<div class="stat-val neu" id="admin-visit-today">-</div>
-<div class="stat-sub">오늘 방문</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Total</div>
-<div class="stat-val neu" id="admin-visit-total">-</div>
-<div class="stat-sub">누적 방문</div>
-</div>
-</div>
-<button class="range-btn" style="margin-top:10px" onclick="loadVisitorStats()">🔄 새로고침</button>
-</div>
-</div>
-</div>
-<div id="admin-tab-mgmt" style="display:none">
-<div class="admin-mgmt-layout">
-<div>
-<div class="admin-sector-list">
-<div class="admin-sector-list-header">
-<span>🇰🇷 섹터 목록</span>
-<span id="admin-sector-count" style="font-size:10px;color:var(--text-muted)"></span>
-</div>
-<div style="padding:6px 8px;border-bottom:1px solid var(--border)">
-<input id="sector-filter-input" class="admin-input"
-style="width:100%;font-size:10px;padding:4px 8px"
-placeholder="🔍 섹터명 필터 (입력 시 자동 적용)"
-oninput="filterAdminSectors(this.value)">
-</div>
-<div id="admin-sector-items">
-<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
-</div>
-</div>
-<div style="margin-top:10px">
-<div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 새 섹터 추가</div>
-<div class="admin-input-row">
-<input class="admin-input" id="new-sector-name" placeholder="섹터명 (예: 우주항공)" maxlength="20">
-<button class="admin-add-btn" onclick="addSector()">추가</button>
-</div>
-<div class="admin-msg" id="sector-msg"></div>
-</div>
-</div>
-<div>
-<div class="admin-stock-panel">
-<div class="admin-panel-header" id="admin-stock-panel-title">← 섹터를 선택하세요</div>
-<div class="admin-panel-body" id="admin-stock-list">
-<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:30px 0">좌측에서 섹터를 선택하면<br>해당 섹터의 종목이 표시됩니다.</div>
-</div>
-</div>
-<div id="add-stock-section" style="display:none;margin-top:10px">
-<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;font-weight:700">+ 종목 추가</div>
-<div style="position:relative;margin-bottom:6px">
-<input class="admin-input" id="new-stock-name"
-placeholder="종목명 입력 (예: 삼성전자) — 입력 시 자동완성"
-style="width:100%"
-oninput="onStockNameInput(this.value)"
-onblur="setTimeout(()=>hideStockSuggest(),200)"
-autocomplete="off">
-<div id="stock-suggest-box" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
-background:var(--bg-card2);border:1px solid var(--accent-kr);border-radius:6px;
-max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.5)"></div>
-</div>
-<div class="admin-input-row" style="margin-bottom:6px;align-items:center;gap:6px">
-<div id="stock-auto-info" style="display:none;flex:1;background:rgba(79,195,247,.08);
-border:1px solid rgba(79,195,247,.3);border-radius:6px;padding:6px 10px;
-font-size:11px;color:var(--accent-kr);font-family:var(--font-mono)">
-✅ 자동 매칭: <span id="stock-auto-ticker"></span>
-</div>
-<div id="stock-manual-inputs" style="display:flex;gap:6px;flex:1">
-<select class="admin-input" id="new-stock-market" style="flex:1;cursor:pointer">
-<option value="">시장 선택</option>
-<option value="KOSPI">코스피</option>
-<option value="KOSDAQ">코스닥</option>
-</select>
-<input class="admin-input" id="new-stock-code" placeholder="종목코드 (예: 005930)" style="flex:1.5"
-oninput="onManualCodeInput()">
-</div>
-</div>
-<div id="stock-ticker-preview" style="display:none;font-size:10px;color:var(--text-muted);
-margin-bottom:6px;padding:3px 8px;background:var(--bg-card2);border-radius:4px;font-family:var(--font-mono)">
-티커: <span id="stock-ticker-preview-val" style="color:var(--text-secondary)"></span>
-</div>
-<div class="admin-input-row" style="margin-top:2px">
-<input class="admin-input" id="new-stock-memo"
-placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
-<button class="admin-add-btn" onclick="addStock()">추가</button>
-</div>
-<div class="admin-msg" id="stock-msg"></div>
-</div>
-</div>
-</div>
-</div>
-<div id="admin-tab-watch" style="display:none">
-<div class="stats-embed-wrap">
-<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px">⭐ 주목 섹터 설정</div>
-<div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">
-체크한 섹터는 <strong style="color:#ffd180">섹터 종목 List</strong>와 <strong style="color:#ffd180">Sector History 표</strong>에서
-<span style="color:#ff6f00;font-weight:700">🟠 주황 테두리</span>로 강조 표시됩니다.
-</div>
-<div id="watch-sector-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">
-<div class="loading-state" style="padding:30px;grid-column:1/-1"><div class="spinner"></div></div>
-</div>
-<div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-<button class="admin-add-btn" onclick="saveWatchSectors()" id="watch-save-btn">💾 저장</button>
-<button class="range-btn" onclick="checkAllWatch(false)">전체 해제</button>
-<span id="watch-save-msg" style="font-size:11px;color:#a5d6a7;display:none"></span>
-</div>
-</div>
-</div>
 
-<div id="admin-tab-memo" style="display:none">
-<div style="max-width:560px">
-  <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8">
-    각 히스토리 표의 <strong style="color:var(--text-primary)">메모</strong> 컬럼에 날짜별 메모를 입력합니다.<br>
-    저장하면 구글 스프레드시트 해당 시트의 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px">📝 메모</code> 열에 기록됩니다.
-  </div>
-  <!-- KR -->
-  <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇰🇷 한국 섹터 History 메모</div>
-    <div class="about-section-body" style="padding:14px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-        <input type="date" id="kr-memo-date" class="admin-input" style="max-width:160px">
+<!-- 메인 스크롤 영역 -->
+<div id="mob-main">
+
+  <!-- ===== KR History ===== -->
+  <div id="page-kr-history" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">🇰🇷</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="mob-page-title">한국 섹터 HISTORY</div>
+        <div class="page-info-icon" data-tooltip="섹터별 일일 평균 등락률 · 최대 1년&#10;📡 오늘 실시간 Data는 약 20분 지연된 값 · 5분마다 자동 갱신">?</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-        <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
+      <div class="mob-page-badge badge-kr" id="kr-status">로딩 중...</div>
+    </div>
+    <div class="mob-notice-bar kr">
+      <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
+      <button onclick="refreshKrToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;white-space:nowrap">🔄 오늘 갱신</button>
+    </div>
+    <div class="mob-controls">
+      <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
+      <button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
+      <button class="range-btn" onclick="setKrRange(132,this)">6개월</button>
+      <button class="range-btn" onclick="setKrRange(365,this)">1년</button>
+      <div class="font-ctrl">
+        <span class="font-ctrl-label">크기</span>
+        <button class="font-btn" onclick="changeFontSize(-1)">−</button>
+        <span class="font-size-display" id="fontSizeLabel">8</span>
+        <button class="font-btn" onclick="changeFontSize(1)">＋</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" id="kr-memo-save-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
+    </div>
+    <div id="kr-stats" class="stats-row"></div>
+    <div class="h-scrollbar-wrap" id="kr-hscroll-wrap"><div class="h-scrollbar-track" id="kr-hscroll-track"><div class="h-scrollbar-thumb" id="kr-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
+    <div class="table-container">
+      <div class="table-scroll" id="kr-table">
+        <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
       </div>
-      <div id="kr-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
+    </div>
+    <div style="margin-top:6px;font-size:8px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
+      🔵 -15% ←—— ⬜ 0% ——→ 🔴 +15% | 섹터 평균 등락률(%)
+    </div>
+    <div id="kr-analytics-section" style="margin-top:14px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+        <button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()">📊 통계 숨기기</button>
+        <div class="chart-ctrl-group" id="kr-analytics-period-controls">
+          <button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
+          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
+          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
+          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
+          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
+          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(66,this)">1개월+</button>
+        </div>
+        <button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
+        <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
+      </div>
+      <div id="kr-analytics-panels" class="analytics-panels-wrap">
+        <div class="analytics-center-col">
+          <div class="analytics-main-col">
+            <div class="chart-section" style="margin:0" id="kr-trend-panel">
+              <div class="chart-header" style="padding:6px 10px">
+                <div>
+                  <div class="chart-title" style="font-size:10px" id="kr-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
+                  <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 코스피·코스닥 포함</div>
+                </div>
+                <div id="kr-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
+                  <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
+                  <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목</button>
+                </div>
+                <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 5px">전체 ON/OFF</button>
+              </div>
+              <div class="chart-body" id="kr-chart-body" style="padding:6px 8px">
+                <div id="kr-chart-wrap" class="chart-canvas-wrap"><canvas id="kr-chart-canvas"></canvas></div>
+              </div>
+            </div>
+            <div class="chart-section" style="margin:0" id="kr-heatmap-panel">
+              <div class="chart-header" style="padding:6px 10px">
+                <div class="chart-title" style="font-size:10px" id="kr-heatmap-title">■ 섹터 히트맵 (N주)</div>
+                <button class="chart-toggle-all" id="kr-reverse-btn" onclick="toggleKrReverse(this)" style="font-size:8px;padding:2px 5px">⇄ 날짜반전</button>
+              </div>
+              <div style="padding:5px 8px 8px;overflow:auto;max-height:260px"><div id="kr-heatmap-wrap"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="analytics-rank-row">
+          <div class="analytics-rank-col-rise">
+            <div class="chart-section" style="margin:0" id="kr-rise-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="kr-rise-bars"></div></div>
+            </div>
+          </div>
+          <div class="analytics-rank-col-fall">
+            <div class="chart-section" style="margin:0" id="kr-fall-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="kr-fall-bars"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="adfit-kr-btm" class="adfit-btm-wrap">
+      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-M6Zo1LmAhvRMTc9R" data-ad-width="320" data-ad-height="50"></ins>
     </div>
   </div>
-  <!-- US 관심종목 섹터등락률 -->
-  <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇺🇸 미국 섹터 History 메모</div>
-    <div class="about-section-body" style="padding:14px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-        <input type="date" id="us-watch-memo-date" class="admin-input" style="max-width:160px">
+
+  <!-- ===== KR List ===== -->
+  <div id="page-kr-list" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">🇰🇷</div>
+      <div>
+        <div class="mob-page-title">한국 섹터 종목 LIST</div>
+        <div style="font-size:9px;color:var(--text-muted)">섹터별 구성 종목 · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">5분마다 자동 갱신</span></div>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-        <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
+      <div class="mob-page-badge badge-kr">KR</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.25);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
+      <span id="kr-list-mode-label">● 오늘 실시간 (약 20분 지연 · 5분 자동갱신)</span>
+      <div style="display:flex;gap:4px;margin-left:auto">
+        <button id="kr-list-btn-today" onclick="setKrListMode('today',this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.7);background:rgba(255,183,77,.3);color:#ffb74d;cursor:pointer;font-weight:700">📡 오늘</button>
+        <button id="kr-list-btn-lastbiz" onclick="setKrListMode('lastbiz',this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.3);background:transparent;color:#a07830;cursor:pointer">📅 최근</button>
+        <button onclick="refreshKrList(this)" style="font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer">🔄</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" id="us-watch-memo-save-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
+    </div>
+    <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
+  </div>
+
+  <!-- ===== US History ===== -->
+  <div id="page-us-history" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">🇺🇸</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="mob-page-title">미국 섹터 HISTORY</div>
+        <div class="page-info-icon" data-tooltip="GICS 11섹터 + 테마 ETF + 채권/달러 · 최대 1년&#10;📡 오늘 실시간 Data는 약 20분 지연된 값 · 5분마다 자동 갱신">?</div>
       </div>
-      <div id="us-watch-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
+      <div class="mob-page-badge badge-us" id="us-status">로딩 중...</div>
+    </div>
+    <div class="mob-notice-bar us">
+      <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
+      <button onclick="refreshUsToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;white-space:nowrap">🔄 오늘 갱신</button>
+    </div>
+    <div class="mob-controls">
+      <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
+      <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
+      <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
+      <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
+      <div class="font-ctrl">
+        <span class="font-ctrl-label">크기</span>
+        <button class="font-btn" onclick="changeFontSize(-1)">−</button>
+        <span class="font-size-display" id="fontSizeLabelUs">8</span>
+        <button class="font-btn" onclick="changeFontSize(1)">＋</button>
+      </div>
+    </div>
+    <div id="us-stats" class="stats-row"></div>
+    <div class="h-scrollbar-wrap" id="us-hscroll-wrap"><div class="h-scrollbar-track" id="us-hscroll-track"><div class="h-scrollbar-thumb" id="us-hscroll-thumb"><div class="h-scrollbar-thumb-knob"></div></div></div></div>
+    <div class="table-container">
+      <div class="table-scroll" id="us-table">
+        <div class="loading-state"><div class="spinner"></div><div>데이터 로딩 중...</div></div>
+      </div>
+    </div>
+    <div style="margin-top:6px;font-size:8px;color:var(--text-muted);text-align:right;font-family:var(--font-mono)">
+      🔵 -10% ←—— ⬜ 0% ——→ 🔴 +10% | ETF 등락률(%)
+    </div>
+    <div id="us-analytics-section" style="margin-top:14px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+        <button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()">📊 통계 숨기기</button>
+        <div class="chart-ctrl-group" id="us-analytics-period-controls">
+          <button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
+          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
+          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
+          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
+          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
+          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(66,this)">1개월+</button>
+        </div>
+        <button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
+        <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
+      </div>
+      <div id="us-analytics-panels" class="analytics-panels-wrap">
+        <div class="analytics-center-col">
+          <div class="analytics-main-col">
+            <div class="chart-section" style="margin:0" id="us-trend-panel">
+              <div class="chart-header" style="padding:6px 10px">
+                <div>
+                  <div class="chart-title" style="font-size:10px" id="us-chart-title">■ 섹터별 등락률 추이 (Top 5, N주)</div>
+                  <div class="chart-subtitle">범례 클릭으로 섹터 ON/OFF · 전체 섹터 포함</div>
+                </div>
+                <div id="us-treemap-mode-btns" style="display:none;gap:4px;align-items:center">
+                  <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
+                  <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목</button>
+                </div>
+                <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 5px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
+              </div>
+              <div class="chart-body" id="us-chart-body" style="padding:6px 8px">
+                <div id="us-chart-wrap" class="chart-canvas-wrap"><canvas id="us-chart-canvas"></canvas></div>
+              </div>
+            </div>
+            <div class="chart-section" style="margin:0" id="us-heatmap-panel">
+              <div class="chart-header" style="padding:6px 10px">
+                <div class="chart-title" style="font-size:10px" id="us-heatmap-title">■ 섹터 히트맵 (N주)</div>
+                <button class="chart-toggle-all" id="us-reverse-btn" onclick="toggleUsReverse(this)" style="font-size:8px;padding:2px 5px">⇄ 날짜반전</button>
+              </div>
+              <div style="padding:5px 8px 8px;overflow:auto;max-height:260px"><div id="us-heatmap-wrap"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="analytics-rank-row">
+          <div class="analytics-rank-col-rise">
+            <div class="chart-section" style="margin:0" id="us-rise-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 상승 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="us-rise-bars"></div></div>
+            </div>
+          </div>
+          <div class="analytics-rank-col-fall">
+            <div class="chart-section" style="margin:0" id="us-fall-panel">
+              <div class="chart-header" style="padding:6px 10px"><div class="chart-title" style="font-size:10px">■ 하락 섹터 랭킹</div></div>
+              <div style="padding:5px 8px 8px"><div id="us-fall-bars"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="adfit-us-btm" class="adfit-btm-wrap">
+      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-M6Zo1LmAhvRMTc9R" data-ad-width="320" data-ad-height="50"></ins>
     </div>
   </div>
-</div>
-</div><!-- /#admin-tab-memo -->
-<div id="admin-tab-techref" style="display:none">
-<div class="stats-embed-wrap" style="max-width:820px">
 
-<div style="font-size:13px;font-weight:700;color:var(--accent-kr);margin-bottom:4px">🔧 버튼별 기술 동작 상세 주석</div>
-<div style="font-size:11px;color:var(--text-muted);margin-bottom:20px">
-  일반 사용자 툴팁에서 제거된 기술 상세 내용을 정리합니다.<br>
-  GAS 웹앱 URL, 캐시 TTL, 영향 범위 등 개발·운영 참고용입니다.
-</div>
-
-<!-- 새로고침 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🔄 헤더 새로고침 버튼 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshAllData()</code></div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>영향 범위:</strong> 웹페이지만 (구글 스프레드시트 무영향)<br>
-    · 현재 보고 있는 페이지의 캐시(in-memory)를 폐기하고 GAS 웹앱에서 최신 데이터를 fetch하여 화면을 즉시 리렌더링<br>
-    · 5분 자동갱신 타이머와 별개로 수동 즉시 갱신<br>
-    · 구글 스프레드시트 원본의 값을 변경하거나 저장·기록하는 기능 없음<br>
-    · <strong>GAS 웹앱 URL:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">GAS_WEBAPP_URL</code> (스크립트 상단 상수 참조)
+  <!-- ===== US List ===== -->
+  <div id="page-us-list" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">🇺🇸</div>
+      <div>
+        <div class="mob-page-title">미국 섹터 종목 LIST</div>
+        <div style="font-size:9px;color:var(--text-muted)">GICS 11섹터 + 테마 ETF · 오늘 등락률: 약 20분 지연 · <span style="color:#80cbc4">5분마다 자동 갱신</span></div>
+      </div>
+      <div class="mob-page-badge badge-us">US</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.25);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
+      <span id="us-list-mode-label">● 오늘 실시간 (약 20분 지연 · 5분 자동갱신)</span>
+      <div style="display:flex;gap:4px;margin-left:auto">
+        <button id="us-list-btn-today" onclick="setUsListMode('today',this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.7);background:rgba(239,83,80,.3);color:#ef9a9a;cursor:pointer;font-weight:700">📡 오늘</button>
+        <button id="us-list-btn-lastbiz" onclick="setUsListMode('lastbiz',this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#804040;cursor:pointer">📅 최근</button>
+        <button onclick="refreshUsListData(this)" style="font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer">🔄</button>
+      </div>
+    </div>
+    <div id="us-list"></div>
   </div>
-</div>
 
-<!-- 지금 수집 버튼 기술 정보 (관리자용) -->
-<div style="background:rgba(100,181,246,.05);border:1px solid rgba(100,181,246,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px">
-  <div style="font-size:12px;font-weight:700;color:#64b5f6;margin-bottom:8px">📡 지금 수집 버튼 — 기술 정보</div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
-    · 동작: GitHub Actions <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">fetch-realtime.yml</code> workflow_dispatch 트리거<br>
-    · 데이터 소스: 네이버 금융 API → Cloudflare KV 저장<br>
-    · 쿨다운: 서버 측 5분 제한 (GAS Script Properties: <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">TRIGGER_LAST_RUN</code>)<br>
-    · 완료 소요시간: 약 30~60초<br>
-    · GAS 함수: <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">triggerGithubActionsNoUi()</code>
+  <!-- ===== About ===== -->
+  <div id="page-about" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">ℹ️</div>
+      <div>
+        <div class="mob-page-title">소개</div>
+        <div style="font-size:9px;color:var(--text-muted)">Stock Sector Tracker Map 소개 및 이용 안내</div>
+      </div>
+    </div>
+    <div class="about-section">
+      <div class="about-section-title">📌 서비스 소개</div>
+      <div class="about-section-body">
+        <strong>Stock Sector Tracker Map</strong>는 한국과 미국 주식시장의 <strong>섹터별 일일 등락률 흐름</strong>을 한눈에 파악할 수 있도록 만든 무료 정보 서비스입니다.<br><br>
+        어떤 섹터가 강세이고 어떤 섹터가 약세인지, 최근 시장의 자금 흐름이 어디로 향하는지를 히트맵·추이 차트·랭킹 차트로 직관적으로 확인할 수 있습니다.
+      </div>
+    </div>
+    <div class="about-section">
+      <div class="about-section-title">🇰🇷 한국 섹터 History</div>
+      <div class="about-section-body">
+        각 섹터는 해당 섹터를 대표하는 주요 종목들의 당일 등락률 평균값으로 계산됩니다.<br><br>
+        <strong>색상 기준</strong><br>
+        🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락 · ⬜ 흰색에 가까울수록 보합<br>
+        섹터 등락률 기준: ±15% 범위에서 색상이 포화됩니다.
+      </div>
+    </div>
+    <div class="about-section">
+      <div class="about-section-title">🕐 데이터 업데이트 주기</div>
+      <div class="about-section-body">
+        <strong>📡 실시간 수집 (장중 5분 간격)</strong><br>
+        · 🇰🇷 한국: KST 09:00~15:30 장중에 5분마다 수집<br>
+        · 🇺🇸 미국: 미국 정규장 시간에 5분마다 수집<br><br>
+        <strong>오늘(장중) 실시간 행</strong><br>
+        섹터 History 표 최상단에 오늘 날짜로 표시된 행은 현재 장중 실시간 등락률을 반영합니다.<br>
+        ⚠️ <strong>약 20분 지연된 값</strong>이 표시됩니다.
+      </div>
+    </div>
+    <div class="notice-box" style="border-left-color:#4fc3f7;margin-top:4px">
+      <strong>📋 데이터 정확성 안내</strong><br><br>
+      본 서비스에서 제공하는 모든 정보는 <strong>참고용</strong>으로만 사용하시기 바랍니다.<br><br>
+      💌 건의 사항 및 오류 신고: estartooza [at] gmail.com
+    </div>
+    <div class="notice-box" style="border-left-color:var(--text-muted);margin-top:4px">
+      <strong>⚠️ 면책 고지</strong><br><br>
+      이 서비스에서 제공하는 모든 정보는 <strong>투자 참고용</strong>으로만 제공되며, 특정 종목이나 섹터에 대한 투자를 권유하거나 조언하지 않습니다.
+    </div>
+    <div style="text-align:center;padding:16px 0 8px">
+      <a href="/" onclick="localStorage.setItem('preferPC','true')" style="font-size:11px;color:var(--text-muted);text-decoration:none;display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card)">🖥️ PC 버전으로 보기</a>
+    </div>
   </div>
-</div>
-<!-- KR History 오늘 데이터 갱신 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡 한국 섹터 History — 오늘 데이터 갱신 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshKrToday()</code></div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>영향 범위:</strong> 웹페이지 테이블의 오늘(당일) 행만 (구글 스프레드시트 무영향)<br>
-    · GAS 웹앱에서 오늘 날짜 행의 섹터 평균 등락률(약 20분 지연)을 새로 불러와 테이블 맨 위 오늘 행만 덮어씁니다.<br>
-    · 과거 확정 데이터 행은 변경되지 않습니다.<br>
-    · 구글 스프레드시트 원본에는 영향 없음
+
+  <!-- ===== Admin (hidden) ===== -->
+  <div id="page-admin" style="display:none">
+    <div class="mob-page-header">
+      <div class="mob-page-flag">⚙️</div>
+      <div><div class="mob-page-title">관리자 페이지</div></div>
+      <div class="mob-page-badge" id="admin-login-badge" style="background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3);font-family:var(--font-mono);font-size:9px;padding:2px 8px;border-radius:12px">미로그인</div>
+    </div>
+    <div id="admin-login-section">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;gap:16px">
+        <div style="font-family:var(--font-display);font-size:20px;letter-spacing:2px;color:var(--text-primary)">🔐 관리자 로그인</div>
+        <div style="font-size:11px;color:var(--text-muted);text-align:center">관리자 비밀번호를 입력하세요.</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:280px">
+          <input id="admin-pw-input" type="password" placeholder="비밀번호"
+            style="width:100%;padding:8px 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg-darkest);color:var(--text-primary);font-size:13px;outline:none;transition:border-color .15s;font-family:var(--font-body)"
+            onfocus="this.style.borderColor='var(--accent-kr)'"
+            onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter')adminPwLogin()">
+          <button onclick="adminPwLogin()"
+            style="width:100%;padding:9px 0;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:13px;font-weight:700;cursor:pointer">로그인</button>
+          <div id="admin-pw-error" style="color:#ef9a9a;font-size:11px;display:none">❌ 비밀번호가 올바르지 않습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div id="admin-content-section" style="display:none">
+      <div style="font-size:12px;color:var(--text-muted);padding:20px;text-align:center">
+        관리자 기능은 PC 버전에서 이용해 주세요.<br>
+        <a href="https://sstmap.com" style="color:var(--accent-kr)">sstmap.com</a>
+      </div>
+    </div>
   </div>
-</div>
 
-<!-- US History 오늘 데이터 갱신 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡 미국 섹터 History — 오늘 데이터 갱신 <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshUsToday()</code></div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>영향 범위:</strong> 웹페이지 테이블의 오늘(당일) 행만 (구글 스프레드시트 무영향)<br>
-    · GAS 웹앱에서 오늘 날짜 행의 미국 섹터 ETF 등락률(약 20분 지연)을 새로 받아와 테이블 맨 위 오늘 행만 덮어씁니다.<br>
-    · 과거 확정 데이터 행은 변경되지 않습니다.<br>
-    · 구글 스프레드시트 원본에는 영향 없음
-  </div>
-</div>
+</div><!-- /mob-main -->
 
-<!-- KR List 모드/갱신 버튼 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡📅🔄 한국 섹터 종목 List — 모드 전환 / 갱신 버튼</div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>오늘 실시간 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setKrListMode('today')</code>: 영향 범위 — 화면 표시 모드만 변경 (데이터 재요청·스프레드시트 무영향). 각 종목 등락률을 오늘 장중 실시간값(약 20분 지연)으로 표시. 5분마다 백그라운드 자동 갱신.<br>
-    · <strong>최근 영업일 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setKrListMode('lastbiz')</code>: 가장 최근 장 마감 후 확정·저장된 종가 기준 등락률 표시. 모드 전환만 수행.<br>
-    · <strong>갱신 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshKrList()</code>: 영향 범위 — 웹페이지 종목 카드 전체 (구글 스프레드시트 무영향). 섹터 구성 종목 목록과 현재 선택 모드의 등락률을 GAS 웹앱에서 즉시 다시 불러와 모든 종목 카드 갱신. 캐시(10분 TTL) 무시하고 강제 최신 데이터 수신.
-  </div>
-</div>
-
-<!-- US List 모드/갱신 버튼 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📡📅🔄 미국 섹터 종목 List — 모드 전환 / 갱신 버튼</div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>오늘 실시간 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setUsListMode('today')</code>: 영향 범위 — 화면 표시 모드만 변경 (데이터 재요청·스프레드시트 무영향). 각 섹터 ETF 등락률을 오늘 장중 실시간값(약 20분 지연)으로 표시. 5분마다 백그라운드 자동 갱신.<br>
-    · <strong>최근 영업일 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">setUsListMode('lastbiz')</code>: 가장 최근 미국 장 마감 후 확정·저장된 종가 기준 등락률 표시. 모드 전환만 수행.<br>
-    · <strong>갱신 버튼</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">refreshUsListData()</code>: 영향 범위 — 웹페이지 섹터 카드 전체 (구글 스프레드시트 무영향). 미국 섹터 ETF 목록과 현재 선택 모드의 등락률을 GAS 웹앱에서 즉시 다시 불러와 모든 섹터 카드 갱신. 캐시 무시하고 강제 최신 데이터 수신.
-  </div>
-</div>
-
-<!-- 자동 갱신 구조 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">⏱️ 자동 갱신 타이머 구조</div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>수집 주기:</strong> 5분 (GitHub Actions cron) — 장중에 5분마다 수집 후 KV 저장. 화면은 KV에서만 읽음.<br>
-    · <strong>한국/미국 데이터 확정:</strong> 장중 5분마다 GitHub Actions가 수집 → KV 저장. 장 마감 후 수집 중단 시 마지막 수집값이 확정값으로 유지됨.<br>
-    · <strong>Config 시트 GAS 트리거(20:00 KST / 06:00 KST):</strong> 현재 비활성화 검토 중. GitHub Actions 마지막 수집값으로 충분히 대체 가능.<br>
-    · <strong>원 소스 (구글 스프레드시트):</strong> 히스토리 데이터의 근거. 웹 화면에서는 읽기만 수행하며 쓰기(변경/저장)는 GAS만 수행.
-  </div>
-</div>
-
-<!-- GAS 웹앱 연결 정보 -->
-<div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:8px">🔗 GAS 웹앱 연결 정보</div>
-  <div style="font-size:11px;color:var(--text-secondary);line-height:2">
-    · <strong>상수명:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">GAS_WEBAPP_URL</code> (index.html 스크립트 상단)<br>
-    · <strong>엔드포인트 형식:</strong> <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">https://script.google.com/macros/s/[DEPLOY_ID]/exec</code><br>
-    · <strong>통신 방식:</strong> GET 파라미터 — <code style="font-size:10px;color:#90caf9;background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">?action=kr_history</code> 등 action 파라미터로 구분<br>
-    · <strong>응답 형식:</strong> JSON (CORS 허용 설정 필요 — GAS doGet에서 ContentService 설정)
-  </div>
-  <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">
-    현재 배포 URL:
-    <code id="techref-gas-url" style="font-size:10px;color:#4fc3f7;background:rgba(0,0,0,.3);padding:2px 8px;border-radius:3px;word-break:break-all"></code>
-  </div>
-</div>
-
-</div><!-- /.stats-embed-wrap -->
-</div><!-- /#admin-tab-techref -->
-
-<div id="admin-tab-us-mgmt" style="display:none">
-<div class="admin-mgmt-layout">
-<div>
-<div class="admin-sector-list">
-<div class="admin-sector-list-header">
-<span>🇺🇸 US 섹터 목록</span>
-<span id="us-admin-sector-count" style="font-size:10px;color:var(--text-muted)"></span>
-</div>
-<div style="padding:6px 8px;border-bottom:1px solid var(--border)">
-<input id="us-sector-filter-input" class="admin-input"
-style="width:100%;font-size:10px;padding:4px 8px"
-placeholder="🔍 섹터명 필터 (입력 시 자동 적용)"
-oninput="filterUsAdminSectors(this.value)">
-</div>
-<div id="us-admin-sector-list-body">
-<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
-</div>
-</div>
-<div style="margin-top:10px">
-<div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;font-weight:700">+ 새 섹터 추가</div>
-<div class="admin-input-row">
-<input class="admin-input" id="us-new-sector-name" placeholder="섹터명 (예: 우주항공)" maxlength="20">
-<button class="admin-add-btn" onclick="usAdminAddSectorPrompt()">추가</button>
-</div>
-<div class="admin-msg" id="us-sector-msg"></div>
-</div>
-</div>
-<div>
-<div class="admin-stock-panel">
-<div class="admin-panel-header" id="us-admin-panel-title">← 섹터를 선택하세요</div>
-<div class="admin-panel-body" id="us-admin-panel-body">
-<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:30px 0">좌측에서 섹터를 선택하면<br>해당 섹터의 종목이 표시됩니다.</div>
-</div>
-</div>
-<div id="us-add-stock-section" style="display:none;margin-top:10px">
-<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;font-weight:700">+ 종목 추가</div>
-<div class="admin-input-row" style="margin-bottom:6px">
-<input class="admin-input" id="us-add-stock-name" placeholder="종목명 (예: NVIDIA)" style="flex:2">
-<input class="admin-input" id="us-add-stock-ticker" placeholder="티커 (예: NASDAQ:NVDA)" style="flex:2">
-<select class="admin-input" id="us-add-stock-type" style="flex:0 0 90px;cursor:pointer" title="종목 유형"><option value="STOCK" selected>STOCK</option><option value="ETF">ETF</option></select>
-</div>
-<div class="admin-input-row" style="margin-top:2px">
-<input class="admin-input" id="us-add-stock-memo" placeholder="📝 메모 (선택사항)" style="flex:1">
-<button class="admin-add-btn" onclick="usAdminDoAddStock()">추가</button>
-</div>
-<div style="font-size:10px;color:var(--text-muted);margin-top:5px">💡 티커 형식: NASDAQ:NVDA / NYSE:JPM / NYSEARCA:XLK / BATS:ITA</div>
-<div class="admin-msg" id="us-admin-msg"></div>
-</div>
-</div>
-</div>
-</div>
-
-<div id="admin-tab-us-watch" style="display:none">
-<div class="stats-embed-wrap">
-<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px">🇺🇸 US 주목 섹터 설정</div>
-<div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">
-체크한 섹터는 <strong style="color:#ffd180">US 섹터 종목 List</strong>와 <strong style="color:#ffd180">US Sector History 표</strong>에서
-<span style="color:#ff6f00;font-weight:700">🟠 주황 테두리</span>로 강조 표시됩니다.
-</div>
-<div id="us-watch-sector-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px">
-<div class="loading-state" style="padding:30px;grid-column:1/-1"><div class="spinner"></div></div>
-</div>
-<div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-<button class="admin-add-btn" onclick="saveUsWatchSectors()" id="us-watch-save-btn" style="background:var(--accent-us)">💾 저장</button>
-<button class="range-btn" onclick="checkAllUsWatch(false)">전체 해제</button>
-<span id="us-watch-save-msg" style="font-size:11px;color:#a5d6a7;display:none"></span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</main>
-</div>
-<div id="scrollTop" onclick="document.querySelector('.main').scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</div>
+<!-- FAB 버튼 -->
 <div id="fab-group">
-<div class="fab-btn" id="fab-rate-sort" onclick="toggleRateSort()" title="등락률 높은순 정렬"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="1" y="4" width="3" height="11" rx="1" fill="#ff9800"/>
-  <rect x="5.5" y="7" width="3" height="8" rx="1" fill="#ff9800" opacity=".8"/>
-  <rect x="10" y="10" width="3" height="5" rx="1" fill="#ff9800" opacity=".6"/>
-  <rect x="14.5" y="12" width="3" height="3" rx="1" fill="#ff9800" opacity=".4"/>
-  <polyline points="14,2 16,4.5 18,2" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="16" y1="1" x2="16" y2="4.5" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round"/>
-</svg></div>
-<div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="섹터명 가나다 정렬"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <text x="1" y="8" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7">A</text>
-  <text x="1" y="17" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7" opacity=".65">Z</text>
-  <line x1="14" y1="2" x2="14" y2="15" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
-  <polyline points="10,11 14,16 18,11" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg></div>
-<div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
+  <div class="fab-btn" id="fab-rate-sort" onclick="toggleRateSort()" title="등락률 정렬">
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="4" width="3" height="11" rx="1" fill="#ff9800"/><rect x="5.5" y="7" width="3" height="8" rx="1" fill="#ff9800" opacity=".8"/><rect x="10" y="10" width="3" height="5" rx="1" fill="#ff9800" opacity=".6"/><rect x="14.5" y="12" width="3" height="3" rx="1" fill="#ff9800" opacity=".4"/><polyline points="14,2 16,4.5 18,2" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="1" x2="16" y2="4.5" stroke="#ff9800" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </div>
+  <div class="fab-btn" id="fab-sort" onclick="toggleListSort()" title="가나다 정렬">
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><text x="1" y="8" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7">A</text><text x="1" y="17" font-family="Arial Black,Arial" font-weight="900" font-size="8" fill="#4fc3f7" opacity=".65">Z</text><line x1="14" y1="2" x2="14" y2="15" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/><polyline points="10,11 14,16 18,11" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="fab-btn" id="fab-watch" onclick="toggleWatchedOnly()" title="주목 섹터만 보기">⭐</div>
 </div>
+
+<!-- 스크롤 탑 -->
+<div id="scrollTop" onclick="(document.getElementById('mob-main')||document.body).scrollTo({top:0,behavior:'smooth'})" title="맨 위로">↑</div>
+
+
+<!-- 섹터 종목 팝업 -->
+<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
+
+<!-- F&G 전용 팝업 -->
+<div id="fng-popup">
+  <div id="fng-popup-header">
+    <span style="font-size:16px">😱🤑</span>
+    <span id="fng-popup-title">공포탐욕지수 (F&G)</span>
+    <span style="font-size:9px;color:#b0a0c0;font-family:var(--font-mono);background:rgba(255,255,255,.06);border-radius:3px;padding:1px 6px;margin-left:4px" title="F&G 지수는 장 마감 후 확정값이 기록됩니다. 당일 장중에는 전일 확정값이 표시됩니다.">확정값 기준</span>
+    <button id="fng-popup-close" onclick="closeFnGPopup()">✕</button>
+  </div>
+  <div id="fng-popup-body" style="flex:1"></div>
+</div>
+
+<div id="sector-popup-overlay">
+  <div id="sector-popup">
+    <div id="sector-popup-header">
+      <span id="sector-popup-flag">🇰🇷</span>
+      <span id="sector-popup-title">섹터명</span>
+      <span id="sector-popup-avg"></span>
+      <button id="sector-popup-close" onclick="closeSectorPopup()">✕</button>
+    </div>
+    <div id="sector-popup-body">
+      <div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+// 최고/최저 섹터 stat 클릭 이벤트 위임
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('.sp-stat-click');
+  if (!el) return;
+  const sector  = el.getAttribute('data-sector');
+  const market  = el.getAttribute('data-market') || '';
+  const isPrev  = el.getAttribute('data-isprev') === '1';
+  const prevDate= el.getAttribute('data-date') || '';
+  const isKr    = market === 'us' ? false : true;
+  if (sector) openSectorPopup(sector, isKr, isPrev ? prevDate : '');
+});
+// 랭킹 바 차트 클릭 이벤트 위임
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('.rank-bar-row[data-sector]');
+  if (!el) return;
+  const sector = el.getAttribute('data-sector');
+  if (!sector) return;
+  // US 페이지에서는 isKr=false, KR 페이지에서는 isKr=true
+  const isUsPage = document.getElementById('page-us-history') && document.getElementById('page-us-history').style.display !== 'none';
+  openSectorPopup(sector, !isUsPage);
+});
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  커스텀 가로 스크롤바 — KR / US 히스토리 테이블
+// ═══════════════════════════════════════════════════════
+(function(){
+  function initHScroll(tableId, thumbId, trackId){
+    var table = document.getElementById(tableId);
+    var thumb = document.getElementById(thumbId);
+    var track = document.getElementById(trackId);
+    if(!table||!thumb||!track) return;
+
+    function updateThumb(){
+      var trackW  = track.offsetWidth;
+      var scrollW = table.scrollWidth;
+      var clientW = table.clientWidth;
+      if(scrollW <= clientW){
+        thumb.style.display='none'; return;
+      }
+      thumb.style.display='';
+      var ratio    = clientW / scrollW;
+      var thumbW   = Math.max(36, trackW * ratio);
+      var maxLeft  = trackW - thumbW;
+      var scrollRatio = table.scrollLeft / (scrollW - clientW);
+      thumb.style.width  = thumbW + 'px';
+      thumb.style.left   = (scrollRatio * maxLeft) + 'px';
+    }
+
+    // 테이블 스크롤 → thumb 위치 동기화
+    table.addEventListener('scroll', updateThumb);
+
+    // thumb 드래그 → 테이블 스크롤
+    var dragging=false, startX=0, startLeft=0;
+    thumb.addEventListener('mousedown', function(e){
+      dragging=true;
+      startX=e.clientX;
+      startLeft=parseFloat(thumb.style.left)||0;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      var trackW  = track.offsetWidth;
+      var thumbW  = thumb.offsetWidth;
+      var maxLeft = trackW - thumbW;
+      var newLeft = Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startX)));
+      thumb.style.left = newLeft + 'px';
+      var scrollW = table.scrollWidth;
+      var clientW = table.clientWidth;
+      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
+    });
+    document.addEventListener('mouseup', function(){ dragging=false; });
+
+    // 터치 지원
+    thumb.addEventListener('touchstart', function(e){
+      dragging=true;
+      startX=e.touches[0].clientX;
+      startLeft=parseFloat(thumb.style.left)||0;
+      e.preventDefault();
+    },{passive:false});
+    document.addEventListener('touchmove', function(e){
+      if(!dragging) return;
+      var trackW  = track.offsetWidth;
+      var thumbW  = thumb.offsetWidth;
+      var maxLeft = trackW - thumbW;
+      var newLeft = Math.max(0, Math.min(maxLeft, startLeft + (e.touches[0].clientX - startX)));
+      thumb.style.left = newLeft + 'px';
+      var scrollW = table.scrollWidth;
+      var clientW = table.clientWidth;
+      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
+    },{passive:false});
+    document.addEventListener('touchend', function(){ dragging=false; });
+
+    // 트랙 클릭 → 해당 위치로 이동
+    track.addEventListener('click', function(e){
+      if(e.target===thumb||thumb.contains(e.target)) return;
+      var rect    = track.getBoundingClientRect();
+      var clickX  = e.clientX - rect.left;
+      var trackW  = track.offsetWidth;
+      var thumbW  = thumb.offsetWidth;
+      var maxLeft = trackW - thumbW;
+      var newLeft = Math.max(0, Math.min(maxLeft, clickX - thumbW/2));
+      thumb.style.left = newLeft + 'px';
+      var scrollW = table.scrollWidth;
+      var clientW = table.clientWidth;
+      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
+    });
+
+    // MutationObserver: 테이블 내용 변경 시 thumb 재계산
+    var mo = new MutationObserver(function(){ setTimeout(updateThumb, 80); });
+    mo.observe(table, {childList:true, subtree:false});
+    // ResizeObserver: 창 크기 변경 시 재계산
+    if(window.ResizeObserver){
+      new ResizeObserver(updateThumb).observe(table);
+    }
+    window.addEventListener('resize', updateThumb);
+    setTimeout(updateThumb, 300);
+  }
+
+  // 페이지 로드 완료 후 초기화
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      initHScroll('kr-table','kr-hscroll-thumb','kr-hscroll-track');
+      initHScroll('us-table','us-hscroll-thumb','us-hscroll-track');
+    }, 500);
+  });
+
+  // renderKr/renderUs 후에도 재초기화 (내용 바뀌면 scrollWidth 변동)
+  var _origRenderKrTableOnly = window.renderKrTableOnly;
+  var _origRenderUsTableOnly = window.renderUsTableOnly;
+  // MutationObserver가 처리하므로 별도 후킹 불필요
+})();
+</script>
+
+
+<!-- 하단 탭바 -->
+<nav id="mob-tabbar">
+  <div class="mob-tab kr-active active" id="tab-kr" onclick="go('kr-history',null)">
+    <div class="tab-icon">🇰🇷</div>
+    <div>KR 히스토리</div>
+  </div>
+  <div class="mob-tab" id="tab-kr-list" onclick="go('kr-list',null)">
+    <div class="tab-icon">📋</div>
+    <div>종목 List</div>
+  </div>
+  <div class="mob-tab" id="tab-us" onclick="go('us-history',null)">
+    <div class="tab-icon">🇺🇸</div>
+    <div>US 히스토리</div>
+  </div>
+  <div class="mob-tab" id="tab-us-list" onclick="go('us-list',null)">
+    <div class="tab-icon">📊</div>
+    <div>US List</div>
+  </div>
+  <div class="mob-tab" id="tab-about" onclick="go('about',null)">
+    <div class="tab-icon">ℹ️</div>
+    <div>소개</div>
+  </div>
+</nav>
 <script>if(window.ChartDataLabels) Chart.register(ChartDataLabels);
 Chart.defaults.plugins.datalabels = { display: false };
 const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyOofgj0rwucEaCvJDR2_nI9nw1vUM1GvQTUOqyo0hFHvETyVnW0Kc8YXCSKANfUpkj/exec';
@@ -1126,11 +1063,11 @@ function _naverStockUrl(ticker, type) {
   if (colon < 0) return null;
   const exchange = t.slice(0, colon).toUpperCase();
   const code = t.slice(colon + 1);
-  // KR 종목: 네이버 국내주식 (유지)
+  // KR 종목: 네이버 모바일 국내주식 (유지)
   if (['KOSPI','KOSDAQ','KRX'].includes(exchange)) {
     const numCode = code.replace(/[^0-9]/g, '');
     if (!numCode) return null;
-    return 'https://stock.naver.com/domestic/stock/' + numCode + '/price';
+    return 'https://m.stock.naver.com/domestic/stock/' + numCode + '/total';
   }
   // US 종목: 트레이딩뷰 (NYSEARCA/NYSEMKT/BATS → AMEX로 매핑)
   const tvExchange = ['NYSEARCA','NYSEMKT','BATS','AMEX'].includes(exchange) ? 'AMEX' : exchange;
@@ -1153,7 +1090,7 @@ function _renderStockItem(st, useChg, isKr) {
   const chgColor = chg!==null&&chg>0?'#ef5350':chg!==null&&chg<0?'#42a5f5':'#8a9ab5';
   const tkrShort = (st.ticker||'').split(':').pop();
   const memo = st.memo||'';
-  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}">ℹ</span>`:'';
+  const memoHtml = memo?`<span class="memo-icon" data-memo="${memo.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();event.preventDefault();(function(el){var t=document.getElementById('global-memo-tooltip');if(!t)return;var m=el.getAttribute('data-memo');if(!m)return;t.textContent=m;t.style.display='block';t.style.opacity='1';var r=el.getBoundingClientRect(),w=t.offsetWidth||200,x=r.left+r.width/2,y=r.top-12;if(x-w/2<10)x=10+w/2;if(x+w/2>window.innerWidth-10)x=window.innerWidth-10-w/2;if(y-t.offsetHeight<10)y=r.bottom+12;t.style.left=Math.round(x-w/2)+'px';t.style.top=Math.round(y-t.offsetHeight)+'px';t._memoOpen=true;function _closeMemo(ev){if(ev.target.closest&&ev.target.closest('.memo-icon'))return;t.style.opacity='0';setTimeout(function(){t.style.display='none';},150);t._memoOpen=false;document.removeEventListener('touchstart',_closeMemo,true);document.removeEventListener('click',_closeMemo,true);}setTimeout(function(){document.addEventListener('touchstart',_closeMemo,true);document.addEventListener('click',_closeMemo,true);},100);})(this)">ℹ</span>`:'';
   let yIcon='', nameAttr='';
   if (!isKr) {
     const yUrl=_yahooStockUrl(st.ticker||'');
@@ -1173,9 +1110,9 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 // ══════════════════════════════════════════════════
 function openSectorPopup(sectorName, isKr, prevDate) {
   // F&G 컬럼은 전용 팝업으로 분기
-  if (sectorName === 'F&G')    { openFnGPopup(); return; }
-  if (sectorName === 'VIX')    { openVIXPopup(); return; }
-  if (sectorName === '하이일드') { openHYPopup();  return; }
+  if (sectorName === 'F&G') { openFnGPopup(); return; }
+  if (sectorName === 'VIX')    { openVIXPopup();      return; }
+  if (sectorName === '하이일드') { openHYPopup();    return; }
 
   const popup    = document.getElementById('sector-popup');
   const backdrop = document.getElementById('sector-popup-backdrop');
@@ -1188,6 +1125,14 @@ function openSectorPopup(sectorName, isKr, prevDate) {
   flagEl.textContent = isKr ? '🇰🇷' : '🇺🇸';
   avgEl.textContent = '';
   body.innerHTML = '<div class="loading-state" style="padding:30px"><div class="spinner"></div></div>';
+
+  // ★ 주목섹터면 헤더 색상 변경 (List와 동일)
+  const _hdr = document.getElementById('sector-popup-header');
+  const _isWatchedHdr = isKr ? WATCHED_SECTORS.has(sectorName) : US_WATCHED_SECTORS.has(sectorName);
+  if (_hdr) {
+    _hdr.style.background = _isWatchedHdr ? 'rgba(249,201,0,.12)' : '';
+    _hdr.style.borderBottomColor = _isWatchedHdr ? 'rgba(249,201,0,.4)' : '';
+  }
 
   popup.classList.add('open');
   backdrop.classList.add('active');
@@ -1231,12 +1176,6 @@ function openFnGPopup() {
   const backdrop = document.getElementById('sector-popup-backdrop');
   if (!popup) return;
 
-  // 타이틀·헤더 배경을 F&G용으로 명시 설정 (HY/VIX 팝업 사용 후 오염 방지)
-  const titleEl = document.getElementById('fng-popup-title');
-  if (titleEl) titleEl.textContent = '공포탐욕지수 (F&G)';
-  const hdrEl = document.getElementById('fng-popup-header');
-  if (hdrEl) hdrEl.style.background = 'linear-gradient(90deg,#2a1a35,#1a1a2e)';
-
   // 게이지 렌더
   _renderFnGPopup(todayScore, history, latestDate);
   popup.classList.add('open');
@@ -1250,158 +1189,19 @@ function closeFnGPopup() {
   if (popup) popup.classList.remove('open');
   backdrop.classList.remove('active');
   document.removeEventListener('keydown', _fngEscHandler);
+  // 팝업 타이틀/헤더 F&G 기본값으로 원복
+  const titleEl = document.getElementById('fng-popup-title');
+  if (titleEl) titleEl.textContent = '공포탐욕지수 (F&G)';
+  const hdrEl = document.getElementById('fng-popup-header');
+  if (hdrEl) hdrEl.style.background = 'linear-gradient(90deg,#2a1a35,#1a1a2e)';
 }
 
 function _fngEscHandler(e) { if (e.key === 'Escape') closeFnGPopup(); }
+// ══════════════════════════════════════════════════════════════════════
+// ★ VIX 팝업 (F&G와 동일한 fng-popup 재사용)
+// ══════════════════════════════════════════════════════════════════════
 
-function _fngLabel(score) {
-  if (score === null || isNaN(score)) return { label:'--', color:'#8a9ab5' };
-  if (score <= 24)  return { label:'극단적 공포', color:'#1565C0' };
-  if (score <= 44)  return { label:'공포',        color:'#42a5f5' };
-  if (score <= 54)  return { label:'중립',         color:'#8a9ab5' };
-  if (score <= 74)  return { label:'탐욕',         color:'#ef5350' };
-  return              { label:'극단적 탐욕',       color:'#b71c1c' };
-}
-
-function _fngGaugeColor(score) {
-  if (score === null || isNaN(score)) return '#8a9ab5';
-  if (score <= 24)  return '#1565C0';
-  if (score <= 44)  return '#42a5f5';
-  if (score <= 54)  return '#78909C';
-  if (score <= 74)  return '#ef5350';
-  return '#b71c1c';
-}
-
-function _renderFnGPopup(score, history, latestDate) {
-  const info  = _fngLabel(score);
-  const color = _fngGaugeColor(score);
-
-  // ── 반원 게이지 수학 ──────────────────────────────────────────────
-  // SVG 경로: M16,100 A84,84 0 0,1 184,100  (중심 100,100, 반지름 84)
-  //
-  // ★ pathLength="100" 사용 → dasharray 값 = score 그대로 (오차 없음)
-  //   stroke-linecap:round가 dasharray에 추가되는 오차를 pathLength로 완전 제거
-  //
-  // 바늘 끝점 계산 (SVG 수학):
-  //   score=0   → angle=180° → 왼쪽 끝  (16, 100)
-  //   score=50  → angle=90°  → 맨 위    (100, 16)
-  //   score=100 → angle=0°   → 오른쪽 끝(184, 100)
-  //   angle_rad = (1 - score/100) × π
-  //   끝점 x = 100 + cos(angle_rad) × NEEDLE_R
-  //   끝점 y = 100 - sin(angle_rad) × NEEDLE_R  ← SVG y축 아래가 양수이므로 빼기
-  const NEEDLE_R = 70;
-  const s = (score !== null && !isNaN(score)) ? Math.max(0, Math.min(100, score)) : 0;
-  const angleRad = (1 - s / 100) * Math.PI;
-  const nx = Math.cos(angleRad) * NEEDLE_R;
-  const ny = -Math.sin(angleRad) * NEEDLE_R;
-
-  // 게이지 SVG
-  const gaugeHtml = `
-  <div style="text-align:center;padding:24px 0 10px">
-    <div style="font-size:9px;color:var(--accent-kr);font-family:var(--font-mono);margin-bottom:6px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);border-radius:4px;padding:2px 8px;display:inline-block">${latestDate?latestDate+' 기준 (확정값)':'-- 기준'}</div>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">코스피 · KOSDAQ</div>
-    <div style="position:relative;width:200px;height:110px;margin:0 auto">
-      <svg viewBox="0 0 200 105" width="200" height="105" style="overflow:visible">
-        <defs>
-          <linearGradient id="fngGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"    stop-color="#1565C0"/>
-            <stop offset="25%"   stop-color="#42a5f5"/>
-            <stop offset="50%"   stop-color="#90A4AE"/>
-            <stop offset="75%"   stop-color="#EF9A9A"/>
-            <stop offset="100%"  stop-color="#B71C1C"/>
-          </linearGradient>
-        </defs>
-        <!-- 배경 반원 (어두운 트랙) -->
-        <path d="M16,100 A84,84 0 0,1 184,100"
-              fill="none" stroke="#1e2535" stroke-width="16" stroke-linecap="round"/>
-        <!-- 그라데이션 트랙 (흐리게) -->
-        <path d="M16,100 A84,84 0 0,1 184,100"
-              fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="round" opacity="0.3"/>
-        <!-- 진행 호 (score 만큼만) — pathLength="100" 으로 dasharray=score 직접 사용 -->
-        <path d="M16,100 A84,84 0 0,1 184,100"
-              fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"
-              pathLength="100"
-              stroke-dasharray="${s} 100" opacity="0.9"/>
-        <!-- 바늘: 중심(100,100)에서 끝점(nx,ny)으로 -->
-        <line x1="100" y1="100"
-              x2="${(100 + nx).toFixed(1)}" y2="${(100 + ny).toFixed(1)}"
-              stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
-        <!-- 바늘 중심 원 -->
-        <circle cx="100" cy="100" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
-        <!-- 눈금 라벨 -->
-        <text x="10"  y="99" font-size="9" fill="#42a5f5"  text-anchor="middle" opacity="0.8">0</text>
-        <text x="45"  y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">25</text>
-        <text x="100" y="12" font-size="9" fill="#90A4AE"  text-anchor="middle" opacity="0.8">50</text>
-        <text x="155" y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">75</text>
-        <text x="190" y="99" font-size="9" fill="#EF5350"  text-anchor="middle" opacity="0.8">100</text>
-      </svg>
-      <!-- 중앙 점수 (SVG 아래) -->
-      <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap">
-        <div style="font-size:34px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">
-          ${score !== null ? Math.round(score) : '--'}
-        </div>
-        <div style="font-size:12px;font-weight:600;color:${color};margin-top:3px">${info.label}</div>
-      </div>
-    </div>
-  </div>`;
-
-  // 구간 기준표
-  const rangeHtml = `
-  <div style="padding:0 14px 10px">
-    <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 구간 기준 —</div>
-    ${[
-      { range:'0 ~ 24',   label:'극단적 공포', color:'#1565C0', dot:'#1565C0' },
-      { range:'25 ~ 44',  label:'공포',         color:'#42a5f5', dot:'#42a5f5' },
-      { range:'45 ~ 54',  label:'중립',          color:'#78909C', dot:'#78909C' },
-      { range:'55 ~ 74',  label:'탐욕',          color:'#ef5350', dot:'#ef5350' },
-      { range:'75 ~ 100', label:'극단적 탐욕',  color:'#b71c1c', dot:'#b71c1c' },
-    ].map(r => {
-      const isActive = score !== null && (
-        (r.range==='0 ~ 24'   && score<=24) ||
-        (r.range==='25 ~ 44'  && score>24 && score<=44) ||
-        (r.range==='45 ~ 54'  && score>44 && score<=54) ||
-        (r.range==='55 ~ 74'  && score>54 && score<=74) ||
-        (r.range==='75 ~ 100' && score>74)
-      );
-      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;
-        ${isActive ? 'background:rgba(255,255,255,0.06);border:1px solid '+r.dot+'44;' : 'border:1px solid transparent'}">
-        <span style="width:9px;height:9px;border-radius:50%;background:${r.dot};flex-shrink:0;
-          ${isActive ? 'box-shadow:0 0 6px '+r.dot : ''}"></span>
-        <span style="font-size:10px;color:${isActive ? r.color : 'var(--text-muted)'};
-          font-weight:${isActive ? '700' : '400'}">
-          ${r.range} <span style="color:var(--text-secondary)">(${r.label})</span>
-        </span>
-        ${isActive ? '<span style="margin-left:auto;font-size:9px;color:'+r.color+';font-weight:700">◀ 현재</span>' : ''}
-      </div>`;
-    }).join('')}
-  </div>`;
-
-  // 최근 히스토리 (최대 7일)
-  let histHtml = '';
-  if (history.length > 0) {
-    const recent = history.slice(0, 7); // 최신순 (최신이 위)
-    histHtml = `
-    <div style="padding:0 14px 14px">
-      <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 최근 추이 —</div>
-      ${recent.map(r => {
-        const c = _fngGaugeColor(r.score);
-        const lbl = _fngLabel(r.score);
-        const barW = Math.round(r.score);
-        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.2)">
-          <span style="font-size:9px;color:var(--text-muted);width:72px;flex-shrink:0">${r.date}</span>
-          <div style="flex:1;height:10px;background:#1e2535;border-radius:4px;overflow:hidden">
-            <div style="width:${barW}%;height:100%;background:${c};border-radius:4px;opacity:.8"></div>
-          </div>
-          <span style="font-size:10px;font-weight:700;color:${c};width:24px;text-align:right">${Math.round(r.score)}</span>
-          <span style="font-size:9px;color:${c};width:52px">${lbl.label}</span>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }
-
-  document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml;
-}
-
+// ══════════════════════════════════════════════════════════════════════
 // ★ 하이일드 스프레드 팝업
 // ══════════════════════════════════════════════════════════════════════
 function _hyLabel(v) {
@@ -1451,7 +1251,7 @@ function openHYPopup() {
 function _renderHYPopup(score, history, latestDate) {
   const info  = _hyLabel(score);
   const color = _hyGaugeColor(score);
-  const HY_MAX = 15;
+  const HY_MAX = 15; // 게이지 최대값 15%
   const s = (score !== null && !isNaN(score)) ? Math.max(0, Math.min(HY_MAX, score)) : 0;
   const pct = s / HY_MAX;
   const angleRad = (1 - pct) * Math.PI;
@@ -1548,8 +1348,6 @@ function _renderHYPopup(score, history, latestDate) {
   document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml + linkBtn;
 }
 
-// ★ VIX 변동성 지수 팝업
-// ══════════════════════════════════════════════════════════════════════
 function _vixLabel(v) {
   if (v === null || isNaN(v)) return { label:'--', color:'#8a9ab5' };
   if (v <= 15) return { label:'매우 안정 / 낙관',      color:'#2e7d32' };
@@ -1583,8 +1381,11 @@ function openVIXPopup() {
   const backdrop = document.getElementById('sector-popup-backdrop');
   if (!popup) return;
 
+  // 팝업 타이틀 변경
   const titleEl = document.getElementById('fng-popup-title');
   if (titleEl) titleEl.textContent = 'VIX 변동성 지수';
+
+  // 팝업 헤더 배경 VIX 색상으로
   const hdrEl = document.getElementById('fng-popup-header');
   if (hdrEl) hdrEl.style.background = 'linear-gradient(90deg,#1a1a2e,#0d1b2a)';
 
@@ -1687,6 +1488,7 @@ function _renderVIXPopup(score, history, latestDate) {
 
   document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml + yahooBtn;
 }
+
 
 function _popupEscHandler(e) {
   if (e.key === 'Escape') closeSectorPopup();
@@ -1854,15 +1656,31 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       // 메타 정보 + 오늘 실시간 + 종목 목록 + 최근 5일
       const todayVal = usTodayMap[sectorName];
       const grpLabel = meta.group ? ({'INDEX':'주요지수','SECTOR':'GICS섹터','THEMATIC':'테마ETF','BOND':'채권·달러'}[meta.group]||meta.group) : '';
-      body.innerHTML = _renderSectorNoteHeader(sectorName, false) + `
-        <div style="padding:4px 2px">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;display:flex;gap:10px;flex-wrap:wrap">
-            ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
-            ${grpLabel?`<span>그룹: <span style="color:var(--accent-gold)">${grpLabel}</span></span>`:''}
-          </div>
-          ${''/* 오늘 실시간 제거 - 타이틀에 이미 표시됨 */}
-          ${stocksHtml}
-        </div>`;
+      // ★ 주목섹터 배지 + 바 그래프
+      const _usIsWatched = US_WATCHED_SECTORS.has(sectorName);
+      const _usWatchBadge = _usIsWatched
+        ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#f9c900;background:rgba(249,201,0,.15);border:1px solid rgba(249,201,0,.4);border-radius:4px;padding:2px 7px;margin-bottom:8px">⭐ 주목 섹터</span>'
+        : '';
+      const _usAvgVal = parseFloat(avgEl.textContent);
+      let _usBarHtml = '';
+      if (!isNaN(_usAvgVal) && avgEl.textContent) {
+        const BAR_MAX=15,BARS=10;
+        const filled=Math.round(Math.min(Math.abs(_usAvgVal)/BAR_MAX,1)*BARS);
+        const isUp=_usAvgVal>=0;
+        const bs='width:7px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0';
+        _usBarHtml='<div style="display:flex;align-items:center;gap:0;margin-bottom:8px">';
+        for(let i=0;i<BARS;i++){
+          const active=isUp?(i<filled):(BARS-1-i<filled);
+          _usBarHtml+=`<span style="${bs};background:${active?(isUp?'#e53935':'#1e88e5'):'rgba(255,255,255,.1)'}"></span>`;
+        }
+        _usBarHtml+='</div>';
+      }
+      // ★ 종목수 안내
+      const _usCountLabel = stocksHtml
+        ? `<div style="font-size:9px;color:var(--text-muted);margin-bottom:4px">${meta.etf?'📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">'+meta.etf+'</span>&nbsp;&nbsp;':''}${grpLabel?'그룹: <span style="color:var(--accent-gold)">'+grpLabel+'</span>':''}</div>`
+        : '';
+      body.innerHTML = _usWatchBadge + _usBarHtml + _renderSectorNoteHeader(sectorName, false)
+        + `<div style="padding:4px 2px">${_usCountLabel}${stocksHtml}</div>`;
       return;
     }
 
@@ -1928,44 +1746,7 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
     let html = '';
     sorted.forEach(st => {
-      const chg     = (st.chg     !== null && st.chg     !== undefined && !isNaN(st.chg))     ? parseFloat(st.chg)     : null;
-      const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
-      const ticker  = st.ticker || '';
-      const memo    = st.memo || '';
-
-      let mainVal, subHtml = '';
-      if (_usePrev) {
-        // ★ 최근 영업일 박스 클릭: prevChg(전일 확정) 메인, chg 보조
-        mainVal = prevChg !== null ? prevChg : chg;
-        if (chg !== null && prevChg !== null) {
-          const tc = chg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
-        }
-      } else if (_useToday) {
-        // 장중/마감후: chg(네이버) 메인 + prevChg 보조
-        mainVal = chg !== null ? chg : prevChg;
-        if (chg !== null && prevChg !== null) {
-          const pc = prevChg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
-        }
-      } else {
-        // 장전·주말·공휴일: prevChg(최근 확정) 메인
-        mainVal = prevChg !== null ? prevChg : chg;
-      }
-
-      const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
-      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
-
-      const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="TradingView에서 보기"` : '';
-      const _yUrlP = !isKr ? _yahooStockUrl(ticker) : null;
-      const _yIconP = _yUrlP ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
-      html += '<div class="sp-stock-row">'
-        + _yIconP
-        + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
-        + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
-        + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
-        + '</div>';
+      html += _renderStockItem(st, _useToday || !_usePrev, isKr);
     });
 
     // 헤더 안내 (갱신 시각 포함)
@@ -1975,10 +1756,34 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       : _useToday
         ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
         : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
+    // ★ 주목섹터 표시
+    const _isWatched = isKr ? WATCHED_SECTORS.has(sectorName) : US_WATCHED_SECTORS.has(sectorName);
+    const watchedBadge = _isWatched
+      ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#f9c900;background:rgba(249,201,0,.15);border:1px solid rgba(249,201,0,.4);border-radius:4px;padding:2px 7px;margin-bottom:8px">⭐ 주목 섹터</span>'
+      : '';
+
+    // ★ 섹터 평균 등락률 바 그래프
+    const _avgVal = parseFloat(avgEl.textContent);
+    let barHtml2 = '';
+    if (!isNaN(_avgVal) && avgEl.textContent && avgEl.textContent !== '') {
+      const BAR_MAX=15, BARS=10;
+      const filled = Math.round(Math.min(Math.abs(_avgVal)/BAR_MAX,1)*BARS);
+      const isUp = _avgVal >= 0;
+      const filledColor = isUp ? '#e53935' : '#1e88e5';
+      const emptyColor = 'rgba(255,255,255,.1)';
+      const barStyle = 'width:7px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0';
+      barHtml2 = '<div style="display:flex;align-items:center;gap:0;margin-bottom:8px">';
+      for(let i=0;i<BARS;i++){
+        const active = isUp ? (i<filled) : (BARS-1-i<filled);
+        barHtml2 += `<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
+      }
+      barHtml2 += '</div>';
+    }
+
     const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
-    // ★ 섹터 메모/링크 헤더 prepend
-    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + header + html;
+    // ★ 섹터 메모/링크 헤더 prepend + 주목 + 바
+    body.innerHTML = watchedBadge + barHtml2 + _renderSectorNoteHeader(sectorName, isKr) + header + html;
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;color:#ef9a9a;font-size:12px">❌ 로드 실패: ${e.message}</div>`;
   }
@@ -2132,8 +1937,7 @@ function yldCell(v, sectorName){
   else if(sectorName==='단기채권'||sectorName==='ShortBond') zones=_shortBondZones();
   else zones=_longBondZones(); // 장기채권(기본)
   const {rgb,zi}=_zoneBg(Math.max(n,0),zones);
-  const decimals=(sectorName==='하이일드'||sectorName==='HiYield')?2:3;
-  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(decimals)};
+  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(3)};
 }
 
 // ── VIX 색상 ────────────────────────────────────────────────────
@@ -2303,11 +2107,17 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
-const [histData, todayData] = await Promise.all([
+const [histData, todayData, watchedData] = await Promise.all([
 api('kr_history', 365),
 api('kr_today', 0).catch(()=>null),
+!watchedLoaded ? api('watched_sectors', 0).catch(()=>null) : Promise.resolve(null),
 ]);
 d = histData;
+if(watchedData && watchedData.sectors){
+  WATCHED_SECTORS = new Set(watchedData.sectors);
+  watchedLoaded = true;
+  try{localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(watchedData.sectors));}catch(e){}
+}
 document.getElementById('kr-status').textContent='누적 '+d.count+'일치';
 if(todayData){
 // ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음, S.krToday를 null로 유지
@@ -2743,7 +2553,7 @@ var ust2V=ust2Idx>=0?parseFloat(lt[ust2Idx]):NaN;
 var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
 var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(3)+'%';
 var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(3)+'%';
-var hygFmt=isNaN(hygV)?'-':hygV.toFixed(2)+'%';
+var hygFmt=isNaN(hygV)?'-':hygV.toFixed(3)+'%';
 var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=4?'#ef5350':hygV>=3?'#ffa726':'#66bb6a';
 var vxFmt=isNaN(vx)?'-':vx.toFixed(2);
 var vxC=isNaN(vx)?'var(--text-muted)':vx<20?'#66bb6a':vx<30?'#ffa726':'#ef5350';
@@ -4216,10 +4026,16 @@ document.getElementById('us-status').textContent='⚠️ 데모 모드';
 // ★ 단일 소스: us_watch_history만 사용 (오늘 행 포함)
 // updateUsSheetToday()가 5분마다 시트 7행을 갱신 + 캐시 무효화
 // → 히스토리가 단일 진실 공급원
-const [watchHistData, watchListData] = await Promise.all([
+const [watchHistData, watchListData, usWatchedData] = await Promise.all([
 api('us_watch_history', 365),
-api('us_watch_list', 0).catch(()=>null)
+api('us_watch_list', 0).catch(()=>null),
+!usWatchedLoaded ? api('us_watched_sectors',0).catch(()=>null) : Promise.resolve(null),
 ]);
+if(usWatchedData&&usWatchedData.sectors){
+  US_WATCHED_SECTORS=new Set(usWatchedData.sectors);
+  usWatchedLoaded=true;
+  try{localStorage.setItem(US_WATCHED_KEY,JSON.stringify(usWatchedData.sectors));}catch(e){}
+}
 d = watchHistData;
 document.getElementById('us-status').textContent='누적 '+d.count+'일치';
 // us_watch_history의 첫 행(rows[0])이 오늘 데이터
@@ -4493,6 +4309,8 @@ H.slice(1).forEach((name,ci)=>{const v=parseFloat(latest[ci+1]);if(!isNaN(v))usL
 const hasWatchList=S.usWatchL&&S.usWatchL.sectors&&S.usWatchL.sectors.length>0;
 if(hasWatchList){
 let sectors=[...S.usWatchL.sectors];
+// ★ 지수형 섹터 제외 (US_STATS_EXCLUDE: 채권/달러/VIX/주요지수)
+sectors=sectors.filter(s=>!US_STATS_EXCLUDE.has(s.sector));
 // ★ 주목 섹터 필터
 if(watchedOnly) sectors=sectors.filter(s=>US_WATCHED_SECTORS.has(s.sector));
 // 정렬
@@ -4516,25 +4334,25 @@ if(!sec.stocks||sec.stocks.length===0)return;
 const meta=US_META[sec.sector]||{};
 const c=C[i%C.length];
 const isWatched=US_WATCHED_SECTORS&&US_WATCHED_SECTORS.has(sec.sector);
-// 섹터 평균 등락률: today=usToday 맵, lastbiz=usLastBiz
-const secAvg=useToday
-?(usTodayMap[sec.sector]!==undefined?parseFloat(usTodayMap[sec.sector]):null)
-:(usLastBiz[sec.sector]!==undefined?parseFloat(usLastBiz[sec.sector]):null);
+// ★ 방법B: 섹터 평균을 종목 등락률에서 직접 계산 (항상 종목과 일치)
+const _stocks=sec.stocks||[];
+const _vals=_stocks.map(st=>useToday?parseFloat(st.chg):parseFloat(st.prevChg)).filter(v=>!isNaN(v));
+const secAvg=_vals.length>0?(_vals.reduce((a,b)=>a+b,0)/_vals.length):null;
 const avgClass=secAvg===null?'':(secAvg>0?' avg-up':secAvg<0?' avg-dn':'');
 const avgHtml=secAvg!==null
 ?`<span style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:${secAvg>0?'#ef5350':secAvg<0?'#42a5f5':'#8a9ab5'};margin-left:auto">${secAvg>0?'+':''}${secAvg.toFixed(2)}%</span>`
 :'';
-// 막대 그래프
-const BAR_MAX=10,BARS=10;
+// 막대 그래프 (5칸)
+const BAR_MAX=10,BARS=5;
 let barHtml='';
 if(secAvg!==null){
 const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
 const isUp=secAvg>=0;
 const fc=isUp?'#e53935':'#1e88e5';
-barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+barHtml='<div style="display:flex;align-items:center;gap:0">';
 for(let bi=0;bi<BARS;bi++){
 const active=isUp?(bi<filled):(BARS-1-bi<filled);
-barHtml+=`<span style="width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0;background:${active?fc:'rgba(255,255,255,.1)'}"></span>`;
+barHtml+=`<span style="width:9px;height:13px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0;background:${active?fc:'rgba(255,255,255,.1)'}"></span>`;
 }
 barHtml+='</div>';
 }
@@ -4573,10 +4391,12 @@ if(_usNoteL.memo||_usNoteL.link){
     onclick="event.stopPropagation()">${_usNoteL.link}</a></div>`;
   h+=`</div>`;
 }
-h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
-h+=`<span class="sector-count">${sec.stocks.length} 종목</span>`;
+h+=`<div class="sector-card-meta" style="padding:4px 12px 2px;flex-direction:column;align-items:stretch;gap:2px">`;
+h+=`<div style="display:flex;align-items:center;gap:6px">${barHtml}${avgHtml}</div>`;
+h+=`<div style="display:flex;align-items:center;gap:4px;margin-top:1px">`;
+h+=`<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
 if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-h+=`${barHtml}${avgHtml}</div></div>`;
+h+=`</div></div></div>`;
 h+=`<div class="sector-stocks">`;
 sec.stocks.forEach((st,idx)=>{
 if(!st.name)return;
@@ -4947,7 +4767,7 @@ if(!S.usOk) loadUs().then(()=>renderUsList());
 else renderUsList();
 }
 else if(page==='admin')initAdminPage();
-document.querySelector('.main').scrollTo({top:0});
+(document.getElementById('mob-main')||document.querySelector('.main')||document.body).scrollTo({top:0});
 const fab=document.getElementById('fab-group');
 if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
 if(page!=='kr-list'&&page!=='us-list'){
@@ -5067,26 +4887,27 @@ if(_krNoteL.memo||_krNoteL.link){
     onclick="event.stopPropagation()">${_krNoteL.link}</a></div>`;
   h+=`</div>`;
 }
-const BAR_MAX=15, BARS=10;
+const BAR_MAX=15, BARS=5;
 let barHtml='';
 if(secAvg!==null){
 const filled=Math.round(Math.min(Math.abs(secAvg)/BAR_MAX,1)*BARS);
 const isUp=secAvg>=0;
 const filledColor=isUp?'#e53935':'#1e88e5';
 const emptyColor='rgba(255,255,255,.1)';
-const barStyle=`width:7px;height:12px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0`;
-barHtml='<div style="display:flex;align-items:center;margin-left:auto;gap:0">';
+const barStyle=`width:9px;height:13px;border-radius:2px;border:1px solid rgba(255,255,255,.12);display:inline-block;margin:0 1px;flex-shrink:0`;
+barHtml='<div style="display:flex;align-items:center;gap:0">';
 for(let i=0;i<BARS;i++){
 const active = isUp ? (i < filled) : (BARS-1-i < filled);
 barHtml+=`<span style="${barStyle};background:${active?filledColor:emptyColor}"></span>`;
 }
 barHtml+='</div>';
 }
-h+=`<div class="sector-card-meta" style="padding:5px 12px 7px">`;
-h+=`<span class="sector-count" style="font-size:10px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
+h+=`<div class="sector-card-meta" style="padding:4px 12px 2px;flex-direction:column;align-items:stretch;gap:2px">`;
+h+=`<div style="display:flex;align-items:center;gap:6px">${barHtml}${avgHtml}</div>`;
+h+=`<div style="display:flex;align-items:center;gap:4px;margin-top:1px">`;
+h+=`<span style="font-size:9px;color:var(--text-muted)">${sec.stocks.length} 종목</span>`;
 if(isWatched) h+=`<span class="watch-badge">⭐ 주목</span>`;
-h+=`${barHtml}`;
-h+=`${avgHtml}</div></div><div class="sector-stocks">`;
+h+=`</div></div></div><div class="sector-stocks">`;
 sec.stocks.forEach(s=>{
 const chg=useToday?s.chg:s.prevChg;
 let chgHtml='';
@@ -5564,6 +5385,18 @@ const US_WATCHED_KEY = 'us_watched_sectors_v1';
 let US_WATCHED_SECTORS = new Set(
   JSON.parse(localStorage.getItem(US_WATCHED_KEY)||'[]')
 );
+let usWatchedLoaded = US_WATCHED_SECTORS.size > 0;
+async function loadUsWatchedSectors(){
+  try{
+    const d = await api('us_watched_sectors', 0);
+    const fresh = new Set(d.sectors||[]);
+    const changed = fresh.size!==US_WATCHED_SECTORS.size||[...fresh].some(s=>!US_WATCHED_SECTORS.has(s));
+    US_WATCHED_SECTORS = fresh;
+    usWatchedLoaded = true;
+    localStorage.setItem(US_WATCHED_KEY, JSON.stringify(d.sectors||[]));
+    if(changed){ if(S.usOk) renderUs(); }
+  }catch(e){ usWatchedLoaded=true; }
+}
 function renderUsWatchSectorList(){
 const wrap=document.getElementById('us-watch-sector-list');
 if(!wrap)return;
@@ -5610,9 +5443,11 @@ if(el&&el.checked) selected.push(sec.sector);
 const btn=document.getElementById('us-watch-save-btn');
 btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중';
 try{
-// localStorage에 영구 저장 (새로고침해도 유지)
+// GAS ScriptProperties 저장 (기기 간 공유) + localStorage 캐시
+await adminPost('save_us_watched',{sectors:selected.join(',')});
 localStorage.setItem(US_WATCHED_KEY, JSON.stringify(selected));
 US_WATCHED_SECTORS=new Set(selected);
+usWatchedLoaded=true;
 // US History 표 & US List 즉시 갱신
 if(S.usOk) renderUs();
 if(S.usWatchL) renderUsList(listSorted);
@@ -6211,21 +6046,27 @@ renderUsList(listSorted);
 }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
 }
-let WATCHED_SECTORS = new Set();
-let watchedLoaded = false;
+const KR_WATCHED_KEY = 'kr_watched_sectors_v1';
+let WATCHED_SECTORS = new Set(
+  JSON.parse(localStorage.getItem(KR_WATCHED_KEY)||'[]')
+);
+let watchedLoaded = WATCHED_SECTORS.size > 0;
 async function loadWatchedSectors(){
-if(watchedLoaded) return;
 try{
 const d = await api('watched_sectors', 0);
-WATCHED_SECTORS = new Set(d.sectors||[]);
+const fresh = new Set(d.sectors||[]);
+const changed = fresh.size !== WATCHED_SECTORS.size ||
+  [...fresh].some(s => !WATCHED_SECTORS.has(s));
+WATCHED_SECTORS = fresh;
 watchedLoaded = true;
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(d.sectors||[]));
+if(changed){
+  if(S.krOk) renderKr();
+  if(S.usOk) renderUs();
+}
 }catch(e){
-WATCHED_SECTORS = new Set();
 watchedLoaded = true;
 }
-// ★ 주목 섹터 로드 후 현재 페이지 재렌더 (헤더 별표 표시)
-if(S.krOk) renderKr();
-if(S.usOk) renderUs();
 }
 function renderWatchSectorList(){
 const wrap=document.getElementById('watch-sector-list');
@@ -6276,6 +6117,7 @@ btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>저장 중'
 try{
 await adminPost('save_watched',{sectors:selected.join(',')});
 WATCHED_SECTORS=new Set(selected);
+localStorage.setItem(KR_WATCHED_KEY, JSON.stringify(selected));
 S.krLoaded=false; S.krListAt=0; // 주목 섹터 변경 → 다음 kr-list 진입 시 갱신
 const msg=document.getElementById('watch-save-msg');
 msg.textContent='✅ 저장 완료! ('+selected.length+'개 섹터)';
@@ -6287,13 +6129,15 @@ alert('❌ 저장 실패: '+e.message);
 }
 btn.disabled=false; btn.innerHTML='💾 저장';
 }
-document.querySelector('.main').addEventListener('scroll',()=>{
-document.getElementById('scrollTop').classList.toggle('visible',document.querySelector('.main').scrollTop>200);
+document.getElementById('mob-main').addEventListener('scroll',()=>{
+const _st=document.getElementById('scrollTop');const _mm=document.getElementById('mob-main');if(_st&&_mm)_st.classList.toggle('visible',_mm.scrollTop>200);
 });
 
-go('kr-history',document.getElementById('nav-kr-history'));
+go('kr-history', null);
+localStorage.removeItem('preferPC'); // 모바일 페이지 진입 시 preferPC 초기화
 if(!IS_DEMO) fetch(GAS_WEBAPP_URL+'?type=visit_hit').catch(()=>{});
 if(!IS_DEMO) loadWatchedSectors();
+if(!IS_DEMO) loadUsWatchedSectors();
 (function(){
 const STORAGE_KEY = 'sidebarPinned';
 const SIDEBAR_KEY = 'sidebarOpen';
@@ -6505,170 +6349,82 @@ tooltip.style.top=Math.round(y-h)+'px';
 
 
 </script>
-
-<!-- 섹터 종목 팝업 -->
-<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
-
-<!-- F&G 전용 팝업 -->
-<div id="fng-popup">
-  <div id="fng-popup-header">
-    <span style="font-size:16px">😱🤑</span>
-    <span id="fng-popup-title">공포탐욕지수 (F&G)</span>
-    <span style="font-size:9px;color:#b0a0c0;font-family:var(--font-mono);background:rgba(255,255,255,.06);border-radius:3px;padding:1px 6px;margin-left:4px" title="F&G 지수는 장 마감 후 확정값이 기록됩니다. 당일 장중에는 전일 확정값이 표시됩니다.">확정값 기준</span>
-    <button id="fng-popup-close" onclick="closeFnGPopup()">✕</button>
-  </div>
-  <div id="fng-popup-body" style="flex:1"></div>
-</div>
-
-<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
-<div id="sector-popup-overlay">
-  <div id="sector-popup">
-    <div id="sector-popup-header">
-      <span id="sector-popup-flag">🇰🇷</span>
-      <span id="sector-popup-title">섹터명</span>
-      <span id="sector-popup-avg"></span>
-      <button id="sector-popup-close" onclick="closeSectorPopup()">✕</button>
-    </div>
-    <div id="sector-popup-body">
-      <div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
-    </div>
-  </div>
-</div>
 <script>
-// 최고/최저 섹터 stat 클릭 이벤트 위임
-document.addEventListener('click', function(e) {
-  const el = e.target.closest('.sp-stat-click');
-  if (!el) return;
-  const sector  = el.getAttribute('data-sector');
-  const market  = el.getAttribute('data-market') || '';
-  const isPrev  = el.getAttribute('data-isprev') === '1';
-  const prevDate= el.getAttribute('data-date') || '';
-  const isKr    = market === 'us' ? false : true;
-  if (sector) openSectorPopup(sector, isKr, isPrev ? prevDate : '');
-});
-// 랭킹 바 차트 클릭 이벤트 위임
-document.addEventListener('click', function(e) {
-  const el = e.target.closest('.rank-bar-row[data-sector]');
-  if (!el) return;
-  const sector = el.getAttribute('data-sector');
-  if (!sector) return;
-  // US 페이지에서는 isKr=false, KR 페이지에서는 isKr=true
-  const isUsPage = document.getElementById('page-us-history') && document.getElementById('page-us-history').style.display !== 'none';
-  openSectorPopup(sector, !isUsPage);
-});
-</script>
-
-<script>
-// ═══════════════════════════════════════════════════════
-//  커스텀 가로 스크롤바 — KR / US 히스토리 테이블
-// ═══════════════════════════════════════════════════════
+// ── 모바일 전용 스크롤탑 버튼 ──
 (function(){
-  function initHScroll(tableId, thumbId, trackId){
-    var table = document.getElementById(tableId);
-    var thumb = document.getElementById(thumbId);
-    var track = document.getElementById(trackId);
-    if(!table||!thumb||!track) return;
-
-    function updateThumb(){
-      var trackW  = track.offsetWidth;
-      var scrollW = table.scrollWidth;
-      var clientW = table.clientWidth;
-      if(scrollW <= clientW){
-        thumb.style.display='none'; return;
-      }
-      thumb.style.display='';
-      var ratio    = clientW / scrollW;
-      var thumbW   = Math.max(36, trackW * ratio);
-      var maxLeft  = trackW - thumbW;
-      var scrollRatio = table.scrollLeft / (scrollW - clientW);
-      thumb.style.width  = thumbW + 'px';
-      thumb.style.left   = (scrollRatio * maxLeft) + 'px';
-    }
-
-    // 테이블 스크롤 → thumb 위치 동기화
-    table.addEventListener('scroll', updateThumb);
-
-    // thumb 드래그 → 테이블 스크롤
-    var dragging=false, startX=0, startLeft=0;
-    thumb.addEventListener('mousedown', function(e){
-      dragging=true;
-      startX=e.clientX;
-      startLeft=parseFloat(thumb.style.left)||0;
-      e.preventDefault();
-    });
-    document.addEventListener('mousemove', function(e){
-      if(!dragging) return;
-      var trackW  = track.offsetWidth;
-      var thumbW  = thumb.offsetWidth;
-      var maxLeft = trackW - thumbW;
-      var newLeft = Math.max(0, Math.min(maxLeft, startLeft + (e.clientX - startX)));
-      thumb.style.left = newLeft + 'px';
-      var scrollW = table.scrollWidth;
-      var clientW = table.clientWidth;
-      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
-    });
-    document.addEventListener('mouseup', function(){ dragging=false; });
-
-    // 터치 지원
-    thumb.addEventListener('touchstart', function(e){
-      dragging=true;
-      startX=e.touches[0].clientX;
-      startLeft=parseFloat(thumb.style.left)||0;
-      e.preventDefault();
-    },{passive:false});
-    document.addEventListener('touchmove', function(e){
-      if(!dragging) return;
-      var trackW  = track.offsetWidth;
-      var thumbW  = thumb.offsetWidth;
-      var maxLeft = trackW - thumbW;
-      var newLeft = Math.max(0, Math.min(maxLeft, startLeft + (e.touches[0].clientX - startX)));
-      thumb.style.left = newLeft + 'px';
-      var scrollW = table.scrollWidth;
-      var clientW = table.clientWidth;
-      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
-    },{passive:false});
-    document.addEventListener('touchend', function(){ dragging=false; });
-
-    // 트랙 클릭 → 해당 위치로 이동
-    track.addEventListener('click', function(e){
-      if(e.target===thumb||thumb.contains(e.target)) return;
-      var rect    = track.getBoundingClientRect();
-      var clickX  = e.clientX - rect.left;
-      var trackW  = track.offsetWidth;
-      var thumbW  = thumb.offsetWidth;
-      var maxLeft = trackW - thumbW;
-      var newLeft = Math.max(0, Math.min(maxLeft, clickX - thumbW/2));
-      thumb.style.left = newLeft + 'px';
-      var scrollW = table.scrollWidth;
-      var clientW = table.clientWidth;
-      table.scrollLeft = (newLeft / maxLeft) * (scrollW - clientW);
-    });
-
-    // MutationObserver: 테이블 내용 변경 시 thumb 재계산
-    var mo = new MutationObserver(function(){ setTimeout(updateThumb, 80); });
-    mo.observe(table, {childList:true, subtree:false});
-    // ResizeObserver: 창 크기 변경 시 재계산
-    if(window.ResizeObserver){
-      new ResizeObserver(updateThumb).observe(table);
-    }
-    window.addEventListener('resize', updateThumb);
-    setTimeout(updateThumb, 300);
-  }
-
-  // 페이지 로드 완료 후 초기화
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      initHScroll('kr-table','kr-hscroll-thumb','kr-hscroll-track');
-      initHScroll('us-table','us-hscroll-thumb','us-hscroll-track');
-    }, 500);
+  const main = document.getElementById('mob-main');
+  const btn = document.getElementById('scrollTop');
+  if(!main || !btn) return;
+  main.addEventListener('scroll', function(){
+    btn.classList.toggle('visible', main.scrollTop > 300);
   });
-
-  // renderKr/renderUs 후에도 재초기화 (내용 바뀌면 scrollWidth 변동)
-  var _origRenderKrTableOnly = window.renderKrTableOnly;
-  var _origRenderUsTableOnly = window.renderUsTableOnly;
-  // MutationObserver가 처리하므로 별도 후킹 불필요
 })();
-</script>
 
+// ── 모바일 전용 go() 오버라이드 ──
+(function(){
+  const _orig = window.go;
+  window.go = function(page, el) {
+    // 원본 함수 내부의 페이지 전환 로직 재구현 (사이드바 없음)
+    (window.PAGES||['kr-history','kr-list','us-history','us-list','about','admin']).forEach(function(p){
+      const e = document.getElementById('page-'+p);
+      if(e) e.style.display = 'none';
+    });
+    const pe = document.getElementById('page-'+page);
+    if(pe) pe.style.display = 'block';
+
+    // 탭 활성화
+    document.querySelectorAll('.mob-tab').forEach(function(t){
+      t.classList.remove('active','kr-active','us-active');
+    });
+    const tabMap = {
+      'kr-history':'tab-kr','kr-list':'tab-kr-list',
+      'us-history':'tab-us','us-list':'tab-us-list','about':'tab-about'
+    };
+    const tabId = tabMap[page];
+    if(tabId){
+      const tab = document.getElementById(tabId);
+      if(tab){
+        tab.classList.add('active');
+        tab.classList.add(page.startsWith('us') ? 'us-active' : 'kr-active');
+      }
+    }
+
+    // 데이터 로드
+    if(page==='kr-history') loadKr();
+    else if(page==='us-history') loadUs();
+    else if(page==='kr-list'){
+      if(!window.S||!S.krToday) {
+        try { api('kr_today',0).then(function(d){S.krToday=d;updateRealtimeTime();if(typeof renderKrListFiltered==='function')renderKrListFiltered();}).catch(function(){}); } catch(e) {}
+      }
+      if(typeof loadKrList==='function') loadKrList();
+    }
+    else if(page==='us-list'){
+      if(!window.S||!S.usOk){ if(typeof loadUs==='function') loadUs().then(function(){ if(typeof renderUsList==='function') renderUsList(); }); }
+      else if(typeof renderUsList==='function') renderUsList();
+    }
+
+    // 스크롤 탑
+    const main = document.getElementById('mob-main');
+    if(main) main.scrollTo({top:0});
+
+    // FAB
+    const fab = document.getElementById('fab-group');
+    if(fab) fab.classList.toggle('visible', page==='kr-list'||page==='us-list');
+    if(page!=='kr-list'&&page!=='us-list'){
+      if(typeof listSorted!=='undefined') { listSorted=false; }
+      if(typeof watchedOnly!=='undefined') { watchedOnly=false; }
+      if(typeof rateSort!=='undefined') { rateSort=0; }
+      ['fab-sort','fab-watch'].forEach(function(id){
+        const b=document.getElementById(id);if(b)b.classList.remove('active');
+      });
+      const rb=document.getElementById('fab-rate-sort');
+      if(rb) rb.classList.remove('active');
+    }
+  };
+})();
+
+// 초기 페이지 → KR History
+go('kr-history', null);
+</script>
 </body>
 </html>
