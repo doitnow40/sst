@@ -6615,5 +6615,33 @@ tooltip.style.top=Math.round(y-h)+'px';
 // 초기 페이지 → KR History
 go('kr-history', null);
 </script>
+
+<!-- 섹터 종목 팝업 -->
+<div id="sector-popup-backdrop" onclick="closeSectorPopup();closeFnGPopup()"></div>
+
+<!-- F&G 전용 팝업 -->
+<div id="fng-popup">
+  <div id="fng-popup-header">
+    <span style="font-size:16px">😱🤑</span>
+    <span id="fng-popup-title">공포탐욕지수 (F&G)</span>
+    <span style="font-size:9px;color:#b0a0c0;font-family:var(--font-mono);background:rgba(255,255,255,.06);border-radius:3px;padding:1px 6px;margin-left:4px" title="F&G 지수는 장 마감 후 확정값이 기록됩니다. 당일 장중에는 전일 확정값이 표시됩니다.">확정값 기준</span>
+    <button id="fng-popup-close" onclick="closeFnGPopup()">✕</button>
+  </div>
+  <div id="fng-popup-body" style="flex:1"></div>
+</div>
+
+<div id="sector-popup-overlay">
+  <div id="sector-popup">
+    <div id="sector-popup-header">
+      <span id="sector-popup-flag">🇰🇷</span>
+      <span id="sector-popup-title">섹터명</span>
+      <span id="sector-popup-avg"></span>
+      <button id="sector-popup-close" onclick="closeSectorPopup()">✕</button>
+    </div>
+    <div id="sector-popup-body">
+      <div class="loading-state" style="padding:30px"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
