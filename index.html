@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
 <script>
-// ★ 모바일 접속 시 /mobile/ 로 자동 리다이렉트
 (function(){
   var ua = navigator.userAgent || '';
   if (/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
@@ -1171,7 +1170,7 @@ function _renderStockItem(st, useChg, isKr) {
     const nUrl=_naverStockUrl(st.ticker||'','');
     if(nUrl) nameAttr=` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="네이버 증권에서 보기"`;
   }
-  return `<div class="stock-item">${yIcon}<span class="stock-name"${nameAttr} style="flex:1;min-width:0">${st.name}</span>${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};flex-shrink:0">${chgStr}</span></div>`;
+  return `<div class="stock-item" style="gap:0">${yIcon?'<span style="margin-right:4px;flex-shrink:0">'+yIcon+'</span>':''}<span class="stock-name"${nameAttr} style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.name}</span><span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;padding-left:6px">${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};min-width:50px;text-align:right">${chgStr}</span></span></div>`;
 }
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
@@ -1210,6 +1209,8 @@ function closeSectorPopup() {
   popup.classList.remove('open');
   backdrop.classList.remove('active');
   document.removeEventListener('keydown', _popupEscHandler);
+  const _hdrEl = document.getElementById('sector-popup-header');
+  if (_hdrEl) { _hdrEl.style.background = ''; _hdrEl.style.borderBottomColor = ''; }
 }
 
 // ══════════════════════════════════════════════════
@@ -1258,24 +1259,6 @@ function closeFnGPopup() {
 }
 
 function _fngEscHandler(e) { if (e.key === 'Escape') closeFnGPopup(); }
-
-function _fngLabel(score) {
-  if (score === null || isNaN(score)) return { label:'--', color:'#8a9ab5' };
-  if (score <= 24)  return { label:'극단적 공포', color:'#1565C0' };
-  if (score <= 44)  return { label:'공포',        color:'#42a5f5' };
-  if (score <= 54)  return { label:'중립',         color:'#8a9ab5' };
-  if (score <= 74)  return { label:'탐욕',         color:'#ef5350' };
-  return              { label:'극단적 탐욕',       color:'#b71c1c' };
-}
-
-function _fngGaugeColor(score) {
-  if (score === null || isNaN(score)) return '#8a9ab5';
-  if (score <= 24)  return '#1565C0';
-  if (score <= 44)  return '#42a5f5';
-  if (score <= 54)  return '#78909C';
-  if (score <= 74)  return '#ef5350';
-  return '#b71c1c';
-}
 
 function _renderFnGPopup(score, history, latestDate) {
   const info  = _fngLabel(score);
@@ -1407,7 +1390,6 @@ function _renderFnGPopup(score, history, latestDate) {
   document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml;
 }
 
-function _fngEscHandler(e) { if (e.key === 'Escape') closeFnGPopup(); }
 
 // ★ 하이일드 스프레드 팝업
 // ══════════════════════════════════════════════════════════════════════
@@ -6336,9 +6318,9 @@ alert('❌ 저장 실패: '+e.message);
 }
 btn.disabled=false; btn.innerHTML='💾 저장';
 }
-(function(){const _mm=document.getElementById('mob-main');if(_mm)_mm.addEventListener('scroll',()=>{
-const _st=document.getElementById('scrollTop');if(_st)_st.classList.toggle('visible',_mm.scrollTop>200);
-});})();
+document.getElementById('mob-main').addEventListener('scroll',()=>{
+const _st=document.getElementById('scrollTop');const _mm=document.getElementById('mob-main');if(_st&&_mm)_st.classList.toggle('visible',_mm.scrollTop>200);
+});
 
 go('kr-history', null);
 localStorage.removeItem('preferPC'); // 모바일 페이지 진입 시 preferPC 초기화
@@ -6635,4 +6617,3 @@ go('kr-history', null);
 </script>
 </body>
 </html>
- 
