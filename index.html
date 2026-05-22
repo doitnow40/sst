@@ -1227,6 +1227,12 @@ function openFnGPopup() {
   const backdrop = document.getElementById('sector-popup-backdrop');
   if (!popup) return;
 
+  // 타이틀·헤더 배경을 F&G용으로 명시 설정 (HY/VIX 팝업 사용 후 오염 방지)
+  const titleEl = document.getElementById('fng-popup-title');
+  if (titleEl) titleEl.textContent = '공포탐욕지수 (F&G)';
+  const hdrEl = document.getElementById('fng-popup-header');
+  if (hdrEl) hdrEl.style.background = 'linear-gradient(90deg,#2a1a35,#1a1a2e)';
+
   // 게이지 렌더
   _renderFnGPopup(todayScore, history, latestDate);
   popup.classList.add('open');
