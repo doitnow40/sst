@@ -2128,7 +2128,8 @@ function yldCell(v, sectorName){
   else if(sectorName==='단기채권'||sectorName==='ShortBond') zones=_shortBondZones();
   else zones=_longBondZones(); // 장기채권(기본)
   const {rgb,zi}=_zoneBg(Math.max(n,0),zones);
-  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(3)};
+  const decimals=(sectorName==='하이일드'||sectorName==='HiYield')?2:3;
+  return{bg:hex(rgb[0],rgb[1],rgb[2]),fg:_bondFg(zi),b:(zi>=3),t:n.toFixed(decimals)};
 }
 
 // ── VIX 색상 ────────────────────────────────────────────────────
@@ -2738,7 +2739,7 @@ var ust2V=ust2Idx>=0?parseFloat(lt[ust2Idx]):NaN;
 var hygV=hygIdx>=0?parseFloat(lt[hygIdx]):NaN;
 var tnxFmt=isNaN(tnxV)?'-':tnxV.toFixed(3)+'%';
 var ust2Fmt=isNaN(ust2V)?'-':ust2V.toFixed(3)+'%';
-var hygFmt=isNaN(hygV)?'-':hygV.toFixed(3)+'%';
+var hygFmt=isNaN(hygV)?'-':hygV.toFixed(2)+'%';
 var hygC=isNaN(hygV)?'var(--text-muted)':hygV>=4?'#ef5350':hygV>=3?'#ffa726':'#66bb6a';
 var vxFmt=isNaN(vx)?'-':vx.toFixed(2);
 var vxC=isNaN(vx)?'var(--text-muted)':vx<20?'#66bb6a':vx<30?'#ffa726':'#ef5350';
@@ -2760,7 +2761,7 @@ var vxFmtT=isNaN(vxT)?'-':vxT.toFixed(2);
 var vxCT=isNaN(vxT)?'var(--text-muted)':vxT<20?'#66bb6a':vxT<30?'#ffa726':'#ef5350';
 var tnxFmtT=isNaN(tnxT)?'-':tnxT.toFixed(3)+'%';
 var ust2FmtT=isNaN(ust2T)?'-':ust2T.toFixed(3)+'%';
-var hygFmtT=isNaN(hygT)?'-':hygT.toFixed(3)+'%';
+var hygFmtT=isNaN(hygT)?'-':hygT.toFixed(2)+'%';
 var hygCT=isNaN(hygT)?'var(--text-muted)':hygT>=4?'#ef5350':hygT>=3?'#ffa726':'#66bb6a';
 var hasToday=!!(ltToday&&usTdD&&ltToday!==lt); // rows[0]≠rows[1]일 때만 오늘 박스 표시
 var _usTEx=US_STATS_EXCLUDE;
@@ -2779,10 +2780,10 @@ document.getElementById('us-stats').innerHTML=
 +'<div style="display:flex;gap:6px">'
 +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">S&P500</div><div class="stat-val '+(spUpT?'up':'dn')+'">'+(isNaN(spT)?'-':(spT>=0?'+':'')+spT.toFixed(2)+'%')+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">Nasdaq</div><div class="stat-val '+(nqUpT?'up':'dn')+'">'+(isNaN(nqT)?'-':(nqT>=0?'+':'')+nqT.toFixed(2)+'%')+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">VIX</div><div class="stat-val" style="color:'+vxCT+'">'+vxFmtT+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b2+';cursor:pointer" onclick="openVIXPopup()" title="VIX 변동성 지수 보기"><div class="stat-label">VIX</div><div class="stat-val" style="color:'+vxCT+'">'+vxFmtT+'</div></div>'
++'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04);cursor:pointer" onclick="openHYPopup()" title="하이일드 스프레드 보기"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygCT+'">'+hygFmtT+'</div><div class="stat-sub">신용위험</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmtT+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2FmtT+'</div><div class="stat-sub">수익률</div></div>'
-+'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">HY스프레드</div><div class="stat-val" style="color:'+hygCT+'">'+hygFmtT+'</div><div class="stat-sub">신용위험</div></div>'
 +'</div></div>':'')
 // ── 박스2: 최근 영업일
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
