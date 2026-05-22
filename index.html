@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>
+// ★ 모바일 접속 시 /mobile/ 로 자동 리다이렉트
+(function(){
+  var ua = navigator.userAgent || '';
+  if (/Mobi|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+    if (window.location.pathname.indexOf('/mobile') !== -1) return;
+    if (localStorage.getItem('preferPC') === 'true') return;
+    window.location.replace('/mobile/' + window.location.search + window.location.hash);
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stock Sector Tracker Map | 한국·미국 섹터 등락률 트래커</title>
