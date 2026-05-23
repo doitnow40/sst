@@ -528,9 +528,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       </div>
     </div>
     <div id="kr-list"><div class="loading-state"><div class="spinner"></div><div>로딩 중...</div></div></div>
-    <div class="adfit-btm-wrap">
-      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-rz27HmToRjCbbDhp" data-ad-width="320" data-ad-height="50"></ins>
-    </div>
   </div>
 
   <!-- ===== US History ===== -->
@@ -628,7 +625,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       </div>
     </div>
     <div id="adfit-us-btm" class="adfit-btm-wrap">
-      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-Wuz4huPlmeSwaIMp" data-ad-width="320" data-ad-height="50"></ins>
+      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-M6Zo1LmAhvRMTc9R" data-ad-width="320" data-ad-height="50"></ins>
     </div>
   </div>
 
@@ -651,9 +648,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       </div>
     </div>
     <div id="us-list"></div>
-    <div class="adfit-btm-wrap">
-      <ins class="kakao_ad_area" style="display:none;" data-ad-unit="DAN-mz3BhP2CpqoseqVV" data-ad-width="320" data-ad-height="50"></ins>
-    </div>
   </div>
 
   <!-- ===== About ===== -->
@@ -1236,11 +1230,11 @@ function _renderFnGPopup(score, history, latestDate) {
         (r.range==='55 ~ 74'  && score>54 && score<=74) ||
         (r.range==='75 ~ 100' && score>74)
       );
-      return \`<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;\${isActive?'background:rgba(255,255,255,0.06);border:1px solid '+r.dot+'44;':'border:1px solid transparent'}">
-        <span style="width:9px;height:9px;border-radius:50%;background:\${r.dot};flex-shrink:0;\${isActive?'box-shadow:0 0 6px '+r.dot:''}"></span>
-        <span style="font-size:10px;color:\${isActive?r.color:'var(--text-muted)'};font-weight:\${isActive?'700':'400'}">\${r.range} <span style="color:var(--text-secondary)">(\${r.label})</span></span>
-        \${isActive?'<span style="margin-left:auto;font-size:9px;color:'+r.color+';font-weight:700">◀ 현재</span>':''}
-      </div>\`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;${isActive?'background:rgba(255,255,255,0.06);border:1px solid '+r.dot+'44;':'border:1px solid transparent'}">
+        <span style="width:9px;height:9px;border-radius:50%;background:${r.dot};flex-shrink:0;${isActive?'box-shadow:0 0 6px '+r.dot:''}"></span>
+        <span style="font-size:10px;color:${isActive?r.color:'var(--text-muted)'};font-weight:${isActive?'700':'400'}">${r.range} <span style="color:var(--text-secondary)">(${r.label})</span></span>
+        ${isActive?'<span style="margin-left:auto;font-size:9px;color:'+r.color+';font-weight:700">◀ 현재</span>':''}
+      </div>`;
     }).join('')}
   </div>`;
 
@@ -1254,14 +1248,14 @@ function _renderFnGPopup(score, history, latestDate) {
         const c = _fngGaugeColor(r.score);
         const lbl = _fngLabel(r.score);
         const barW = Math.round(r.score);
-        return \`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.2)">
-          <span style="font-size:9px;color:var(--text-muted);width:72px;flex-shrink:0">\${r.date}</span>
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.2)">
+          <span style="font-size:9px;color:var(--text-muted);width:72px;flex-shrink:0">${r.date}</span>
           <div style="flex:1;height:10px;background:#1e2535;border-radius:4px;overflow:hidden">
-            <div style="width:\${barW}%;height:100%;background:\${c};border-radius:4px;opacity:.8"></div>
+            <div style="width:${barW}%;height:100%;background:${c};border-radius:4px;opacity:.8"></div>
           </div>
-          <span style="font-size:10px;font-weight:700;color:\${c};width:24px;text-align:right">\${Math.round(r.score)}</span>
-          <span style="font-size:9px;color:\${c};width:52px">\${lbl.label}</span>
-        </div>\`;
+          <span style="font-size:10px;font-weight:700;color:${c};width:24px;text-align:right">${Math.round(r.score)}</span>
+          <span style="font-size:9px;color:${c};width:52px">${lbl.label}</span>
+        </div>`;
       }).join('')}
     </div>`;
   }
