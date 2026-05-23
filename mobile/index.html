@@ -4844,7 +4844,10 @@ if(usList) renderUsList(listSorted);
 }, AUTO_REFRESH_MS);
 const PAGES=['kr-history','kr-list','us-history','us-list','about','admin'];
 // ── 카카오 Adfit: SPA 페이지 전환 시 <ins> 태그 재주입으로 광고 재초기화 ──
+const _adfitDone = {};
 function reinitAdfit(pageId){
+  if(_adfitDone[pageId]) return;
+  _adfitDone[pageId] = true;
   var page=document.getElementById('page-'+pageId);
   if(!page)return;
   page.querySelectorAll('ins.kakao_ad_area').forEach(function(ins){
