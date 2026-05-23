@@ -6490,8 +6490,7 @@ tooltip.style.top=Math.round(y-h)+'px';
     });
     const pe = document.getElementById('page-'+page);
     if(pe) pe.style.display = 'block';
-
-    // 탭 활성화
+    reinitAdfit(page);
     document.querySelectorAll('.mob-tab').forEach(function(t){
       t.classList.remove('active','kr-active','us-active');
     });
