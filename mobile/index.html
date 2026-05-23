@@ -13,7 +13,6 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3PTKMRYZZ3"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-3PTKMRYZZ3');</script>
 <style>
-  
 :root {
   --bg-darkest:#0f1117;
   --bg-dark:#161b27;
@@ -1160,6 +1159,116 @@ function closeSectorPopup() {
 // ══════════════════════════════════════════════════
 //  공포탐욕지수 (F&G) 전용 팝업
 // ══════════════════════════════════════════════════
+function _fngLabel(score) {
+  if (score === null || isNaN(score)) return { label:'--', color:'#8a9ab5' };
+  if (score <= 24)  return { label:'극단적 공포', color:'#1565C0' };
+  if (score <= 44)  return { label:'공포',        color:'#42a5f5' };
+  if (score <= 54)  return { label:'중립',         color:'#8a9ab5' };
+  if (score <= 74)  return { label:'탐욕',         color:'#ef5350' };
+  return              { label:'극단적 탐욕',       color:'#b71c1c' };
+}
+
+function _fngGaugeColor(score) {
+  if (score === null || isNaN(score)) return '#8a9ab5';
+  if (score <= 24)  return '#1565C0';
+  if (score <= 44)  return '#42a5f5';
+  if (score <= 54)  return '#78909C';
+  if (score <= 74)  return '#ef5350';
+  return '#b71c1c';
+}
+
+function _renderFnGPopup(score, history, latestDate) {
+  const info  = _fngLabel(score);
+  const color = _fngGaugeColor(score);
+  const NEEDLE_R = 70;
+  const s = (score !== null && !isNaN(score)) ? Math.max(0, Math.min(100, score)) : 0;
+  const angleRad = (1 - s / 100) * Math.PI;
+  const nx = Math.cos(angleRad) * NEEDLE_R;
+  const ny = -Math.sin(angleRad) * NEEDLE_R;
+
+  const gaugeHtml = `
+  <div style="text-align:center;padding:24px 0 10px">
+    <div style="font-size:9px;color:var(--accent-kr);font-family:var(--font-mono);margin-bottom:6px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);border-radius:4px;padding:2px 8px;display:inline-block">${latestDate?latestDate+' 기준 (확정값)':'-- 기준'}</div>
+    <div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px">코스피 · KOSDAQ</div>
+    <div style="position:relative;width:200px;height:110px;margin:0 auto">
+      <svg viewBox="0 0 200 105" width="200" height="105" style="overflow:visible">
+        <defs>
+          <linearGradient id="fngGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"    stop-color="#1565C0"/>
+            <stop offset="25%"   stop-color="#42a5f5"/>
+            <stop offset="50%"   stop-color="#90A4AE"/>
+            <stop offset="75%"   stop-color="#EF9A9A"/>
+            <stop offset="100%"  stop-color="#B71C1C"/>
+          </linearGradient>
+        </defs>
+        <path d="M16,100 A84,84 0 0,1 184,100" fill="none" stroke="#1e2535" stroke-width="16" stroke-linecap="round"/>
+        <path d="M16,100 A84,84 0 0,1 184,100" fill="none" stroke="url(#fngGrad2)" stroke-width="16" stroke-linecap="round" opacity="0.3"/>
+        <path d="M16,100 A84,84 0 0,1 184,100" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="${s} 100" opacity="0.9"/>
+        <line x1="100" y1="100" x2="${(100+nx).toFixed(1)}" y2="${(100+ny).toFixed(1)}" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
+        <circle cx="100" cy="100" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.95"/>
+        <text x="10"  y="99" font-size="9" fill="#42a5f5"  text-anchor="middle" opacity="0.8">0</text>
+        <text x="45"  y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">25</text>
+        <text x="100" y="12" font-size="9" fill="#90A4AE"  text-anchor="middle" opacity="0.8">50</text>
+        <text x="155" y="28" font-size="9" fill="#8a9ab5"  text-anchor="middle" opacity="0.8">75</text>
+        <text x="190" y="99" font-size="9" fill="#EF5350"  text-anchor="middle" opacity="0.8">100</text>
+      </svg>
+      <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap">
+        <div style="font-size:34px;font-weight:700;color:${color};line-height:1;font-family:var(--font-mono)">${score !== null ? Math.round(score) : '--'}</div>
+        <div style="font-size:12px;font-weight:600;color:${color};margin-top:3px">${info.label}</div>
+      </div>
+    </div>
+  </div>`;
+
+  const rangeHtml = `
+  <div style="padding:0 14px 10px">
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 구간 기준 —</div>
+    ${[
+      { range:'0 ~ 24',   label:'극단적 공포', color:'#1565C0', dot:'#1565C0' },
+      { range:'25 ~ 44',  label:'공포',         color:'#42a5f5', dot:'#42a5f5' },
+      { range:'45 ~ 54',  label:'중립',          color:'#78909C', dot:'#78909C' },
+      { range:'55 ~ 74',  label:'탐욕',          color:'#ef5350', dot:'#ef5350' },
+      { range:'75 ~ 100', label:'극단적 탐욕',  color:'#b71c1c', dot:'#b71c1c' },
+    ].map(r => {
+      const isActive = score !== null && (
+        (r.range==='0 ~ 24'   && score<=24) ||
+        (r.range==='25 ~ 44'  && score>24 && score<=44) ||
+        (r.range==='45 ~ 54'  && score>44 && score<=54) ||
+        (r.range==='55 ~ 74'  && score>54 && score<=74) ||
+        (r.range==='75 ~ 100' && score>74)
+      );
+      return \`<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;\${isActive?'background:rgba(255,255,255,0.06);border:1px solid '+r.dot+'44;':'border:1px solid transparent'}">
+        <span style="width:9px;height:9px;border-radius:50%;background:\${r.dot};flex-shrink:0;\${isActive?'box-shadow:0 0 6px '+r.dot:''}"></span>
+        <span style="font-size:10px;color:\${isActive?r.color:'var(--text-muted)'};font-weight:\${isActive?'700':'400'}">\${r.range} <span style="color:var(--text-secondary)">(\${r.label})</span></span>
+        \${isActive?'<span style="margin-left:auto;font-size:9px;color:'+r.color+';font-weight:700">◀ 현재</span>':''}
+      </div>\`;
+    }).join('')}
+  </div>`;
+
+  let histHtml = '';
+  if (history.length > 0) {
+    const recent = history.slice(0, 7);
+    histHtml = `
+    <div style="padding:0 14px 14px">
+      <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;text-align:center">— 최근 추이 —</div>
+      ${recent.map(r => {
+        const c = _fngGaugeColor(r.score);
+        const lbl = _fngLabel(r.score);
+        const barW = Math.round(r.score);
+        return \`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(46,58,80,.2)">
+          <span style="font-size:9px;color:var(--text-muted);width:72px;flex-shrink:0">\${r.date}</span>
+          <div style="flex:1;height:10px;background:#1e2535;border-radius:4px;overflow:hidden">
+            <div style="width:\${barW}%;height:100%;background:\${c};border-radius:4px;opacity:.8"></div>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:\${c};width:24px;text-align:right">\${Math.round(r.score)}</span>
+          <span style="font-size:9px;color:\${c};width:52px">\${lbl.label}</span>
+        </div>\`;
+      }).join('')}
+    </div>`;
+  }
+
+  document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml;
+}
+
 function openFnGPopup() {
   // F&G 값 소스: krD.rows 에서 F&G 헤더 인덱스로 직접 추출
   // (krToday.sectors 에는 F&G가 포함되지 않음 — majorIndex/sector가 아닌 별도 컬럼)
@@ -4748,7 +4857,7 @@ function reinitAdfit(pageId){
     ins.parentNode.replaceChild(clone,ins);
     var sc=document.createElement('script');
     sc.type='text/javascript';
-    sc.src='//t1.daumcdn.net/kas/static/ba.min.js';
+    sc.src='//t1.kakaocdn.net/kas/static/ba.min.js';
     clone.parentNode.insertBefore(sc,clone.nextSibling);
   });
 }
