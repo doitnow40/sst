@@ -2164,10 +2164,10 @@ return pctCell(val,15);
 return pctCell(val,15);
 }
 function usCell(name,val){
-const m=US_META[name];if(!m)return pctCell(val,6);
+const m=US_META[name];if(!m)return pctCell(val,15);
 if(m.type==='YIELD') return yldCell(val,name);
 if(m.type==='VIX')   return vixCell(val);
-return pctCell(val,6);
+return pctCell(val,15);
 }
 async function api(type,range,forceRefresh,extraParams){
 // ★ kr_today / us_watch_today → Cloudflare Worker (KV) 우선 호출
