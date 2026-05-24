@@ -11,7 +11,6 @@
     window.location.replace('/mobile/' + window.location.search + window.location.hash);
   }
 })();
-  
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -520,14 +519,15 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 · <strong>주요지수</strong>: S&P500, Nasdaq, 다우존스, 러셀2000 등 주요 지수 등락률 및 VIX(공포지수), 달러<br>
 · <strong>GICS섹터</strong>: SPDR ETF 기반 11개 섹터 (IT, 헬스케어, 금융, 임의소비재, 산업재, 통신서비스, 필수소비재, 에너지, 유틸리티, 부동산, 소재)<br>
 · <strong>테마ETF</strong>: 반도체, 소프트웨어, AI/로봇, 바이오, 방산, 클린에너지 등 테마별 ETF<br>
-· <strong>채권·달러</strong>: 장기채권(TLT, 만기 20년 이상), 단기채권(SHY, 만기 1~3년), 하이일드채권(HYG), 달러인덱스 — 모두 ETF 가격 등락률로 표시<br><br>
+· <strong>채권·달러</strong>: 장기채권(10년물 수익률 절대값), 단기채권(2년물 수익률 절대값), 하이일드(신용 스프레드 절대값), 달러인덱스 — ETF 등락률이 아닌 절대 수치로 표시<br><br>
 <strong>채권 금리 표시 방식</strong><br>
 <strong>히스토리 표</strong><br>
-· <strong>장기채권(10년물)</strong>: 미국 10년물 국채 수익률 절대값 (예: 4.420%)<br>· <strong>단기채권(2년물)</strong>: 미국 2년물 국채 수익률 절대값 (예: 3.920%)<br>· <strong>하이일드</strong>: HYG ETF 당일 등락률(%) — 하이일드 스프레드 절대값이 아닌 ETF 가격 변동률<br><br><strong>상단 요약 박스(최근 영업일 / 오늘)</strong><br>
-위와 동일한 값을 카드 형태로 표시합니다. 금리가 오를수록 숫자가 커지며, 장단기 스프레드(10년물 - 2년물)는 직접 계산하여 참고하세요.<br><br>
+· <strong>장기채권(10년물)</strong>: 미국 10년물 국채 수익률 절대값 (예: 4.420%)<br>· <strong>단기채권(2년물)</strong>: 미국 2년물 국채 수익률 절대값 (예: 3.920%)<br>· <strong>하이일드</strong>: 미국 하이일드 채권 스프레드 절대값(%) — ETF 등락률이 아닌 신용 스프레드 수치 (예: 2.80%). 클릭 시 스프레드 추이 팝업이 열립니다.<br><br><strong>상단 요약 박스(최근 영업일 / 오늘)</strong><br>
+위와 동일한 값을 카드 형태로 표시합니다. 금리가 오를수록 숫자가 커지며, 장단기 스프레드(10년물 - 2년물)는 직접 계산하여 참고하세요. 표시 순서: S&amp;P500 → Nasdaq → VIX → HY스프레드 → 10년물 → 2년물. <strong>VIX와 HY스프레드 카드는 클릭 시 전용 팝업</strong>이 열립니다.<br><br>
 <strong>VIX</strong><br>
 공포지수로 불리며 20 이하는 안정, 20~30은 경계, 30 이상은 고변동성 구간입니다. 등락률이 아닌 <strong>절대 수치</strong>로 표시됩니다.<br><br>
-<strong>색상 기준</strong><br>
+<strong>종목명 클릭</strong><br>
+US 섹터 종목명 클릭 시 <strong>TradingView(트레이딩뷰)</strong> 한국어 페이지로 이동합니다.<br><br><strong>색상 기준</strong><br>
 🔴 붉은색이 진할수록 강한 상승 · 🔵 파란색이 진할수록 강한 하락<br>
 ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다. (VIX는 별도 색상 기준 적용)
 </div>
