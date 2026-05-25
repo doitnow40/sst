@@ -373,6 +373,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 
 /* ── adfit 광고 ── */
 .adfit-btm-wrap{margin:10px 0;display:flex;justify-content:center;}
+.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px}
+.admin-tab{padding:8px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.admin-tab:hover{color:var(--text-primary)}
+.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}
 #grp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none}
 #grp-bottomsheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:16px 16px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s ease;max-height:60vh;display:flex;flex-direction:column}
 #grp-bottomsheet.open{transform:translateY(0)}
@@ -2624,6 +2628,7 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
+window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
@@ -4900,6 +4905,7 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
+window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
@@ -5336,13 +5342,13 @@ loadStockCodes();
 function switchAdminTab(tab, btn){
 document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
 if(btn) btn.classList.add('active');
-document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
-document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
-document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
-document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
-document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
-document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none';
-document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none';
+document.getElementById('admin-tab-stats')?.style && (document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none');
+document.getElementById('admin-tab-mgmt')?.style && (document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none');
+document.getElementById('admin-tab-watch')?.style && (document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none');
+document.getElementById('admin-tab-techref')?.style && (document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none');
+document.getElementById('admin-tab-us-mgmt')?.style && (document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none');
+document.getElementById('admin-tab-us-watch')?.style && (document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none');
+document.getElementById('admin-tab-memo')?.style && (document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none');
 // 메모 탭 열 때 날짜 기본값 세팅 (최근 영업일)
 if(tab==='memo'){
   const today=new Date().toISOString().slice(0,10);
