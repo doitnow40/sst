@@ -4378,7 +4378,7 @@ spans.forEach(({g,n},si)=>{
   t+=`<th colspan="${n}" style="${bdrStyle}background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;
 });
 t+=`<th style="background:#1a2535;"></th>`;
-t=_usColgroup+t;
+t=t.replace('<table id="us-table">', '<table id="us-table">'+_usColgroup);
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach((h,_usThi)=>{
 const gn=gMap[h]||'INDEX';const gs2=_groupStyle(gn);
