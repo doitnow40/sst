@@ -1260,7 +1260,7 @@ function _buildGroupToggleBar(tableId, groups) {
     const collapsed = !!_collapsedGroups[key];
     html += '<button class="grp-toggle-btn'+(collapsed?' grp-collapsed':'')+'"'
           + ' data-table="'+tableId+'" data-group="'+g+'"'
-          + ' onclick="toggleGroupCols(''+tableId+'',''+g+'')"'
+          + ' onclick="toggleGroupCols(\''+tableId+'\',\''+g+'\')"'
           + ' title="'+(collapsed?g+' 펼치기':g+' 접기')+'">'+g+'</button>';
   });
   html += '</div>';
