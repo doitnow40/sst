@@ -373,10 +373,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 
 /* ── adfit 광고 ── */
 .adfit-btm-wrap{margin:10px 0;display:flex;justify-content:center;}
-.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px}
-.admin-tab{padding:8px 14px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
-.admin-tab:hover{color:var(--text-primary)}
-.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}
 #grp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none}
 #grp-bottomsheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:16px 16px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s ease;max-height:60vh;display:flex;flex-direction:column}
 #grp-bottomsheet.open{transform:translateY(0)}
@@ -404,7 +400,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 
 <!-- 상단 헤더 -->
 <header id="mob-header">
-  <div class="mob-logo-icon" onclick="_logoTap()" style="cursor:pointer">📡</div>
+  <div class="mob-logo-icon" onclick="_logoTap()" style="cursor:pointer"><svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="6" fill="#121828"/><polyline points="3,24 9,18 14,21 20,11 27,6" fill="none" stroke="#4fc3f7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="3,28 9,22 14,25 20,15 27,10" fill="none" stroke="#ef5350" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/></svg></div>
   <div onclick="go('kr-history',null)" style="cursor:pointer">
     <div class="mob-logo-text">STOCK SECTOR TRACKER MAP</div>
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
@@ -767,75 +763,9 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       </div>
     </div>
     <div id="admin-content-section" style="display:none">
-      <!-- 모바일 관리자 탭 -->
-      <div class="admin-tabs" style="margin-top:12px">
-        <div class="admin-tab active" onclick="switchAdminTab('stats',this)">📊 통계</div>
-        <div class="admin-tab" onclick="switchAdminTab('memo',this)">📝 History 메모</div>
-      </div>
-      <!-- 통계 탭 -->
-      <div id="admin-tab-stats">
-        <div style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:8px">⚡ 사이트 방문자 카운터</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-            <div class="stat-card"><div class="stat-label">Today</div><div class="stat-val neu" id="admin-visit-today">-</div><div class="stat-sub">오늘 방문</div></div>
-            <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val neu" id="admin-visit-total">-</div><div class="stat-sub">누적 방문</div></div>
-          </div>
-          <button class="range-btn" onclick="loadVisitorStats()">🔄 새로고침</button>
-        </div>
-        <div style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📋 KR 섹터 등록 정보</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="admin-reg-days">-</div><div class="stat-sub" id="admin-reg-krR">-</div></div>
-            <div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="admin-reg-sectors">-</div><div class="stat-sub">트래킹 중</div></div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:8px">📋 US 섹터 등록 정보</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="admin-reg-us-days">-</div><div class="stat-sub" id="admin-reg-usR">-</div></div>
-            <div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="admin-reg-us-sectors">-</div><div class="stat-sub">트래킹 중</div></div>
-          </div>
-        </div>
-      </div>
-      <!-- History 메모 탭 -->
-      <div id="admin-tab-memo" style="display:none">
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.7">
-          히스토리 표의 <strong style="color:var(--text-primary)">메모</strong> 컬럼에 날짜별 메모를 입력합니다.
-        </div>
-        <div class="about-section" style="margin-bottom:14px">
-          <div class="about-section-title">🇰🇷 한국 섹터 History 메모</div>
-          <div class="about-section-body" style="padding:12px">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-              <input type="date" id="kr-memo-date" class="admin-input" style="max-width:160px">
-            </div>
-            <div style="display:flex;gap:8px;align-items:flex-start">
-              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-              <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
-            </div>
-            <div style="margin-top:10px">
-              <button class="admin-add-btn" id="kr-memo-save-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
-            </div>
-            <div id="kr-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
-          </div>
-        </div>
-        <div class="about-section">
-          <div class="about-section-title">🇺🇸 미국 섹터 History 메모</div>
-          <div class="about-section-body" style="padding:12px">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-              <input type="date" id="us-watch-memo-date" class="admin-input" style="max-width:160px">
-            </div>
-            <div style="display:flex;gap:8px;align-items:flex-start">
-              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-              <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
-            </div>
-            <div style="margin-top:10px">
-              <button class="admin-add-btn" id="us-watch-memo-save-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
-            </div>
-            <div id="us-watch-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
-          </div>
-        </div>
+      <div style="font-size:12px;color:var(--text-muted);padding:20px;text-align:center">
+        관리자 기능은 PC 버전에서 이용해 주세요.<br>
+        <a href="https://sstmap.com" style="color:var(--accent-kr)">sstmap.com</a>
       </div>
     </div>
   </div>
@@ -2628,7 +2558,6 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
@@ -4905,7 +4834,6 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
 _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
@@ -5342,13 +5270,13 @@ loadStockCodes();
 function switchAdminTab(tab, btn){
 document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
 if(btn) btn.classList.add('active');
-document.getElementById('admin-tab-stats')?.style && (document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none');
-document.getElementById('admin-tab-mgmt')?.style && (document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none');
-document.getElementById('admin-tab-watch')?.style && (document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none');
-document.getElementById('admin-tab-techref')?.style && (document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none');
-document.getElementById('admin-tab-us-mgmt')?.style && (document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none');
-document.getElementById('admin-tab-us-watch')?.style && (document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none');
-document.getElementById('admin-tab-memo')?.style && (document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none');
+document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
+document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
+document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
+document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
+document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
+document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none';
+document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none';
 // 메모 탭 열 때 날짜 기본값 세팅 (최근 영업일)
 if(tab==='memo'){
   const today=new Date().toISOString().slice(0,10);
@@ -5852,9 +5780,6 @@ if(btnEl){btnEl.disabled=false;btnEl.innerHTML='💾 저장';}
 async function loadVisitorStats(){
 document.getElementById('admin-visit-today').textContent='…';
 document.getElementById('admin-visit-total').textContent='…';
-// 등록 정보 업데이트
-if(window._krRegInfo){const ri=window._krRegInfo;const d=document.getElementById('admin-reg-days');const s=document.getElementById('admin-reg-sectors');const r=document.getElementById('admin-reg-krR');if(d)d.textContent=ri.days+'일';if(s)s.textContent=ri.sectors+'개';if(r)r.textContent='최근 '+ri.krR+'일';}
-if(window._usRegInfo){const ui=window._usRegInfo;const ud=document.getElementById('admin-reg-us-days');const us=document.getElementById('admin-reg-us-sectors');const ur=document.getElementById('admin-reg-usR');if(ud)ud.textContent=ui.days+'일';if(us)us.textContent=ui.sectors+'개';if(ur)ur.textContent='최근 '+ui.usR+'일';}
 try{
 const d=await api('visit_count',0);
 document.getElementById('admin-visit-today').textContent=(d.today||0).toLocaleString();
@@ -6714,11 +6639,6 @@ tooltip.style.top=Math.round(y-h)+'px';
     const pe = document.getElementById('page-'+page);
     if(pe) pe.style.display = 'block';
     reinitAdfit(page);
-    // 소개 페이지 섹터 정보 업데이트
-    if(page==='about'){
-      if(window._krRegInfo){const ri=window._krRegInfo;const d=document.getElementById('mob-about-kr-days');const s=document.getElementById('mob-about-kr-sectors');const r=document.getElementById('mob-about-kr-krR');if(d)d.textContent=ri.days+'일';if(s)s.textContent=ri.sectors+'개';if(r)r.textContent='최근 '+ri.krR+'일';}
-      if(window._usRegInfo){const ui=window._usRegInfo;const ud=document.getElementById('mob-about-us-days');const us=document.getElementById('mob-about-us-sectors');const ur=document.getElementById('mob-about-us-usR');if(ud)ud.textContent=ui.days+'일';if(us)us.textContent=ui.sectors+'개';if(ur)ur.textContent='최근 '+ui.usR+'일';}
-    }
     document.querySelectorAll('.mob-tab').forEach(function(t){
       t.classList.remove('active','kr-active','us-active');
     });
