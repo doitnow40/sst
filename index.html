@@ -1208,6 +1208,43 @@ function closeSectorPopup() {
 }
 
 // ══════════════════════════════════════════════════
+// ── 그룹 접기/펼치기 ─────────────────────────────────────────────
+const _collapsedGroups = JSON.parse(localStorage.getItem('sst_collapsed_groups')||'{}');
+function toggleGroupCols(tableId, groupName, thEl) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const key = tableId + '|' + groupName;
+  const isCollapsed = !_collapsedGroups[key];
+  _collapsedGroups[key] = isCollapsed;
+  localStorage.setItem('sst_collapsed_groups', JSON.stringify(_collapsedGroups));
+  // colgroup의 col 태그 visibility 토글
+  table.querySelectorAll('col[data-group="' + groupName + '"]').forEach(function(col) {
+    col.style.visibility = isCollapsed ? 'collapse' : '';
+  });
+  // 그룹 헤더 텍스트 토글
+  if (thEl) {
+    thEl.innerHTML = isCollapsed
+      ? '◀ ' + groupName
+      : '▶ ' + groupName;
+    thEl.title = isCollapsed ? '클릭하여 펼치기' : '클릭하여 접기';
+  }
+}
+function _applyCollapsedGroups(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  table.querySelectorAll('th[data-collapse-group]').forEach(function(th) {
+    const g = th.getAttribute('data-collapse-group');
+    const key = tableId + '|' + g;
+    if (_collapsedGroups[key]) {
+      table.querySelectorAll('col[data-group="' + g + '"]').forEach(function(col) {
+        col.style.visibility = 'collapse';
+      });
+      th.innerHTML = '◀ ' + g;
+      th.title = '클릭하여 펼치기';
+    }
+  });
+}
+
 //  공포탐욕지수 (F&G) 전용 팝업
 // ══════════════════════════════════════════════════
 function openFnGPopup() {
@@ -2517,7 +2554,7 @@ _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
-let t=`<table><thead>${t_header}<tr><th>날짜 <span style="font-size:8px;color:var(--accent-kr);font-weight:400">KST</span></th>`;
+let t=`<table id="kr-table"><thead>${t_header}<tr><th>날짜 <span style="font-size:8px;color:var(--accent-kr);font-weight:400">KST</span></th>`;
 sectorHdrs.forEach((name,_si)=>{
 const fixed=KR_FIXED[name];
 let bg,fg;
@@ -2618,6 +2655,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
+_applyCollapsedGroups('kr-table');
 renderKrChart();
 renderKrAnalytics();
 }
@@ -2644,6 +2682,13 @@ window._krGroupBorderCols=new Set();
 let col=0;
 spans.forEach(({count},si)=>{if(si>0)window._krGroupBorderCols.add(col);col+=count;});
 
+// KR colgroup 생성
+let _krColgroup='<colgroup><col style="width:72px">'; // 날짜 열
+spans.forEach(({label,count})=>{
+  for(let _ci=0;_ci<count;_ci++) _krColgroup+=`<col data-group="${label||'_etc'}">`;
+});
+_krColgroup+='<col></colgroup>';
+
 let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
 spans.forEach(({label,count},si)=>{
 const isBorder=si>0;
@@ -2657,11 +2702,11 @@ KR_GROUP_COLOR_CACHE[label]=KR_GROUP_COLORS[KR_GROUP_COLOR_IDX%KR_GROUP_COLORS.l
 KR_GROUP_COLOR_IDX++;
 }
 const bg=KR_GROUP_COLOR_CACHE[label];
-row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3);${borderStyle}white-space:normal;word-break:keep-all;padding:4px 6px;text-shadow:0 1px 2px rgba(0,0,0,.5)">▶ ${label}</th>`;
+row+=`<th colspan="${count}" data-collapse-group="${label}" onclick="toggleGroupCols('kr-table','${label}',this)" style="cursor:pointer;background:${bg};color:#fff;font-size:9px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid rgba(255,255,255,.3);${borderStyle}white-space:normal;word-break:keep-all;padding:4px 6px;text-shadow:0 1px 2px rgba(0,0,0,.5)" title="클릭하여 접기">▶ ${label}</th>`;
 });
 row+=`<th style="background:#1a2535;"></th>`;
 row+=`</tr>`;
-return row;
+return _krColgroup+row;
 }
 let krChart=null;
 let krChartAllOn=true;
@@ -4302,13 +4347,19 @@ window._usGroupBorderCols=new Set();
 {let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
 // avg/sparkline 행에서도 _krGroupBorderCols 대신 _usGroupBorderCols 사용하도록 임시 매핑
 window._krGroupBorderCols=window._usGroupBorderCols;
-let t=`<table><thead><tr class="group-row"><th></th>`;
+let _usColgroup='<colgroup><col>'; // 날짜 열
+spans.forEach(({g,n})=>{
+  for(let _ci=0;_ci<n;_ci++) _usColgroup+=`<col data-group="${g}">`;
+});
+_usColgroup+='<col></colgroup>';
+let t=`<table id="us-table"><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n},si)=>{
   const gg=_groupStyle(g);
   const bdrStyle=si>0?'border-left:3px solid #000;':'';
-  t+=`<th colspan="${n}" style="${bdrStyle}background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;
+  t+=`<th colspan="${n}" data-collapse-group="${g}" onclick="toggleGroupCols('us-table','${g}',this)" style="cursor:pointer;${bdrStyle}background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px" title="클릭하여 접기">▶ ${g}</th>`;
 });
 t+=`<th style="background:#1a2535;"></th>`;
+t=_usColgroup+t;
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach((h,_usThi)=>{
 const gn=gMap[h]||'INDEX';const gs2=_groupStyle(gn);
@@ -4402,6 +4453,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
+_applyCollapsedGroups('us-table');
 renderUsChart();
 renderUsAnalytics();
 }
@@ -4803,6 +4855,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
+_applyCollapsedGroups('kr-table');
 applyTableScroll('kr-table', S.krR);
 }
 function renderUsTableOnly(){
@@ -4848,6 +4901,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
+_applyCollapsedGroups('us-table');
 applyTableScroll('us-table', S.usR);
 }
 async function refreshKrToday(btn){
