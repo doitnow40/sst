@@ -1223,7 +1223,6 @@ function toggleGroupCols(tableId, groupName) {
   _collapsedGroups[key] = isCollapsed;
   localStorage.setItem('sst_collapsed_groups', JSON.stringify(_collapsedGroups));
   _applyGroupCollapse(tableId, groupName, isCollapsed);
-  // 버튼 상태 업데이트
   const btn = document.querySelector('.grp-toggle-btn[data-table="'+tableId+'"][data-group="'+groupName+'"]');
   if (btn) {
     btn.classList.toggle('grp-collapsed', isCollapsed);
@@ -1234,7 +1233,6 @@ function toggleGroupCols(tableId, groupName) {
 function _applyGroupCollapse(tableId, groupName, isCollapsed) {
   const table = document.getElementById(tableId);
   if (!table) return;
-  // colgroup col 숨기기
   table.querySelectorAll('col[data-group="'+groupName+'"]').forEach(function(col){
     col.style.visibility = isCollapsed ? 'collapse' : '';
   });
@@ -1245,10 +1243,8 @@ function _applyCollapsedGroups(tableId) {
     if (!_collapsedGroups[key]) return;
     const parts = key.split('|');
     if (parts[0] !== tableId) return;
-    const g = parts[1];
-    _applyGroupCollapse(tableId, g, true);
+    _applyGroupCollapse(tableId, parts[1], true);
   });
-  // 버튼 상태 복원
   document.querySelectorAll('.grp-toggle-btn[data-table="'+tableId+'"]').forEach(function(btn){
     const g = btn.getAttribute('data-group');
     const key = tableId + '|' + g;
@@ -2682,10 +2678,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
 _applyCollapsedGroups('kr-table');
-// KR 그룹 토글 버튼 바
-const _krGroups=[...new Set(spans.map(s=>s.label).filter(Boolean))];
-const _krBarWrap=document.getElementById('kr-group-toggle-bar');
-if(_krBarWrap){_krBarWrap.innerHTML=_buildGroupToggleBar('kr-table',_krGroups);_applyCollapsedGroups('kr-table');}
+const _krGs1=[...new Set(spans.map(function(s){return s.label;}).filter(Boolean))];const _krB1=document.getElementById('kr-group-toggle-bar');if(_krB1){_krB1.innerHTML=_buildGroupToggleBar('kr-table',_krGs1);_applyCollapsedGroups('kr-table');}
 renderKrChart();
 renderKrAnalytics();
 }
@@ -2712,13 +2705,9 @@ window._krGroupBorderCols=new Set();
 let col=0;
 spans.forEach(({count},si)=>{if(si>0)window._krGroupBorderCols.add(col);col+=count;});
 
-// KR colgroup 생성
-let _krColgroup='<colgroup><col style="width:72px">'; // 날짜 열
-spans.forEach(({label,count})=>{
-  for(let _ci=0;_ci<count;_ci++) _krColgroup+=`<col data-group="${label||'_etc'}">`;
-});
+let _krColgroup='<colgroup><col style="width:72px">';
+spans.forEach(function(s){for(var _ci=0;_ci<s.count;_ci++) _krColgroup+='<col data-group="'+( s.label||'_etc')+'">'; });
 _krColgroup+='<col></colgroup>';
-
 let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
 spans.forEach(({label,count},si)=>{
 const isBorder=si>0;
@@ -4377,10 +4366,8 @@ window._usGroupBorderCols=new Set();
 {let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
 // avg/sparkline 행에서도 _krGroupBorderCols 대신 _usGroupBorderCols 사용하도록 임시 매핑
 window._krGroupBorderCols=window._usGroupBorderCols;
-let _usColgroup='<colgroup><col>'; // 날짜 열
-spans.forEach(({g,n})=>{
-  for(let _ci=0;_ci<n;_ci++) _usColgroup+=`<col data-group="${g}">`;
-});
+let _usColgroup='<colgroup><col>';
+spans.forEach(function(s){for(var _ci=0;_ci<s.n;_ci++) _usColgroup+='<col data-group="'+s.g+'">'; });
 _usColgroup+='<col></colgroup>';
 let t=`<table id="us-table"><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n},si)=>{
@@ -4484,9 +4471,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
-const _usGroups=[...new Set(spans.map(s=>s.g).filter(Boolean))];
-const _usBarWrap=document.getElementById('us-group-toggle-bar');
-if(_usBarWrap){_usBarWrap.innerHTML=_buildGroupToggleBar('us-table',_usGroups);_applyCollapsedGroups('us-table');}
+const _usGs1=[...new Set(spans.map(function(s){return s.g;}).filter(Boolean))];const _usB1=document.getElementById('us-group-toggle-bar');if(_usB1){_usB1.innerHTML=_buildGroupToggleBar('us-table',_usGs1);_applyCollapsedGroups('us-table');}
 renderUsChart();
 renderUsAnalytics();
 }
@@ -4889,9 +4874,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
 _applyCollapsedGroups('kr-table');
-const _krGroups2=[...new Set(spans.map(s=>s.label).filter(Boolean))];
-const _krBarWrap2=document.getElementById('kr-group-toggle-bar');
-if(_krBarWrap2){_krBarWrap2.innerHTML=_buildGroupToggleBar('kr-table',_krGroups2);_applyCollapsedGroups('kr-table');}
+const _krGs2=[...new Set(spans.map(function(s){return s.label;}).filter(Boolean))];const _krB2=document.getElementById('kr-group-toggle-bar');if(_krB2){_krB2.innerHTML=_buildGroupToggleBar('kr-table',_krGs2);_applyCollapsedGroups('kr-table');}
 applyTableScroll('kr-table', S.krR);
 }
 function renderUsTableOnly(){
@@ -4938,9 +4921,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
-const _usGroups2=[...new Set(sh.map(h=>gMap[h]).filter(Boolean))];
-const _usBarWrap2=document.getElementById('us-group-toggle-bar');
-if(_usBarWrap2){_usBarWrap2.innerHTML=_buildGroupToggleBar('us-table',_usGroups2);_applyCollapsedGroups('us-table');}
+const _usGs2=[...new Set(sh.map(function(h){return gMap[h];}).filter(Boolean))];const _usB2=document.getElementById('us-group-toggle-bar');if(_usB2){_usB2.innerHTML=_buildGroupToggleBar('us-table',_usGs2);_applyCollapsedGroups('us-table');}
 applyTableScroll('us-table', S.usR);
 }
 async function refreshKrToday(btn){
