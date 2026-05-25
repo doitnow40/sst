@@ -373,6 +373,20 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 
 /* ── adfit 광고 ── */
 .adfit-btm-wrap{margin:10px 0;display:flex;justify-content:center;}
+#grp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none}
+#grp-bottomsheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-radius:16px 16px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s ease;max-height:60vh;display:flex;flex-direction:column}
+#grp-bottomsheet.open{transform:translateY(0)}
+.grp-sheet-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.grp-sheet-title{font-size:13px;font-weight:700;color:var(--text-primary)}
+.grp-sheet-close{font-size:18px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border:none;background:transparent}
+#grp-sheet-body{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;overflow-y:auto}
+.grp-sheet-item{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card2);cursor:pointer;transition:all .15s}
+.grp-sheet-item.grp-sheet-collapsed{background:rgba(239,83,80,.1);border-color:rgba(239,83,80,.4)}
+.grp-sheet-check{font-size:12px;font-weight:700;color:var(--accent-kr);flex-shrink:0;width:14px;text-align:center}
+.grp-sheet-item.grp-sheet-collapsed .grp-sheet-check{color:#ef9a9a}
+.grp-sheet-name{font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grp-sheet-item.grp-sheet-collapsed .grp-sheet-name{color:#ef9a9a;text-decoration:line-through}
+.grp-sheet-trigger{background:transparent;border:none;color:var(--text-muted);font-size:14px;cursor:pointer;padding:2px 4px;line-height:1}
 
 /* ── 오늘 공지 배지 ── */
 .table-today-notice{position:absolute;top:5px;right:10px;font-size:8px;color:#ffb74d;font-family:var(--font-mono);background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.3);border-radius:4px;padding:2px 6px;z-index:10;display:flex;align-items:center;gap:3px;}
@@ -1268,6 +1282,75 @@ function _renderFnGPopup(score, history, latestDate) {
   }
 
   document.getElementById('fng-popup-body').innerHTML = gaugeHtml + rangeHtml + histHtml;
+}
+
+// ── 그룹 접기/펼치기 (모바일 바텀시트) ──────────────────────────
+const _collapsedGroups = JSON.parse(localStorage.getItem('sst_collapsed_groups')||'{}');
+
+function toggleGroupCols(tableId, groupName) {
+  const key = tableId + '|' + groupName;
+  const isCollapsed = !_collapsedGroups[key];
+  _collapsedGroups[key] = isCollapsed;
+  localStorage.setItem('sst_collapsed_groups', JSON.stringify(_collapsedGroups));
+  _applyGroupCollapse(tableId, groupName, isCollapsed);
+  // 바텀시트 내 체크 아이콘 업데이트
+  const item = document.querySelector('.grp-sheet-item[data-table="'+tableId+'"][data-group="'+groupName+'"]');
+  if (item) {
+    item.classList.toggle('grp-sheet-collapsed', isCollapsed);
+    item.querySelector('.grp-sheet-check').textContent = isCollapsed ? '✕' : '✓';
+  }
+}
+
+function _applyGroupCollapse(tableId, groupName, isCollapsed) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  table.querySelectorAll('col[data-group="'+groupName+'"]').forEach(function(col){
+    col.style.visibility = isCollapsed ? 'collapse' : '';
+  });
+}
+
+function _applyCollapsedGroups(tableId) {
+  Object.keys(_collapsedGroups).forEach(function(key) {
+    if (!_collapsedGroups[key]) return;
+    const parts = key.split('|');
+    if (parts[0] !== tableId) return;
+    _applyGroupCollapse(tableId, parts[1], true);
+  });
+}
+
+function openGroupSheet(tableId) {
+  const groups = tableId === 'kr-table'
+    ? (window._krLastSpans ? [...new Set(window._krLastSpans.map(function(s){return s.label;}).filter(Boolean))] : [])
+    : (window._usLastSpans ? [...new Set(window._usLastSpans.map(function(s){return s.g;}).filter(Boolean))] : []);
+
+  const sheet = document.getElementById('grp-bottomsheet');
+  const body  = document.getElementById('grp-sheet-body');
+  const backdrop = document.getElementById('grp-backdrop');
+  if (!sheet || !body) return;
+
+  sheet.setAttribute('data-table', tableId);
+  let html = '';
+  groups.forEach(function(g) {
+    const key = tableId + '|' + g;
+    const collapsed = !!_collapsedGroups[key];
+    html += '<div class="grp-sheet-item'+(collapsed?' grp-sheet-collapsed':'')+'"'
+          + ' data-table="'+tableId+'" data-group="'+g+'"'
+          + ' onclick="toggleGroupCols(\''+tableId+'\',\''+g+'\')">'
+          + '<span class="grp-sheet-check">'+(collapsed?'✕':'✓')+'</span>'
+          + '<span class="grp-sheet-name">'+g+'</span>'
+          + '</div>';
+  });
+  body.innerHTML = html;
+
+  backdrop.style.display = 'block';
+  sheet.classList.add('open');
+}
+
+function closeGroupSheet() {
+  const sheet = document.getElementById('grp-bottomsheet');
+  const backdrop = document.getElementById('grp-backdrop');
+  if (sheet) sheet.classList.remove('open');
+  if (backdrop) backdrop.style.display = 'none';
 }
 
 function openFnGPopup() {
@@ -2442,7 +2525,7 @@ _buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
-let t=`<table><thead>${t_header}<tr><th>날짜 <span style="font-size:8px;color:var(--accent-kr);font-weight:400">KST</span></th>`;
+let t=`<table id="kr-table"><thead>${t_header}<tr><th>날짜 <span style="font-size:8px;color:var(--accent-kr);font-weight:400">KST</span></th>`;
 sectorHdrs.forEach((name,_si)=>{
 const fixed=KR_FIXED[name];
 let bg,fg;
@@ -2543,6 +2626,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
+_applyCollapsedGroups('kr-table');
 renderKrChart();
 renderKrAnalytics();
 }
@@ -2569,7 +2653,11 @@ window._krGroupBorderCols=new Set();
 let col=0;
 spans.forEach(({count},si)=>{if(si>0)window._krGroupBorderCols.add(col);col+=count;});
 
-let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"></th>`;
+let _krColgroup='<colgroup><col style="width:55px">';
+spans.forEach(function(s){for(var _ci=0;_ci<s.count;_ci++) _krColgroup+='<col data-group="'+( s.label||'_etc')+'">'; });
+_krColgroup+='<col></colgroup>';
+window._krLastSpans = spans;
+let row=`<tr class="group-row"><th style="position:sticky;left:0;z-index:20;background:var(--bg-card2)"><button class="grp-sheet-trigger" onclick="openGroupSheet('kr-table')" title="섹터 그룹 접기/펴기">☰</button></th>`;
 spans.forEach(({label,count},si)=>{
 const isBorder=si>0;
 const borderStyle=isBorder?'border-left:3px solid #000;':'';
@@ -2586,7 +2674,7 @@ row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;fo
 });
 row+=`<th style="background:#1a2535;"></th>`;
 row+=`</tr>`;
-return row;
+return _krColgroup+row;
 }
 let krChart=null;
 let krChartAllOn=true;
@@ -4233,13 +4321,18 @@ window._usGroupBorderCols=new Set();
 {let _bc=0;spans.forEach(({n},si)=>{if(si>0)window._usGroupBorderCols.add(_bc);_bc+=n;});}
 // avg/sparkline 행에서도 _krGroupBorderCols 대신 _usGroupBorderCols 사용하도록 임시 매핑
 window._krGroupBorderCols=window._usGroupBorderCols;
-let t=`<table><thead><tr class="group-row"><th></th>`;
+let _usColgroup='<colgroup><col>';
+spans.forEach(function(s){for(var _ci=0;_ci<s.n;_ci++) _usColgroup+='<col data-group="'+s.g+'">'; });
+_usColgroup+='<col></colgroup>';
+window._usLastSpans = spans;
+let t=`<table id="us-table"><thead><tr class="group-row"><th><button class="grp-sheet-trigger" onclick="openGroupSheet('us-table')" title="섹터 그룹 접기/펴기">☰</button></th>`;
 spans.forEach(({g,n},si)=>{
   const gg=_groupStyle(g);
   const bdrStyle=si>0?'border-left:3px solid #000;':'';
   t+=`<th colspan="${n}" style="${bdrStyle}background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;
 });
 t+=`<th style="background:#1a2535;"></th>`;
+t=t.replace('<table id="us-table">', '<table id="us-table">'+_usColgroup);
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach((h,_usThi)=>{
 const gn=gMap[h]||'INDEX';const gs2=_groupStyle(gn);
@@ -4333,6 +4426,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
+_applyCollapsedGroups('us-table');
 renderUsChart();
 renderUsAnalytics();
 }
@@ -4738,6 +4832,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
+_applyCollapsedGroups('kr-table');
 applyTableScroll('kr-table', S.krR);
 }
 function renderUsTableOnly(){
@@ -4753,8 +4848,13 @@ _buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.
 const spans=[];let pg=null,gs=0;
 const gMap2=S.usD.groupMap||{};
 sh.forEach((h,i)=>{const g=gMap2[h]||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
-let t=`<table><thead><tr class="group-row"><th></th>`;
+let _usColgroup2='<colgroup><col>';
+spans.forEach(function(s){for(var _ci=0;_ci<s.n;_ci++) _usColgroup2+='<col data-group="'+s.g+'">'; });
+_usColgroup2+='<col></colgroup>';
+window._usLastSpans = spans;
+let t=`<table id="us-table"><thead><tr class="group-row"><th><button class="grp-sheet-trigger" onclick="openGroupSheet('us-table')" title="섹터 그룹 접기/펴기">☰</button></th>`;
 spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{bg:GROUP_COLORS[Object.keys(gMap2).indexOf(g)%GROUP_COLORS.length]||'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;});
+t=t.replace('<table id="us-table">', '<table id="us-table">'+_usColgroup2);
 t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
 sh.forEach(h=>{
 const gn=gMap2[h]||'INDEX';const gs3=US_GROUPS[gn]||{bg:'#2e3a50',fg:'#e2e8f0'};
@@ -4783,6 +4883,7 @@ t+='</tr>';
 });
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
+_applyCollapsedGroups('us-table');
 applyTableScroll('us-table', S.usR);
 }
 async function refreshKrToday(btn){
@@ -6549,5 +6650,15 @@ tooltip.style.top=Math.round(y-h)+'px';
 // 초기 페이지 → KR History
 go('kr-history', null);
 </script>
+
+<!-- 섹터 그룹 접기/펴기 바텀시트 -->
+<div id="grp-backdrop" onclick="closeGroupSheet()"></div>
+<div id="grp-bottomsheet">
+  <div class="grp-sheet-header">
+    <span class="grp-sheet-title">접기/펴기</span>
+    <button class="grp-sheet-close" onclick="closeGroupSheet()">✕</button>
+  </div>
+  <div id="grp-sheet-body"></div>
+</div>
 </body>
 </html>
