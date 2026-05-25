@@ -6714,6 +6714,11 @@ tooltip.style.top=Math.round(y-h)+'px';
     const pe = document.getElementById('page-'+page);
     if(pe) pe.style.display = 'block';
     reinitAdfit(page);
+    // 소개 페이지 섹터 정보 업데이트
+    if(page==='about'){
+      if(window._krRegInfo){const ri=window._krRegInfo;const d=document.getElementById('mob-about-kr-days');const s=document.getElementById('mob-about-kr-sectors');const r=document.getElementById('mob-about-kr-krR');if(d)d.textContent=ri.days+'일';if(s)s.textContent=ri.sectors+'개';if(r)r.textContent='최근 '+ri.krR+'일';}
+      if(window._usRegInfo){const ui=window._usRegInfo;const ud=document.getElementById('mob-about-us-days');const us=document.getElementById('mob-about-us-sectors');const ur=document.getElementById('mob-about-us-usR');if(ud)ud.textContent=ui.days+'일';if(us)us.textContent=ui.sectors+'개';if(ur)ur.textContent='최근 '+ui.usR+'일';}
+    }
     document.querySelectorAll('.mob-tab').forEach(function(t){
       t.classList.remove('active','kr-active','us-active');
     });
