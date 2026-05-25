@@ -14,7 +14,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Sector Tracker Map | 한국·미국 섹터 등락률 트래커</title>
+<title>Stock Sector Tracker Map | 한국·미국 섹터 등락률 트래커 맵</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121828'/%3E%3Cpolyline points='3,24 9,18 14,21 20,11 27,6' fill='none' stroke='%234fc3f7' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpolyline points='3,28 9,22 14,25 20,15 27,10' fill='none' stroke='%23ef5350' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -588,6 +588,27 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다. (VIX는 별�
 이 서비스에서 제공하는 모든 정보는 <strong>투자 참고용</strong>으로만 제공되며, 특정 종목이나 섹터에 대한 투자를 권유하거나 조언하지 않습니다.<br>
 투자 결정에 따른 모든 손익은 투자자 본인에게 귀속되며, 본 서비스는 이에 대한 어떠한 책임도 지지 않습니다.
 </div>
+<div class="about-section" style="margin-top:8px">
+<div class="about-section-title">📊 서비스 현황</div>
+<div class="about-section-body">
+<div style="display:flex;flex-wrap:wrap;gap:12px">
+<div style="flex:1;min-width:140px">
+<div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">🇰🇷 KR 섹터</div>
+<div style="display:flex;gap:8px">
+<div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="about-kr-days" style="font-size:16px">-</div><div class="stat-sub" id="about-kr-krR">-</div></div>
+<div class="stat-card" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="about-kr-sectors" style="font-size:16px">-</div><div class="stat-sub">트래킹 중</div></div>
+</div>
+</div>
+<div style="flex:1;min-width:140px">
+<div style="font-size:10px;color:var(--text-muted);margin-bottom:6px">🇺🇸 US 섹터</div>
+<div style="display:flex;gap:8px">
+<div class="stat-card" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="about-us-days" style="font-size:16px">-</div><div class="stat-sub" id="about-us-usR">-</div></div>
+<div class="stat-card" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="about-us-sectors" style="font-size:16px">-</div><div class="stat-sub">트래킹 중</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="page-admin" style="display:none">
 <div class="page-header">
@@ -655,26 +676,32 @@ GA4 측정 ID: <code id="ga-id-display">G-3PTKMRYZZ3</code>
 📊 Google Analytics 열기
 </a>
 <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border)">
-<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:12px">⚡ GAS 방문자 카운터 (Today / Total)</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px">
-<div class="stat-card">
-<div class="stat-label">Today</div>
-<div class="stat-val neu" id="admin-visit-today">-</div>
-<div class="stat-sub">오늘 방문</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+<!-- 사이트 방문자 카운터 -->
+<div style="flex:1;min-width:200px">
+<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:10px">⚡ 사이트 방문자 카운터</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="stat-card"><div class="stat-label">Today</div><div class="stat-val neu" id="admin-visit-today">-</div><div class="stat-sub">오늘 방문</div></div>
+<div class="stat-card"><div class="stat-label">Total</div><div class="stat-val neu" id="admin-visit-total">-</div><div class="stat-sub">누적 방문</div></div>
 </div>
-<div class="stat-card">
-<div class="stat-label">Total</div>
-<div class="stat-val neu" id="admin-visit-total">-</div>
-<div class="stat-sub">누적 방문</div>
+<button class="range-btn" style="margin-top:8px" onclick="loadVisitorStats()">🔄 새로고침</button>
 </div>
-</div>
-<button class="range-btn" style="margin-top:10px" onclick="loadVisitorStats()">🔄 새로고침</button>
-</div>
-<div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
-<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:12px">📋 KR 섹터 등록 정보</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px">
+<!-- KR 섹터 등록 정보 -->
+<div style="flex:1;min-width:200px">
+<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:10px">📋 KR 섹터 등록 정보</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 <div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="admin-reg-days">-</div><div class="stat-sub" id="admin-reg-krR">-</div></div>
 <div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="admin-reg-sectors">-</div><div class="stat-sub">트래킹 중</div></div>
+</div>
+</div>
+<!-- US 섹터 등록 정보 -->
+<div style="flex:1;min-width:200px">
+<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:10px">📋 US 섹터 등록 정보</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="admin-reg-us-days">-</div><div class="stat-sub" id="admin-reg-usR">-</div></div>
+<div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="admin-reg-us-sectors">-</div><div class="stat-sub">트래킹 중</div></div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -4338,6 +4365,7 @@ const f=rows.slice(0,S.usR);
 // ★ US 메모 컬럼명은 GAS 상수 US_WATCH_MEMO = '📝 Memo' 와 일치해야 함
 const _memoColName='📝 Memo';
 const sh=H.slice(1).filter(h=>h!==_memoColName); // 메모 컬럼 제외한 섹터만
+window._usRegInfo = {sectors: sh.length, days: f.length, usR: S.usR};
 if(f.length){
 const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
 const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
@@ -5017,6 +5045,10 @@ if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').cl
 if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
 const ne=document.getElementById('nav-'+page);if(ne)ne.classList.add(['us-history','us-list'].includes(page)?'us-active':'active');
+if(page==='about'){
+  if(window._krRegInfo){const ri=window._krRegInfo;const d=document.getElementById('about-kr-days');const s=document.getElementById('about-kr-sectors');const r=document.getElementById('about-kr-krR');if(d)d.textContent=ri.days+'일';if(s)s.textContent=ri.sectors+'개';if(r)r.textContent='최근 '+ri.krR+'일';}
+  if(window._usRegInfo){const ui=window._usRegInfo;const ud=document.getElementById('about-us-days');const us=document.getElementById('about-us-sectors');const ur=document.getElementById('about-us-usR');if(ud)ud.textContent=ui.days+'일';if(us)us.textContent=ui.sectors+'개';if(ur)ur.textContent='최근 '+ui.usR+'일';}
+}
 if(page==='kr-history')loadKr();
 else if(page==='us-history')loadUs();
 else if(page==='kr-list'){
@@ -5760,7 +5792,7 @@ msgEl.style.display='';
 if(btnEl){btnEl.disabled=false;btnEl.innerHTML='💾 저장';}
 }
 async function loadVisitorStats(){
-  // 등록 정보 업데이트
+  // KR 등록 정보 업데이트
   if (window._krRegInfo) {
     const ri = window._krRegInfo;
     const d = document.getElementById('admin-reg-days');
@@ -5769,6 +5801,16 @@ async function loadVisitorStats(){
     if (d) d.textContent = ri.days + '일';
     if (s) s.textContent = ri.sectors + '개';
     if (r) r.textContent = '최근 ' + ri.krR + '일';
+  }
+  // US 등록 정보 업데이트
+  if (window._usRegInfo) {
+    const ui = window._usRegInfo;
+    const ud = document.getElementById('admin-reg-us-days');
+    const us = document.getElementById('admin-reg-us-sectors');
+    const ur = document.getElementById('admin-reg-usR');
+    if (ud) ud.textContent = ui.days + '일';
+    if (us) us.textContent = ui.sectors + '개';
+    if (ur) ur.textContent = '최근 ' + ui.usR + '일';
   }
 document.getElementById('admin-visit-today').textContent='…';
 document.getElementById('admin-visit-total').textContent='…';
