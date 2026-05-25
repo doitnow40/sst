@@ -670,6 +670,13 @@ GA4 측정 ID: <code id="ga-id-display">G-3PTKMRYZZ3</code>
 </div>
 <button class="range-btn" style="margin-top:10px" onclick="loadVisitorStats()">🔄 새로고침</button>
 </div>
+<div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+<div style="font-size:11px;font-weight:700;color:var(--text-primary);margin-bottom:12px">📋 KR 섹터 등록 정보</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px">
+<div class="stat-card"><div class="stat-label">표시 기간</div><div class="stat-val neu" id="admin-reg-days">-</div><div class="stat-sub" id="admin-reg-krR">-</div></div>
+<div class="stat-card"><div class="stat-label">섹터 수</div><div class="stat-val neu" id="admin-reg-sectors">-</div><div class="stat-sub">트래킹 중</div></div>
+</div>
+</div>
 </div>
 </div>
 <div id="admin-tab-mgmt" style="display:none">
@@ -3050,17 +3057,9 @@ if(!_adBox && _showTodayData){
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황</div>'
     +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음<div style="font-size:9px;margin-top:3px">장중 수집 후 표시됩니다</div></div></div>';
 }
-// ── 종목 등락 박스 + 등록 정보 박스 추가 ──
-var _regBox='<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-  +'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
-  +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
-  +'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
-  +'</div>';
-document.getElementById('kr-stats').innerHTML+=_adBox+_regBox;+'<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
-+'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
-+'</div>';
+// ── 종목 등락 박스 추가 + 등록 정보 전역 저장 (관리자 페이지에서 표시)
+window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
+document.getElementById('kr-stats').innerHTML+=_adBox;
 }
 
 function _makeRankChart(el,avgArr,isUp,accentColor){
@@ -5759,6 +5758,16 @@ msgEl.style.display='';
 if(btnEl){btnEl.disabled=false;btnEl.innerHTML='💾 저장';}
 }
 async function loadVisitorStats(){
+  // 등록 정보 업데이트
+  if (window._krRegInfo) {
+    const ri = window._krRegInfo;
+    const d = document.getElementById('admin-reg-days');
+    const s = document.getElementById('admin-reg-sectors');
+    const r = document.getElementById('admin-reg-krR');
+    if (d) d.textContent = ri.days + '일';
+    if (s) s.textContent = ri.sectors + '개';
+    if (r) r.textContent = '최근 ' + ri.krR + '일';
+  }
 document.getElementById('admin-visit-today').textContent='…';
 document.getElementById('admin-visit-total').textContent='…';
 try{
