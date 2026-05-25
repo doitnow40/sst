@@ -1189,6 +1189,8 @@ const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 // ══════════════════════════════════════════════════
 function openSectorPopup(sectorName, isKr, prevDate) {
   // F&G 컬럼은 전용 팝업으로 분기
+  if (sectorName === 'BTC')    { window.open('https://kr.tradingview.com/symbols/BTCUSD/?exchange=BITSTAMP&timeframe=6M', '_blank'); return; }
+  if (sectorName === 'ETH')    { window.open('https://kr.tradingview.com/symbols/ETHUSD/?exchange=BINANCE&timeframe=6M', '_blank'); return; }
   if (sectorName === 'F&G')    { openFnGPopup(); return; }
   if (sectorName === 'VIX')    { openVIXPopup(); return; }
   if (sectorName === '하이일드') { openHYPopup();  return; }
