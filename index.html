@@ -2678,7 +2678,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
 _applyCollapsedGroups('kr-table');
-const _krGs1=[...new Set(spans.map(function(s){return s.label;}).filter(Boolean))];const _krB1=document.getElementById('kr-group-toggle-bar');if(_krB1){_krB1.innerHTML=_buildGroupToggleBar('kr-table',_krGs1);_applyCollapsedGroups('kr-table');}
+const _krGs1=window._krLastSpans?[...new Set(window._krLastSpans.map(function(s){return s.label;}).filter(Boolean))]:[];const _krB1=document.getElementById('kr-group-toggle-bar');if(_krB1){_krB1.innerHTML=_buildGroupToggleBar('kr-table',_krGs1);_applyCollapsedGroups('kr-table');}
 renderKrChart();
 renderKrAnalytics();
 }
@@ -2725,6 +2725,7 @@ row+=`<th colspan="${count}" style="background:${bg};color:#fff;font-size:9px;fo
 });
 row+=`<th style="background:#1a2535;"></th>`;
 row+=`</tr>`;
+window._krLastSpans = spans;
 return _krColgroup+row;
 }
 let krChart=null;
@@ -4369,6 +4370,7 @@ window._krGroupBorderCols=window._usGroupBorderCols;
 let _usColgroup='<colgroup><col>';
 spans.forEach(function(s){for(var _ci=0;_ci<s.n;_ci++) _usColgroup+='<col data-group="'+s.g+'">'; });
 _usColgroup+='<col></colgroup>';
+window._usLastSpans = spans;
 let t=`<table id="us-table"><thead><tr class="group-row"><th></th>`;
 spans.forEach(({g,n},si)=>{
   const gg=_groupStyle(g);
@@ -4471,7 +4473,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
-const _usGs1=[...new Set(spans.map(function(s){return s.g;}).filter(Boolean))];const _usB1=document.getElementById('us-group-toggle-bar');if(_usB1){_usB1.innerHTML=_buildGroupToggleBar('us-table',_usGs1);_applyCollapsedGroups('us-table');}
+const _usGs1=window._usLastSpans?[...new Set(window._usLastSpans.map(function(s){return s.g;}).filter(Boolean))]:[];const _usB1=document.getElementById('us-group-toggle-bar');if(_usB1){_usB1.innerHTML=_buildGroupToggleBar('us-table',_usGs1);_applyCollapsedGroups('us-table');}
 renderUsChart();
 renderUsAnalytics();
 }
@@ -4874,7 +4876,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
 _applyCollapsedGroups('kr-table');
-const _krGs2=[...new Set(spans.map(function(s){return s.label;}).filter(Boolean))];const _krB2=document.getElementById('kr-group-toggle-bar');if(_krB2){_krB2.innerHTML=_buildGroupToggleBar('kr-table',_krGs2);_applyCollapsedGroups('kr-table');}
+const _krGs2=window._krLastSpans?[...new Set(window._krLastSpans.map(function(s){return s.label;}).filter(Boolean))]:[];const _krB2=document.getElementById('kr-group-toggle-bar');if(_krB2){_krB2.innerHTML=_buildGroupToggleBar('kr-table',_krGs2);_applyCollapsedGroups('kr-table');}
 applyTableScroll('kr-table', S.krR);
 }
 function renderUsTableOnly(){
@@ -4921,7 +4923,7 @@ t+='</tr>';
 t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
-const _usGs2=[...new Set(sh.map(function(h){return gMap[h];}).filter(Boolean))];const _usB2=document.getElementById('us-group-toggle-bar');if(_usB2){_usB2.innerHTML=_buildGroupToggleBar('us-table',_usGs2);_applyCollapsedGroups('us-table');}
+const _usGs2=window._usLastSpans?[...new Set(window._usLastSpans.map(function(s){return s.g;}).filter(Boolean))]:[];const _usB2=document.getElementById('us-group-toggle-bar');if(_usB2){_usB2.innerHTML=_buildGroupToggleBar('us-table',_usGs2);_applyCollapsedGroups('us-table');}
 applyTableScroll('us-table', S.usR);
 }
 async function refreshKrToday(btn){
