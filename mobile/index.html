@@ -27,7 +27,7 @@
   --accent-us:#ef5350;
   --accent-gold:#ffc107;
   --tab-h:56px;
-  --header-h:auto;
+  --header-h:48px;
   --font-body:'Noto Sans KR',sans-serif;
   --font-mono:'Inter','Helvetica Neue',sans-serif;
   --font-display:'Bebas Neue',sans-serif;
@@ -40,7 +40,7 @@ body{font-family:var(--font-body);color:var(--text-primary);display:flex;flex-di
 
 /* ── 상단 헤더 ── */
 #mob-header {
-  min-height:48px;
+  height:var(--header-h);
   background:var(--bg-dark);
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;
@@ -406,25 +406,17 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-      <div style="display:flex;gap:5px;align-items:center">
-        <button id="refresh-kr-btn" onclick="refreshKrToday(this)" class="mob-hdr-btn" title="오늘 실시간 행만 빠르게 갱신">
-          <span style="font-size:11px">🔄</span>
-          <span>오늘 갱신</span>
-        </button>
-        <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
-          <span style="font-size:11px">📡</span>
-          <span>지금수집</span>
-        </button>
-      </div>
-      <div id="sheetReadBadge" class="mob-hdr-btn" style="cursor:help;padding:2px 6px">
-        <div class="mob-live-dot" id="sheetReadDot"></div>
-        <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
-      </div>
-      <div id="realtimeBadge" class="mob-hdr-btn" style="display:none;padding:2px 6px">
-        <div class="mob-live-dot pulse"></div>
-        <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
-      </div>
+    <button id="refresh-all-btn" onclick="refreshAllData()" class="mob-hdr-btn" title="새로고침">
+      <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
+      <span>새로고침</span>
+    </button>
+    <div class="mob-hdr-btn" id="sheetReadBadge" style="cursor:help">
+      <div class="mob-live-dot" id="sheetReadDot"></div>
+      <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
+    </div>
+    <div class="mob-hdr-btn" id="realtimeBadge" style="display:none">
+      <div class="mob-live-dot pulse"></div>
+      <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
     </div>
   </div>
 </header>
@@ -2235,38 +2227,20 @@ const j=await r.json();
 if(!j.ok)throw new Error(j.error||'API 오류');
 return j.data;
 }
-// ── 장중 여부 판단 (KST 09:00~15:30, 평일) ──────────────────────
-function _isKrTradingNow(){
-  const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-  const dow=kst.getDay();
-  if(dow===0||dow===6) return false;
-  const hhmm=kst.getHours()*100+kst.getMinutes();
-  return hhmm>=900 && hhmm<1530;
-}
-function _shortReadAt(sheetReadAt){
-  const m=sheetReadAt.match(/(\d{2}-\d{2})\s+(\d{2}:\d{2})/);
-  return m ? m[1]+' '+m[2] : sheetReadAt;
-}
-function _syncBadges(){
-  const trading=_isKrTradingNow();
-  const sb=document.getElementById('sheetReadBadge');
-  const rb=document.getElementById('realtimeBadge');
-  if(sb) sb.style.display = trading ? 'none' : '';
-  if(rb) rb.style.display = trading ? ''     : 'none';
-}
 function updateSheetReadTime(sheetReadAt){
-  if(!sheetReadAt) return;
-  const el=document.getElementById('sheetReadTime');
-  if(el) el.textContent='확정 '+_shortReadAt(sheetReadAt);
-  _syncBadges();
+if(!sheetReadAt) return;
+const el=document.getElementById('sheetReadTime');
+if(el) el.textContent='확정 데이터: '+sheetReadAt+' (KST)';
 }
 function updateRealtimeTime(){
-  const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-  const hh=String(kst.getHours()).padStart(2,'0');
-  const mm=String(kst.getMinutes()).padStart(2,'0');
-  const el=document.getElementById('realtimeTime');
-  if(el) el.textContent=`실시간 ${hh}:${mm} 갱신`;
-  _syncBadges();
+const now=new Date();
+const kst=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+const hh=String(kst.getHours()).padStart(2,'0');
+const mm=String(kst.getMinutes()).padStart(2,'0');
+const badge=document.getElementById('realtimeBadge');
+const el=document.getElementById('realtimeTime');
+if(badge) badge.style.display='';
+if(el) el.textContent=`실시간 ${hh}:${mm} 갱신`;
 }
 function demoKr(){
 const H=['날짜','코스피','코스닥','ADR피','ADR닥',
@@ -3060,17 +3034,8 @@ if(!_adBox && _showTodayData){
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황</div>'
     +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음<div style="font-size:9px;margin-top:3px">장중 수집 후 표시됩니다</div></div></div>';
 }
-// ── 종목 등락 박스 + 등록 정보 박스 추가 ──
-var _regBox='<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-  +'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
-  +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
-  +'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
-  +'</div>';
-document.getElementById('kr-stats').innerHTML+=_adBox+_regBox;+'<div style="border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg-card);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">등록 정보</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1"><div class="stat-label">표시 기간</div><div class="stat-val neu">'+f.length+'일</div><div class="stat-sub">최근 '+S.krR+'일</div></div>'
-+'<div class="'+sc+'" style="flex:1"><div class="stat-label">섹터 수</div><div class="stat-val neu">'+pureSectors.length+'</div><div class="stat-sub">트래킹 중</div></div></div></div>'
-+'</div>';
+// ── 종목 등락 박스만 추가 (등록 정보 박스 제거 - 소개 페이지에서 확인 가능)
+document.getElementById('kr-stats').innerHTML+=_adBox;
 }
 
 function _makeRankChart(el,avgArr,isUp,accentColor){
@@ -4949,38 +4914,6 @@ t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
 applyTableScroll('us-table', S.usR);
-}
-async function triggerActionsNow(){
-  const btn=document.getElementById('trigger-actions-btn');
-  const origHTML=btn?btn.innerHTML:'';
-  if(btn){btn.disabled=true;btn.style.opacity='0.7';}
-  try{
-    const d=await api('trigger_actions',0);
-    if(d&&d.cooldown){
-      const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
-      const ss=String(d.remain%60).padStart(2,'0');
-      alert('✅ 잠시 후 최신 데이터가 반영됩니다.\n약 30~60초 후 오늘 갱신 버튼을 눌러주세요.\n\n쿨다운: '+mm+':'+ss);
-      if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origHTML;}
-    } else if(d&&d.ok){
-      let remain=30;
-      alert('✅ 수집 요청 완료!\n30초 후 오늘 갱신 버튼을 눌러 확인하세요.');
-      const cd=setInterval(()=>{
-        remain--;
-        if(btn) btn.innerHTML='<span>'+remain+'초후</span>';
-        if(remain<=0){
-          clearInterval(cd);
-          if(btn){btn.innerHTML=origHTML;btn.disabled=false;btn.style.opacity='1';}
-          refreshKrToday(null);
-        }
-      },1000);
-    } else {
-      alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 오늘 갱신을 눌러보세요.');
-      if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origHTML;}
-    }
-  }catch(e){
-    alert('❌ 실패: '+e.message);
-    if(btn){btn.disabled=false;btn.style.opacity='1';btn.innerHTML=origHTML;}
-  }
 }
 async function refreshKrToday(btn){
 if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
