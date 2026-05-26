@@ -4964,6 +4964,7 @@ S.krToday=null;
 try{
 const d=await api('kr_today',0);
 S.krToday=d;
+S.krStocks=null; // ★ 수동 갱신 시 kr_stocks 캐시 무효화
 updateRealtimeTime();
 renderKr();
 }catch(e){}
@@ -5006,6 +5007,7 @@ if(krHist||krList){
 try{
 const d=await api('kr_today',0);
 S.krToday=d;
+S.krStocks=null; // ★ kr_today 갱신 시 kr_stocks 캐시 무효화 → 팝업 열 때 최신 KV 재로드
 updateRealtimeTime();
 if(krHist) renderKr();
 if(krList){await loadKrList(false);}
