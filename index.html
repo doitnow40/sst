@@ -6657,6 +6657,11 @@ tooltip.style.top=Math.round(y-h)+'px';
 }
 })();
 
+// ── 페이지 초기 로드 시 뱃지 상태 즉시 동기화 ──
+_syncBadges();
+// 1분마다 재동기화 (장 시작/종료 시점 자동 전환)
+setInterval(_syncBadges, 60000);
+
 
 
 
