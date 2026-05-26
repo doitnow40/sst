@@ -2286,20 +2286,40 @@ const j=await r.json();
 if(!j.ok)throw new Error(j.error||'API 오류');
 return j.data;
 }
+// ── 장중 여부 판단 (KST 09:00~15:30, 평일) ──────────────────────────
+function _isKrTradingNow(){
+  const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const dow=kst.getDay(); // 0=일,6=토
+  if(dow===0||dow===6) return false;
+  const hhmm=kst.getHours()*100+kst.getMinutes();
+  return hhmm>=900 && hhmm<1530;
+}
+// ── sheetReadAt 시각 단축 표시: "2026-05-26 07:14 (KST)" → "05-26 07:14" ──
+function _shortReadAt(sheetReadAt){
+  const m=sheetReadAt.match(/(\d{2}-\d{2})\s+(\d{2}:\d{2})/);
+  return m ? m[1]+' '+m[2] : sheetReadAt;
+}
+// ── 뱃지 전환: 장중→실시간, 장외/주말→확정데이터 ──────────────────────
+function _syncBadges(){
+  const trading=_isKrTradingNow();
+  const sb=document.getElementById('sheetReadBadge');
+  const rb=document.getElementById('realtimeBadge');
+  if(sb) sb.style.display = trading ? 'none' : '';
+  if(rb) rb.style.display = trading ? ''     : 'none';
+}
 function updateSheetReadTime(sheetReadAt){
-if(!sheetReadAt) return;
-const el=document.getElementById('sheetReadTime');
-if(el) el.textContent='확정 데이터: '+sheetReadAt+' (KST)';
+  if(!sheetReadAt) return;
+  const el=document.getElementById('sheetReadTime');
+  if(el) el.textContent='확정 데이터: '+_shortReadAt(sheetReadAt);
+  _syncBadges();
 }
 function updateRealtimeTime(){
-const now=new Date();
-const kst=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-const hh=String(kst.getHours()).padStart(2,'0');
-const mm=String(kst.getMinutes()).padStart(2,'0');
-const badge=document.getElementById('realtimeBadge');
-const el=document.getElementById('realtimeTime');
-if(badge) badge.style.display='';
-if(el) el.textContent=`실시간 ${hh}:${mm} 갱신`;
+  const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const hh=String(kst.getHours()).padStart(2,'0');
+  const mm=String(kst.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('realtimeTime');
+  if(el) el.textContent=`실시간 ${hh}:${mm} 갱신`;
+  _syncBadges();
 }
 function demoKr(){
 const H=['날짜','코스피','코스닥','ADR피','ADR닥',
