@@ -3014,9 +3014,6 @@ if(_showTodayData){
   if(kospiV!==null||kosdaqV!==null||adrpiV!==null||adrdakV!==null){
     _kpiRows+='<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스피</div><div class="stat-val '+kospiF.cls+'">'+kospiF.t+'</div></div>';
     _kpiRows+='<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.2);background:rgba(79,195,247,.03)"><div class="stat-label">코스닥</div><div class="stat-val '+kosdaqF.cls+'">'+kosdaqF.t+'</div></div>';
-    _kpiRows+='<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR피</div><div class="stat-val neu">'+adrpiF.t+'</div></div>';
-    _kpiRows+='<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.15);background:rgba(79,195,247,.02)"><div class="stat-label">ADR닥</div><div class="stat-val neu">'+adrdakF.t+'</div></div>';
-    if(_kstAfterClose&&!_kstMarketOpen) _kpiRows+='<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.1)"><div class="stat-label" style="color:var(--text-muted);font-size:8px">장마감 기준값</div></div>';
   } else {
     // 값이 없으면 로딩 중으로 처리
     _kpiRows='<div style="color:var(--text-muted);font-size:11px;padding:8px">데이터 로딩 중...</div>';
@@ -3032,14 +3029,12 @@ if(_showTodayData){
 }
 document.getElementById('kr-stats').innerHTML=
 '<div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">'
+// ① 오늘 주요 지표
 +'<div style="border:1px solid rgba(79,195,247,.35);border-radius:10px;padding:10px 14px;background:rgba(79,195,247,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--accent-kr);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 주요 지표 ('+todayLabelDate+')</div>'
 +_todayBoxContent
 +'</div>'
-+'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
-+'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
+// ② 오늘 섹터
 +(function(){
   if(hasTodayStats){
     return '<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
@@ -3052,6 +3047,13 @@ document.getElementById('kr-stats').innerHTML=
       +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음</div></div>';
   } else { return ''; }
 })()
+// ③ 오늘 종목 등락 현황 (_adBox: 아래서 계산 후 삽입)
++_adBox
+// ④ 최근 영업일
++'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
++'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
++'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
 // ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
 // kr_today.marketBreadth (네이버 전체 시장 데이터) 우선
 // fallback: 관심종목 기반 계산
@@ -3073,34 +3075,38 @@ var _adBox='';
 if((_kospiTot>0||_kosdaqTot>0)&&_showTodayData){
   var _kospiDnR=100-_kospiUpR-(_kospiTot>0?Math.round(_adCnt.kospi.neu/_kospiTot*100):0);
   var _kosdaqDnR=100-_kosdaqUpR-(_kosdaqTot>0?Math.round(_adCnt.kosdaq.neu/_kosdaqTot*100):0);
-  _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-    +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'+'<div style="font-size:8px;color:var(--text-muted);margin-bottom:4px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
-    +'<div style="display:flex;gap:8px">'
-    +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
-    +'<div class="stat-label">코스피</div>'
-    +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
-    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kospi.up+'</span>'
-    +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
-    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kospi.dn+'</span>'
-    +'<span style="font-size:9px;color:var(--text-muted)">하락</span>'
-    +(_adCnt.kospi.neu>0?'<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kospi.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'
-    +'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'
-    +'<div style="height:100%;width:'+_kospiUpR+'%;background:#ef5350;border-radius:3px"></div></div>'
-    +'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kospiUpR+'% / 하락 '+_kospiDnR+'%</div>'
-    +'</div>'
-    +'<div class="'+sc+'" style="flex:1;border-color:rgba(79,195,247,.25);background:rgba(79,195,247,.04)">'
-    +'<div class="stat-label">코스닥</div>'
-    +'<div style="display:flex;gap:4px;align-items:baseline;margin:2px 0">'
-    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#ef5350">'+_adCnt.kosdaq.up+'</span>'
-    +'<span style="font-size:9px;color:var(--text-muted)">상승</span>'
-    +'<span style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#42a5f5;margin-left:4px">'+_adCnt.kosdaq.dn+'</span>'
-    +'<span style="font-size:9px;color:var(--text-muted)">하락</span>'
-    +(_adCnt.kosdaq.neu>0?'<span style="font-size:11px;font-weight:600;color:var(--text-muted);margin-left:4px">'+_adCnt.kosdaq.neu+'</span><span style="font-size:9px;color:var(--text-muted)">보합</span>':'')+'</div>'
-    +'<div style="height:5px;border-radius:3px;background:rgba(66,165,245,.25);overflow:hidden;margin-top:3px">'
-    +'<div style="height:100%;width:'+_kosdaqUpR+'%;background:#ef5350;border-radius:3px"></div></div>'
-    +'<div style="font-size:9px;color:var(--text-muted);margin-top:2px">상승 '+_kosdaqUpR+'% / 하락 '+_kosdaqDnR+'%</div>'
-    +'</div>'
-    +'</div></div>';
+  // ── 스택바 차트 헬퍼 ──
+  function _stackBar(up,dn,neu,tot){
+    var uR=tot>0?Math.round(up/tot*100):0;
+    var dR=tot>0?Math.round(dn/tot*100):0;
+    var nR=100-uR-dR;
+    return '<div style="height:14px;border-radius:4px;overflow:hidden;display:flex;margin:4px 0">'
+      +'<div style="width:'+uR+'%;background:#ef5350;display:flex;align-items:center;justify-content:center">'+(uR>=10?'<span style="font-size:8px;color:#fff;font-weight:700">'+uR+'%</span>':'')+'</div>'
+      +'<div style="width:'+nR+'%;background:rgba(180,180,180,.3)"></div>'
+      +'<div style="width:'+dR+'%;background:#42a5f5;display:flex;align-items:center;justify-content:center">'+(dR>=10?'<span style="font-size:8px;color:#fff;font-weight:700">'+dR+'%</span>':'')+'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:6px;font-size:9px;color:var(--text-muted)">'
+      +'<span style="color:#ef5350">▲'+uR+'%</span>'
+      +(nR>0?'<span>━'+nR+'%</span>':'')
+      +'<span style="color:#42a5f5">▼'+dR+'%</span>'
+      +'</div>';
+  }
+  _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
+    +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'
+    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
+    +(_kospiTot>0
+      ?'<div style="margin-bottom:4px">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--text-primary);margin-bottom:2px">코스피 <span style="font-size:9px;color:var(--text-muted);font-weight:400">('+_kospiTot+'종목)</span></div>'
+        +_stackBar(_adCnt.kospi.up,_adCnt.kospi.dn,_adCnt.kospi.neu,_kospiTot)
+        +'</div>'
+      :'')
+    +(_kosdaqTot>0
+      ?'<div>'
+        +'<div style="font-size:10px;font-weight:700;color:var(--text-primary);margin-bottom:2px">코스닥 <span style="font-size:9px;color:var(--text-muted);font-weight:400">('+_kosdaqTot+'종목)</span></div>'
+        +_stackBar(_adCnt.kosdaq.up,_adCnt.kosdaq.dn,_adCnt.kosdaq.neu,_kosdaqTot)
+        +'</div>'
+      :'')
+    +'</div>';
 }
 // 장마감 후 데이터 없거나 장전/주말이면 '오늘 데이터 없음' 표시
 if(!_adBox && _showTodayData){
@@ -3108,9 +3114,8 @@ if(!_adBox && _showTodayData){
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황</div>'
     +'<div style="color:var(--text-muted);font-size:11px;padding:8px 0;text-align:center">📭 오늘 데이터 없음<div style="font-size:9px;margin-top:3px">장중 수집 후 표시됩니다</div></div></div>';
 }
-// ── 종목 등락 박스 추가 + 등록 정보 전역 저장 (관리자 페이지에서 표시)
+// ── 등록 정보 전역 저장 (관리자 페이지에서 표시)
 window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
-document.getElementById('kr-stats').innerHTML+=_adBox;
 }
 
 function _makeRankChart(el,avgArr,isUp,accentColor){
