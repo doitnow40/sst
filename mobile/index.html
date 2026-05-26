@@ -27,7 +27,7 @@
   --accent-us:#ef5350;
   --accent-gold:#ffc107;
   --tab-h:56px;
-  --header-h:48px;
+  --header-h:auto;
   --font-body:'Noto Sans KR',sans-serif;
   --font-mono:'Inter','Helvetica Neue',sans-serif;
   --font-display:'Bebas Neue',sans-serif;
@@ -406,17 +406,25 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
-    <button id="refresh-all-btn" onclick="refreshAllData()" class="mob-hdr-btn" title="새로고침">
-      <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
-      <span>새로고침</span>
-    </button>
-    <div class="mob-hdr-btn" id="sheetReadBadge" style="cursor:help">
-      <div class="mob-live-dot" id="sheetReadDot"></div>
-      <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
-    </div>
-    <div class="mob-hdr-btn" id="realtimeBadge" style="display:none">
-      <div class="mob-live-dot pulse"></div>
-      <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+      <div style="display:flex;gap:5px;align-items:center">
+        <button id="refresh-kr-btn" onclick="refreshKrToday(this)" class="mob-hdr-btn" title="오늘 실시간 행만 빠르게 갱신">
+          <span style="font-size:11px">🔄</span>
+          <span>오늘 갱신</span>
+        </button>
+        <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
+          <span style="font-size:11px">📡</span>
+          <span>지금수집</span>
+        </button>
+      </div>
+      <div id="sheetReadBadge" class="mob-hdr-btn" style="cursor:help;padding:2px 6px">
+        <div class="mob-live-dot" id="sheetReadDot"></div>
+        <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
+      </div>
+      <div id="realtimeBadge" class="mob-hdr-btn" style="display:none;padding:2px 6px">
+        <div class="mob-live-dot pulse"></div>
+        <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
+      </div>
     </div>
   </div>
 </header>
@@ -6684,6 +6692,11 @@ tooltip.style.top=Math.round(y-h)+'px';
 
 // 초기 페이지 → KR History
 go('kr-history', null);
+
+// ── 페이지 초기 로드 시 뱃지 상태 즉시 동기화 ──
+_syncBadges();
+// 1분마다 재동기화 (장 시작/종료 시점 자동 전환)
+setInterval(_syncBadges, 60000);
 </script>
 
 <!-- 섹터 그룹 접기/펴기 바텀시트 -->
