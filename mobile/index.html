@@ -2853,7 +2853,15 @@ document.getElementById('us-stats').innerHTML=
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">10년물</div><div class="stat-val neu" style="color:#cfd8dc">'+tnxFmtT+'</div><div class="stat-sub">수익률</div></div>'
 +'<div class="'+sc+'" style="flex:1;border-color:rgba(176,190,197,.25);background:rgba(176,190,197,.04)"><div class="stat-label">2년물</div><div class="stat-val neu" style="color:#cfd8dc">'+ust2FmtT+'</div><div class="stat-sub">수익률</div></div>'
 +'</div></div>':'')
-// ── 박스2: 최근 영업일
+// ── 박스2: 오늘 섹터 (장중/마감후)
++(_usTMx?
+'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
++'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+usTdD+')</div>'
++'<div style="display:flex;gap:8px">'
++'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_usTMx.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMx.name.replace(/'/g,"\'")+'" data-market="us" style="cursor:pointer;font-size:11px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usTMx.name+'</div></div>'
++'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usTMn.v>=0?'+':'')+_usTMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMn.name.replace(/'/g,"\'")+'" data-market="us" style="cursor:pointer;font-size:11px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usTMn.name+'</div></div>'
++'</div></div>':'')
+// ── 박스3: 최근 영업일
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
 +'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px">'
@@ -2862,14 +2870,6 @@ document.getElementById('us-stats').innerHTML=
 +(_usMx?'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_usMx.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMx.name.replace(/'/g,"\'")+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:11px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usMx.name+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usMn.v>=0?'+':'')+_usMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usMn.name.replace(/'/g,"\'")+'" data-market="us" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:11px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usMn.name+'</div></div>':'')
 +'</div></div>'
-// ── 박스3: 오늘 섹터 (장중/마감후)
-+(_usTMx?
-'<div style="border:1px solid rgba(255,183,77,.4);border-radius:10px;padding:10px 14px;background:rgba(255,183,77,.05);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:#ffb74d;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 섹터 ('+usTdD+')</div>'
-+'<div style="display:flex;gap:8px">'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+_usTMx.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMx.name.replace(/'/g,"\'")+'" data-market="us" style="cursor:pointer;font-size:11px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+_usTMx.name+'</div></div>'
-+'<div class="'+sc+'" style="flex:1;'+b2+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+(_usTMn.v>=0?'+':'')+_usTMn.v.toFixed(2)+'%</div><div class="sp-stat-click" data-sector="'+_usTMn.name.replace(/'/g,"\'")+'" data-market="us" style="cursor:pointer;font-size:11px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+_usTMn.name+'</div></div>'
-+'</div></div>':'')
 +'</div>';
 }
 
