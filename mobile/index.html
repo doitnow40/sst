@@ -2961,6 +2961,22 @@ if(_showTodayData){
     +(_noDataReason?'<div style="font-size:9px;margin-top:3px;color:var(--text-muted)">'+_noDataReason+'</div>':'')
     +'</div>';
 }
+var _adCnt={kospi:{up:0,dn:0,neu:0},kosdaq:{up:0,dn:0,neu:0}};
+var _usedMarketBreadth = false;
+if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).length > 0){
+  var _mb = S.krToday.marketBreadth;
+  if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
+  if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
+  _usedMarketBreadth = true;
+  var _mbEstimated = (_mb['코스피']&&_mb['코스피'].estimated)||false;
+// marketBreadth 없으면 박스 미표시 (ADR 역산 제거)
+}
+var _kospiTot=_adCnt.kospi.up+_adCnt.kospi.dn+_adCnt.kospi.neu;
+var _kosdaqTot=_adCnt.kosdaq.up+_adCnt.kosdaq.dn+_adCnt.kosdaq.neu;
+var _kospiUpR=_kospiTot>0?Math.round(_adCnt.kospi.up/_kospiTot*100):0;
+var _kosdaqUpR=_kosdaqTot>0?Math.round(_adCnt.kosdaq.up/_kosdaqTot*100):0;
+// ── 등록 정보 전역 저장 (관리자 페이지에서 표시)
+
 var _adBox='';
 if((_kospiTot>0||_kosdaqTot>0)&&_showTodayData){
   var _kospiDnR=100-_kospiUpR-(_kospiTot>0?Math.round(_adCnt.kospi.neu/_kospiTot*100):0);
@@ -3035,21 +3051,6 @@ document.getElementById('kr-stats').innerHTML=
 // ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
 // kr_today.marketBreadth (네이버 전체 시장 데이터) 우선
 // fallback: 관심종목 기반 계산
-var _adCnt={kospi:{up:0,dn:0,neu:0},kosdaq:{up:0,dn:0,neu:0}};
-var _usedMarketBreadth = false;
-if(S.krToday && S.krToday.marketBreadth && Object.keys(S.krToday.marketBreadth).length > 0){
-  var _mb = S.krToday.marketBreadth;
-  if(_mb['코스피']){ _adCnt.kospi.up=_mb['코스피'].rise||0; _adCnt.kospi.dn=_mb['코스피'].fall||0; _adCnt.kospi.neu=_mb['코스피'].same||0; }
-  if(_mb['코스닥']){ _adCnt.kosdaq.up=_mb['코스닥'].rise||0; _adCnt.kosdaq.dn=_mb['코스닥'].fall||0; _adCnt.kosdaq.neu=_mb['코스닥'].same||0; }
-  _usedMarketBreadth = true;
-  var _mbEstimated = (_mb['코스피']&&_mb['코스피'].estimated)||false;
-// marketBreadth 없으면 박스 미표시 (ADR 역산 제거)
-}
-var _kospiTot=_adCnt.kospi.up+_adCnt.kospi.dn+_adCnt.kospi.neu;
-var _kosdaqTot=_adCnt.kosdaq.up+_adCnt.kosdaq.dn+_adCnt.kosdaq.neu;
-var _kospiUpR=_kospiTot>0?Math.round(_adCnt.kospi.up/_kospiTot*100):0;
-var _kosdaqUpR=_kosdaqTot>0?Math.round(_adCnt.kosdaq.up/_kosdaqTot*100):0;
-// ── 등록 정보 전역 저장 (관리자 페이지에서 표시)
 window._krRegInfo = {days: f.length, krR: S.krR, sectors: pureSectors.length};
 }
 
