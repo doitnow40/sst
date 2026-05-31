@@ -949,49 +949,52 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 </div>
 
 <div id="admin-tab-memo" style="display:none">
-<div style="max-width:560px">
-  <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8">
-    각 히스토리 표의 <strong style="color:var(--text-primary)">메모</strong> 컬럼에 날짜별 메모를 입력합니다.<br>
-    저장하면 구글 스프레드시트 해당 시트의 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px">📝 메모</code> 열에 기록됩니다.
-  </div>
-  <!-- KR -->
-  <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇰🇷 한국 섹터 History 메모</div>
-    <div class="about-section-body" style="padding:14px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-        <input type="date" id="kr-memo-date" class="admin-input" style="max-width:160px">
+      <div style="max-width:560px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.8">
+          각 히스토리 표의 <strong style="color:var(--text-primary)">메모</strong> 컬럼에 날짜별 메모를 입력합니다.<br>
+          <strong style="color:var(--accent-kr)">날짜를 선택하면</strong> 기존 메모가 자동으로 불러와집니다. 없으면 신규 입력합니다.<br>
+          저장하면 구글 스프레드시트 해당 시트의 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px">📝 메모</code> 열에 기록됩니다.
+        </div>
+        <!-- KR -->
+        <div class="about-section" style="margin-bottom:14px">
+          <div class="about-section-title">🇰🇷 한국 섹터 History 메모</div>
+          <div class="about-section-body" style="padding:14px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
+              <input type="date" id="kr-memo-date" class="admin-input" style="max-width:160px" onchange="loadHistoryMemo('kr')">
+              <span id="kr-memo-load-status" style="font-size:10px;color:var(--text-muted);white-space:nowrap"></span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
+              <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+              <button class="admin-add-btn" id="kr-memo-save-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
+            </div>
+            <div id="kr-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
+          </div>
+        </div>
+        <!-- US 관심종목 섹터등락률 -->
+        <div class="about-section" style="margin-bottom:14px">
+          <div class="about-section-title">🇺🇸 미국 섹터 History 메모</div>
+          <div class="about-section-body" style="padding:14px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
+              <input type="date" id="us-watch-memo-date" class="admin-input" style="max-width:160px" onchange="loadHistoryMemo('us_watch')">
+              <span id="us-watch-memo-load-status" style="font-size:10px;color:var(--text-muted);white-space:nowrap"></span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
+              <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+              <button class="admin-add-btn" id="us-watch-memo-save-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
+            </div>
+            <div id="us-watch-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-        <textarea id="kr-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) FOMC 금리 동결, 코스피 반등 출발"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" id="kr-memo-save-btn" onclick="saveHistoryMemo('kr')" style="background:var(--accent-kr);color:#000">💾 저장</button>
-      </div>
-      <div id="kr-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
-    </div>
-  </div>
-  <!-- US 관심종목 섹터등락률 -->
-  <div class="about-section" style="margin-bottom:14px">
-    <div class="about-section-title">🇺🇸 미국 섹터 History 메모</div>
-    <div class="about-section-body" style="padding:14px">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap">날짜</label>
-        <input type="date" id="us-watch-memo-date" class="admin-input" style="max-width:160px">
-      </div>
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <label style="font-size:11px;color:var(--text-secondary);white-space:nowrap;padding-top:6px">메모</label>
-        <textarea id="us-watch-memo-text" class="admin-input" rows="3" style="resize:vertical;font-family:var(--font-body);line-height:1.6" placeholder="예) PCE 발표, S&P500 사상최고치"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-        <button class="admin-add-btn" id="us-watch-memo-save-btn" onclick="saveHistoryMemo('us_watch')" style="background:#6a1b9a;color:#fff">💾 저장</button>
-      </div>
-      <div id="us-watch-memo-msg" class="admin-msg" style="margin-top:10px;font-size:12px;padding:8px 12px;display:none"></div>
-    </div>
-  </div>
-</div>
-</div><!-- /#admin-tab-memo -->
+      </div><!-- /#admin-tab-memo -->
 <div id="admin-tab-techref" style="display:none">
 <div class="stats-embed-wrap" style="max-width:820px">
 
@@ -5680,7 +5683,11 @@ if(tab==='memo'){
   const today=new Date().toISOString().slice(0,10);
   ['kr-memo-date','us-watch-memo-date'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el&&!el.value) el.value=today;
+    if(el&&!el.value){
+      el.value=today;
+      const target=id==='kr-memo-date'?'kr':'us_watch';
+      loadHistoryMemo(target);
+    }
   });
 }
 if(tab==='watch'){
@@ -6125,6 +6132,56 @@ onUsWatchChange();
 alert('저장 실패: '+e.message);
 }
 btn.disabled=false; btn.innerHTML='💾 저장';
+}
+// ── History 메모 조회 (날짜 변경 시 자동 로드) ──────────────────────
+async function loadHistoryMemo(target){
+const dateId    = {'kr':'kr-memo-date',         'us_watch':'us-watch-memo-date'}[target];
+const textId    = {'kr':'kr-memo-text',          'us_watch':'us-watch-memo-text'}[target];
+const statusId  = {'kr':'kr-memo-load-status',   'us_watch':'us-watch-memo-load-status'}[target];
+const msgId     = {'kr':'kr-memo-msg',           'us_watch':'us-watch-memo-msg'}[target];
+const actionMap = {'kr':'kr_get_memo',           'us_watch':'us_watch_get_memo'};
+const dateEl   = document.getElementById(dateId);
+const textEl   = document.getElementById(textId);
+const statusEl = document.getElementById(statusId);
+const msgEl    = document.getElementById(msgId);
+if(!dateEl||!textEl||!statusEl) return;
+const dateVal  = dateEl.value;
+if(!dateVal){ textEl.value=''; statusEl.textContent=''; return; }
+statusEl.textContent='⏳ 불러오는 중...';
+statusEl.style.color='var(--text-muted)';
+textEl.value='';
+if(msgEl) msgEl.style.display='none';
+try{
+  const pw_hash=ADMIN_CONFIG.PW_HASH||'';
+  if(!pw_hash||!ADM.loggedIn){
+    statusEl.textContent='❌ 로그인 필요';
+    statusEl.style.color='#ef9a9a';
+    return;
+  }
+  const action=actionMap[target];
+  const url=`${GAS_WEBAPP_URL}?type=admin&action=${encodeURIComponent(action)}&pw_hash=${encodeURIComponent(pw_hash)}&date=${encodeURIComponent(dateVal)}&_t=${Date.now()}`;
+  const r=await fetch(url,{cache:'no-store'});
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j=await r.json();
+  if(!j.ok) throw new Error(j.error||'조회 실패');
+  const d=j.data;
+  if(d.found && d.memo){
+    textEl.value=d.memo;
+    statusEl.textContent='✏️ 기존 메모 — 수정 후 저장';
+    statusEl.style.color='#ffb74d';
+  }else if(d.found && !d.memo){
+    textEl.value='';
+    statusEl.textContent='📅 날짜 존재 — 신규 입력';
+    statusEl.style.color='#a5d6a7';
+  }else{
+    textEl.value='';
+    statusEl.textContent='⚠️ 시트에 없는 날짜';
+    statusEl.style.color='#ef9a9a';
+  }
+}catch(e){
+  statusEl.textContent='❌ 조회 실패: '+e.message;
+  statusEl.style.color='#ef9a9a';
+}
 }
 // ── History 메모 저장 ──────────────────────────────────────────────
 async function saveHistoryMemo(target){
