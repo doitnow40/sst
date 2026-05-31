@@ -75,6 +75,18 @@ body{font-family:var(--font-body);color:var(--text-primary);display:flex;flex-di
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── 헤더 하단 상태바 ── */
+#mob-status-bar{
+  background:var(--bg-card2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:3px 12px;flex-shrink:0;gap:8px;
+}
+#mob-status-bar .status-badge{
+  display:flex;align-items:center;gap:4px;
+  font-size:8px;color:#8aa0c0;font-family:var(--font-mono);
+  white-space:nowrap;cursor:help;
+}
+
 /* ── 메인 스크롤 영역 ── */
 #mob-main{
   flex:1;
@@ -417,29 +429,29 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-      <div style="display:flex;gap:5px;align-items:center">
-        <button id="refresh-kr-btn" onclick="refreshKrToday(this)" class="mob-hdr-btn" title="오늘 실시간 행만 빠르게 갱신">
-          <span style="font-size:11px">🔄</span>
-          <span>오늘 갱신</span>
-        </button>
-        <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
-          <span style="font-size:11px">📡</span>
-          <span>지금수집</span>
-        </button>
-      </div>
-      <div id="sheetReadBadge" class="mob-hdr-btn" style="cursor:help;padding:2px 6px">
-        <div class="mob-live-dot" id="sheetReadDot"></div>
-        <span id="sheetReadTime" style="font-size:8px">로딩 중...</span>
-      </div>
-      <div id="realtimeBadge" class="mob-hdr-btn" style="display:none;padding:2px 6px">
-        <div class="mob-live-dot pulse"></div>
-        <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
-      </div>
-      <button onclick="openHelpModal()" class="mob-hdr-btn" style="border-color:rgba(255,193,7,.4);color:#ffc107;padding:2px 7px" title="도움말">❓</button>
-    </div>
+    <button id="refresh-kr-btn" onclick="refreshKrToday(this)" class="mob-hdr-btn" title="오늘 실시간 행만 빠르게 갱신">
+      <span style="font-size:11px">🔄</span>
+      <span>오늘 갱신</span>
+    </button>
+    <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
+      <span style="font-size:11px">📡</span>
+      <span>지금수집</span>
+    </button>
+    <button onclick="openHelpModal()" class="mob-hdr-btn" style="border-color:rgba(255,193,7,.4);color:#ffc107;padding:2px 7px" title="도움말">❓</button>
   </div>
 </header>
+
+<!-- 헤더 하단 상태바 -->
+<div id="mob-status-bar">
+  <div id="sheetReadBadge" class="status-badge" title="확정 데이터 마지막 수집 시각">
+    <div class="mob-live-dot" id="sheetReadDot"></div>
+    <span id="sheetReadTime">로딩 중...</span>
+  </div>
+  <div id="realtimeBadge" class="status-badge" style="display:none" title="실시간 데이터 마지막 갱신 시각">
+    <div class="mob-live-dot pulse"></div>
+    <span id="realtimeTime">실시간 --:--</span>
+  </div>
+</div>
 
 <!-- 메인 스크롤 영역 -->
 <div id="mob-main">
@@ -7201,7 +7213,6 @@ function _helpContentUser(){
   <div class="help-section-title">📖 이 사이트는?</div>
   <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
     한국·미국 주식 섹터 등락률을 한눈에 확인하는 트래커입니다.<br>
-    각 섹터별 종목 정의는 관리자가 직접합니다. (사용자는 수정 불가)<br>
     <strong>오늘 실시간</strong>(약 20분 지연)과 <strong>최대 1년치 히스토리</strong>를 제공합니다.<br>
     실시간 데이터는 평일 장중에 5분마다 자동으로 갱신됩니다.
   </div>
