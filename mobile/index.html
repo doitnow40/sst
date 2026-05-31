@@ -425,6 +425,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
         <div class="mob-live-dot pulse"></div>
         <span id="realtimeTime" style="font-size:8px">실시간 --:--</span>
       </div>
+      <button onclick="openHelpModal()" class="mob-hdr-btn" style="border-color:rgba(255,193,7,.4);color:#ffc107;padding:2px 7px" title="도움말">❓</button>
     </div>
   </div>
 </header>
@@ -6716,5 +6717,138 @@ setInterval(_syncBadges, 60000);
   </div>
   <div id="grp-sheet-body"></div>
 </div>
+
+<!-- ===== HELP MODAL ===== -->
+<div id="help-modal-overlay" onclick="closeHelpModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
+<div id="help-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9001;width:min(96vw,680px);max-height:88vh;background:var(--bg-dark);border:1px solid var(--border-light);border-radius:12px;overflow:hidden;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.7)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">❓</span>
+      <span id="help-modal-title" style="font-size:14px;font-weight:700;color:var(--text-primary)">도움말</span>
+    </div>
+    <button onclick="closeHelpModal()" style="background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;padding:2px 8px;border-radius:4px">×</button>
+  </div>
+  <div id="help-modal-body" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;font-size:12px;color:var(--text-secondary);line-height:1.85;flex:1"></div>
+</div>
+
+<style>
+.help-section{margin-bottom:18px}
+.help-section-title{font-size:11px;font-weight:700;color:var(--accent-kr);letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.help-section-title.admin-color{color:#ff9800}
+.help-row{padding:5px 0;border-bottom:1px solid rgba(46,58,80,.3)}
+.help-row:last-child{border-bottom:none}
+.help-key{font-family:var(--font-mono);font-size:9px;color:#80cbc4;background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.2);border-radius:4px;padding:1px 6px;display:inline-block;margin-bottom:3px}
+.help-val{font-size:11px;color:var(--text-secondary)}
+.help-val strong{color:var(--text-primary)}
+.help-note{font-size:10px;color:var(--text-muted);background:rgba(255,193,7,.06);border-left:2px solid var(--accent-gold);padding:6px 10px;border-radius:0 4px 4px 0;margin-top:8px;line-height:1.7}
+.help-note.warn{border-left-color:#ef5350;background:rgba(239,83,80,.06)}
+.help-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:6px}
+.help-table th{background:var(--bg-card2);padding:4px 6px;color:var(--text-muted);font-weight:600;text-align:left;border-bottom:1px solid var(--border)}
+.help-table td{padding:4px 6px;border-bottom:1px solid rgba(46,58,80,.3);vertical-align:top;font-size:9px}
+.help-table td:first-child{color:#80cbc4;font-family:var(--font-mono)}
+.help-table td:last-child{color:var(--accent-kr);font-weight:600;white-space:nowrap}
+</style>
+
+<script>
+function _helpContentUser(){
+  return `
+<div class="help-section">
+  <div class="help-section-title">📖 이 사이트는?</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
+    한국·미국 주식 섹터 등락률을 한눈에 확인하는 트래커입니다.<br>
+    <strong>오늘 실시간</strong>(약 20분 지연)과 <strong>최대 1년치 히스토리</strong>를 제공합니다.<br>
+    실시간 데이터는 평일 장중에 5분마다 자동으로 갱신됩니다.
+  </div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title">🖱️ 헤더 버튼 안내</div>
+  <div class="help-row"><div class="help-key">🔄 오늘 갱신</div><div class="help-val">오늘 행만 빠르게 화면에 반영합니다. (약 20분 지연 실시간값)</div></div>
+  <div class="help-row"><div class="help-key">📡 지금수집</div><div class="help-val">서버에서 최신 데이터를 직접 수집합니다. <strong>30~60초</strong> 소요. 장중에만 의미가 있습니다.</div></div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title">🔘 화면 내 버튼/필터 안내</div>
+  <div class="help-row"><div class="help-key">1개월 / 3개월…</div><div class="help-val">히스토리 테이블 <strong>표시 기간</strong>을 조정합니다.</div></div>
+  <div class="help-row"><div class="help-key">글자크기 ±</div><div class="help-val">테이블 폰트 크기를 조절합니다.</div></div>
+  <div class="help-row"><div class="help-key">접기 / 펼치기</div><div class="help-val">섹터 그룹을 접거나 펼칩니다.</div></div>
+  <div class="help-row"><div class="help-key">📡 오늘 / 1주…</div><div class="help-val">하단 통계 차트의 <strong>분석 기간</strong>을 변경합니다.</div></div>
+  <div class="help-row"><div class="help-key">🔄 갱신 (목록)</div><div class="help-val">종목 카드를 최신 데이터로 즉시 다시 불러옵니다.</div></div>
+  <div class="help-row"><div class="help-key">📡 오늘 실시간</div><div class="help-val">종목 카드를 오늘 현재 등락률로 표시합니다.</div></div>
+  <div class="help-row"><div class="help-key">📅 최근 영업일</div><div class="help-val">종목 카드를 가장 최근 마감 확정값으로 표시합니다.</div></div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title">📊 데이터 갱신 주기</div>
+  <div class="help-row"><div class="help-key">오늘 실시간 행</div><div class="help-val">평일 장중 <strong>5분마다 자동 갱신</strong>. 약 20분 지연 데이터.</div></div>
+  <div class="help-row"><div class="help-key">히스토리 과거 행</div><div class="help-val">장 마감 후 <strong>1회 확정 기록</strong>됩니다.</div></div>
+  <div class="help-row"><div class="help-key">BTC / ETH</div><div class="help-val">매일 오전 <strong>6:05 KST</strong> 자동 수집됩니다.</div></div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title">💡 종목 팝업 보는 법</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
+    히스토리 테이블에서 <strong>섹터명(첫 번째 열 셀)을 탭</strong>하면 해당 섹터의 구성 종목과 오늘 등락률 팝업이 표시됩니다.
+  </div>
+</div>`;
+}
+
+function _helpContentAdmin(){
+  return _helpContentUser() + `
+<hr style="border:none;border-top:1px solid var(--border);margin:10px 0 18px">
+<div style="font-size:11px;color:#ff9800;font-weight:700;margin-bottom:12px">🔐 관리자 전용 — 데이터 수정 및 반영 가이드</div>
+
+<div class="help-section">
+  <div class="help-section-title admin-color">🌐 웹사이트 관리자 화면에서 수정 후</div>
+  <div class="help-row"><div class="help-key">종목 추가/삭제</div><div class="help-val">저장 → GAS 자동 반영 → 웹 <strong>[오늘 갱신]</strong></div></div>
+  <div class="help-row"><div class="help-key">섹터 추가/삭제</div><div class="help-val">저장 → <code style="background:rgba(0,0,0,.3);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:9px">syncSectorHeaders()</code> → <strong>KR+US 통계수식 재적용</strong> → 갱신</div></div>
+  <div class="help-note warn">⚠️ 섹터 추가/삭제 후 <strong>통계수식 재적용을 빠뜨리면</strong> 데이터가 꼬입니다.</div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title admin-color">📊 스프레드시트 직접 수정 후</div>
+  <div class="help-row"><div class="help-key">종목/섹터 직접 수정</div><div class="help-val"><code style="background:rgba(0,0,0,.3);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:9px">syncSectorHeaders()</code> → 통계수식 재적용 → 갱신</div></div>
+  <div class="help-row"><div class="help-key">과거 데이터 수정</div><div class="help-val">5분 자동수집 대기 또는 <strong>[지금수집]</strong> → 갱신</div></div>
+  <div class="help-row"><div class="help-key">새 섹터 추가 시</div><div class="help-val">3행 수식 시작행 <code style="background:rgba(0,0,0,.3);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:9px">$열$7</code> (INDIRECT 방식) 반드시 확인</div></div>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title admin-color">⚡ 작업별 반영 흐름 요약</div>
+  <table class="help-table">
+    <thead><tr><th>작업</th><th>추가 조치</th><th>반영</th></tr></thead>
+    <tbody>
+      <tr><td>관리자 종목 추가/삭제</td><td>없음</td><td>즉시</td></tr>
+      <tr><td>관리자 섹터 추가/삭제</td><td>sync + 수식 재적용</td><td>즉시</td></tr>
+      <tr><td>시트 종목 직접 수정</td><td>sync + 수식 재적용</td><td>즉시</td></tr>
+      <tr><td>시트 과거 데이터 수정</td><td>없음 (자동 대기)</td><td>~5분</td></tr>
+      <tr><td>장중 실시간 데이터</td><td>없음</td><td>5분 자동</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="help-section">
+  <div class="help-section-title admin-color">📋 GitHub Actions cron</div>
+  <div class="help-row"><div class="help-key">KR 장중</div><div class="help-val">UTC 00:00~06:55 평일 (KST 09:00~15:55)</div></div>
+  <div class="help-row"><div class="help-key">US 장중</div><div class="help-val">UTC 14:00~20:55 평일 (ET 10:00~16:55)</div></div>
+  <div class="help-note">공휴일(평일)에도 Actions 실행 → fetch_naver.py 내부에서 자동 스킵.</div>
+</div>`;
+}
+
+function openHelpModal(){
+  const isAdmin = !!document.querySelector('#page-admin[style*="block"]');
+  document.getElementById('help-modal-title').textContent = isAdmin ? '도움말 (관리자)' : '도움말';
+  document.getElementById('help-modal-body').innerHTML = isAdmin ? _helpContentAdmin() : _helpContentUser();
+  document.getElementById('help-modal-overlay').style.display = 'block';
+  const m = document.getElementById('help-modal');
+  m.style.display = 'flex';
+}
+function closeHelpModal(){
+  document.getElementById('help-modal-overlay').style.display = 'none';
+  document.getElementById('help-modal').style.display = 'none';
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeHelpModal(); });
+</script>
+<!-- ===== /HELP MODAL ===== -->
+
 </body>
 </html>
