@@ -4971,7 +4971,7 @@ f.forEach(row=>{
 t+=`<tr><td>${row[0]||''}</td>`;
 sectorHdrs.forEach((name,ci)=>{
 const val=row[ci+1];let c;
-if(KR_FIXED[name]?.type==='ADR')c=adrCell(val);else c=pctCell(val,15);
+if(KR_FIXED[name]?.type==='ADR')c=adrCell(val);else if(KR_FIXED[name]?.type==='FNG')c=fngCell(val);else c=pctCell(val,15);
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrTd2=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd2=_isBdrTd2?"border-left:3px solid #000;":"";
