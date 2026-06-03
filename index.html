@@ -2,6 +2,28 @@
 <html lang="ko">
 <head>
 <script>
+/* ── 버튼 처리중/완료 공통 헬퍼 ── */
+function btnLoading(btn, text) {
+  if (!btn) return;
+  btn._origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="admin-spinner"></span>' + (text || '처리 중...');
+}
+function btnDone(btn, text, isErr) {
+  if (!btn) return;
+  btn.disabled = false;
+  btn.classList.remove('loading');
+  if (text) {
+    btn.innerHTML = (isErr ? '❌ ' : '✅ ') + text;
+    setTimeout(function() {
+      btn.innerHTML = btn._origHTML || btn.innerHTML;
+    }, 1500);
+  } else {
+    btn.innerHTML = btn._origHTML || btn.innerHTML;
+  }
+}
+
 // ★ 모바일 접속 시 /mobile/ 로 자동 리다이렉트
 (function(){
   var ua = navigator.userAgent || '';
@@ -67,7 +89,9 @@ gtag('config','G-3PTKMRYZZ3');</script>
   .analytics-center-col{grid-column:1;grid-row:2;grid-template-columns:1fr}
   .analytics-main-col{grid-column:1;grid-row:1}
   .analytics-rank-col-fall{grid-column:1;grid-row:2}
-}@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}.deploy-guide{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:11px;line-height:1.9;color:var(--text-secondary)}.deploy-guide h3{color:var(--accent-kr);font-size:13px;margin-bottom:8px}.deploy-guide ol{padding-left:18px}.deploy-guide li{margin-bottom:4px}.deploy-guide code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px;color:#90caf9}.about-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}.about-section-title{padding:11px 16px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:.3px}.about-section-body{padding:14px 18px;font-size:12px;color:var(--text-secondary);line-height:2.0}.about-section-body strong{color:var(--text-primary)}.admin-login-box{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:20px}.admin-login-title{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--text-primary)}.admin-login-sub{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7}.admin-user-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:16px}.admin-user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}.admin-user-name{font-size:12px;color:var(--text-primary);font-weight:600}.admin-user-email{font-size:10px;color:var(--text-muted)}.admin-logout-btn{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}.admin-logout-btn:hover{border-color:var(--accent-us);color:var(--accent-us)}.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px}.admin-tab{padding:8px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}.admin-tab:hover{color:var(--text-primary)}.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}.stats-embed-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;min-height:200px}.ga-notice{font-size:12px;color:var(--text-secondary);line-height:1.9}.ga-notice code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px;color:#90caf9}.ga-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:10px;transition:opacity .15s}.ga-btn:hover{opacity:.85}.admin-mgmt-layout{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}.admin-sector-list{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-sector-list-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;justify-content:space-between}.admin-sector-item{display:flex;align-items:center;padding:8px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-bottom:1px solid rgba(46,58,80,.3);transition:all .15s;gap:8px}.admin-sector-item:hover{background:rgba(255,255,255,.03);color:var(--text-primary)}.admin-sector-item.selected{background:rgba(79,195,247,.1);color:var(--accent-kr)}.admin-sector-item:last-child{border-bottom:none}.admin-del-btn{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer;flex-shrink:0;transition:all .15s}.admin-del-btn:hover{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us)}.admin-stock-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-panel-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)}.admin-panel-body{padding:14px}.admin-stock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;background:var(--bg-card2);border:1px solid var(--border);margin-bottom:6px}.admin-stock-name{flex:1;color:var(--text-primary)}.admin-stock-ticker{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px}.admin-input-row{display:flex;gap:6px;margin-top:10px}.admin-input{flex:1;background:var(--bg-darkest);border:1px solid var(--border);color:var(--text-primary);padding:6px 10px;border-radius:6px;font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .15s}.admin-input:focus{border-color:var(--accent-kr)}.admin-add-btn{padding:6px 14px;border-radius:6px;border:none;background:var(--accent-kr);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}.admin-add-btn:hover{opacity:.85}.admin-add-btn:disabled{opacity:.4;cursor:not-allowed}.admin-msg{font-size:11px;padding:6px 10px;border-radius:5px;margin-top:8px;display:none}.admin-msg.ok{background:rgba(102,187,106,.15);color:#a5d6a7;border:1px solid rgba(102,187,106,.3)}.admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}.admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}.memo-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(79,195,247,.25);color:var(--accent-kr);font-size:10px;flex-shrink:0;cursor:help;border:1px solid rgba(79,195,247,.4);transition:all .15s;font-weight:700;user-select:none}.memo-icon:hover{background:rgba(79,195,247,.5);transform:scale(1.15)}.watch-checkbox{display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 0}.watch-checkbox input{width:14px;height:14px;accent-color:#ff6f00;cursor:pointer}.watch-check-label{font-size:10px;color:var(--text-muted)}.sector-card.watched{border:2px solid #ff6f00 !important;box-shadow:0 0 12px rgba(255,111,0,.35)}.sector-card.watched .sector-card-header{background:rgba(255,111,0,.12) !important;border-bottom-color:rgba(255,111,0,.4) !important}.watch-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:4px}th.watched-col{background:#7b3a00 !important;color:#ffd180 !important;outline:2px solid #ff6f00;outline-offset:-1px}.hb-line{display:block;width:18px;height:2px;background:var(--text-secondary);border-radius:2px;transition:all .2s}#sidebar-toggle-btn:hover .hb-line{background:var(--text-primary)}.layout{display:flex;flex:1;overflow:hidden;transition:none}.sidebar{width:var(--sidebar-w);background:var(--bg-dark);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0;transition:width .25s ease,opacity .25s ease;overflow-x:hidden;display:flex;flex-direction:column}.sidebar.collapsed{width:0;opacity:0;padding:0;border-right:none}#sidebar-adfit-wrap{margin-top:auto;padding:10px 0 6px;display:flex;justify-content:center;flex-shrink:0}.adfit-btm-wrap{margin:14px 0;display:flex;justify-content:center;max-width:1380px}
+}@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.main{padding:14px}}.deploy-guide{background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:11px;line-height:1.9;color:var(--text-secondary)}.deploy-guide h3{color:var(--accent-kr);font-size:13px;margin-bottom:8px}.deploy-guide ol{padding-left:18px}.deploy-guide li{margin-bottom:4px}.deploy-guide code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:10px;color:#90caf9}.about-section{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}.about-section-title{padding:11px 16px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:.3px}.about-section-body{padding:14px 18px;font-size:12px;color:var(--text-secondary);line-height:2.0}.about-section-body strong{color:var(--text-primary)}.admin-login-box{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:20px}.admin-login-title{font-family:var(--font-display);font-size:22px;letter-spacing:2px;color:var(--text-primary)}.admin-login-sub{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.7}.admin-user-bar{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:16px}.admin-user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}.admin-user-name{font-size:12px;color:var(--text-primary);font-weight:600}.admin-user-email{font-size:10px;color:var(--text-muted)}.admin-logout-btn{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s}.admin-logout-btn:hover{border-color:var(--accent-us);color:var(--accent-us)}.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px}.admin-tab{padding:8px 18px;font-size:12px;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}.admin-tab:hover{color:var(--text-primary)}.admin-tab.active{color:var(--accent-kr);border-bottom-color:var(--accent-kr);font-weight:700}.stats-embed-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:20px;min-height:200px}.ga-notice{font-size:12px;color:var(--text-secondary);line-height:1.9}.ga-notice code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px;font-family:var(--font-mono);font-size:11px;color:#90caf9}.ga-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:7px;border:none;background:var(--accent-kr);color:#000;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;margin-top:10px;transition:opacity .15s}.ga-btn:hover{opacity:.85}.admin-mgmt-layout{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}.admin-sector-list{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-sector-list-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;justify-content:space-between}.admin-sector-item{display:flex;align-items:center;padding:8px 14px;font-size:12px;color:var(--text-secondary);cursor:pointer;border-bottom:1px solid rgba(46,58,80,.3);transition:all .15s;gap:8px}.admin-sector-item:hover{background:rgba(255,255,255,.03);color:var(--text-primary)}.admin-sector-item.selected{background:rgba(79,195,247,.1);color:var(--accent-kr)}.admin-sector-item:last-child{border-bottom:none}.admin-del-btn{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:3px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer;flex-shrink:0;transition:all .15s}.admin-del-btn:hover{background:rgba(239,83,80,.15);border-color:var(--accent-us);color:var(--accent-us)}.admin-stock-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden}.admin-panel-header{padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)}.admin-panel-body{padding:14px}.admin-stock-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;font-size:12px;background:var(--bg-card2);border:1px solid var(--border);margin-bottom:6px}.admin-stock-name{flex:1;color:var(--text-primary)}.admin-stock-ticker{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 6px;border-radius:3px}.admin-input-row{display:flex;gap:6px;margin-top:10px}.admin-input{flex:1;background:var(--bg-darkest);border:1px solid var(--border);color:var(--text-primary);padding:6px 10px;border-radius:6px;font-size:12px;font-family:var(--font-body);outline:none;transition:border-color .15s}.admin-input:focus{border-color:var(--accent-kr)}.admin-add-btn{padding:6px 14px;border-radius:6px;border:none;background:var(--accent-kr);color:#000;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s}.admin-add-btn:hover{opacity:.85}.admin-add-btn:disabled{opacity:.4;cursor:not-allowed}.admin-msg{font-size:11px;padding:6px 10px;border-radius:5px;margin-top:8px;display:none}.admin-msg.ok{background:rgba(102,187,106,.15);color:#a5d6a7;border:1px solid rgba(102,187,106,.3)}.admin-msg.err{background:rgba(239,83,80,.15);color:#ef9a9a;border:1px solid rgba(239,83,80,.3)}.admin-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:4px}
+/* ── 버튼 처리중 상태 공통 CSS ── */
+.admin-add-btn.loading{opacity:.7;cursor:not-allowed;background:var(--bg-card2)!important;color:var(--text-muted)!important;}.memo-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(79,195,247,.25);color:var(--accent-kr);font-size:10px;flex-shrink:0;cursor:help;border:1px solid rgba(79,195,247,.4);transition:all .15s;font-weight:700;user-select:none}.memo-icon:hover{background:rgba(79,195,247,.5);transform:scale(1.15)}.watch-checkbox{display:flex;align-items:center;gap:6px;cursor:pointer;padding:2px 0}.watch-checkbox input{width:14px;height:14px;accent-color:#ff6f00;cursor:pointer}.watch-check-label{font-size:10px;color:var(--text-muted)}.sector-card.watched{border:2px solid #ff6f00 !important;box-shadow:0 0 12px rgba(255,111,0,.35)}.sector-card.watched .sector-card-header{background:rgba(255,111,0,.12) !important;border-bottom-color:rgba(255,111,0,.4) !important}.watch-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#ff6f00;color:#fff;margin-left:4px}th.watched-col{background:#7b3a00 !important;color:#ffd180 !important;outline:2px solid #ff6f00;outline-offset:-1px}.hb-line{display:block;width:18px;height:2px;background:var(--text-secondary);border-radius:2px;transition:all .2s}#sidebar-toggle-btn:hover .hb-line{background:var(--text-primary)}.layout{display:flex;flex:1;overflow:hidden;transition:none}.sidebar{width:var(--sidebar-w);background:var(--bg-dark);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:14px 0;transition:width .25s ease,opacity .25s ease;overflow-x:hidden;display:flex;flex-direction:column}.sidebar.collapsed{width:0;opacity:0;padding:0;border-right:none}#sidebar-adfit-wrap{margin-top:auto;padding:10px 0 6px;display:flex;justify-content:center;flex-shrink:0}.adfit-btm-wrap{margin:14px 0;display:flex;justify-content:center;max-width:1380px}
 .grp-toggle-bar{display:flex;flex-wrap:wrap;gap:5px;padding:6px 10px;background:var(--bg-card2);border-radius:8px;margin-bottom:6px}
 .grp-toggle-btn{font-size:10px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--font-body)}
 .grp-toggle-btn:hover{border-color:var(--accent-kr);color:var(--text-primary)}
@@ -5461,6 +5485,8 @@ if(!panel)return;
 const sectorName=panel.dataset.sector;
 const memo=document.getElementById('us-sector-note-memo').value.trim();
 const link=document.getElementById('us-sector-note-link').value.trim();
+const _usSnBtn=panel.querySelector('.admin-add-btn');
+btnLoading(_usSnBtn,'저장 중...');
 const msg=document.getElementById('us-sector-note-msg');
 try{
   const pw=ADMIN_CONFIG.PW_HASH||'';
@@ -5474,8 +5500,9 @@ try{
     if(!S.usNotes)S.usNotes={};
     S.usNotes[sectorName]={memo,link};
     if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
-  } else { if(msg) msg.textContent='❌ '+(d.error||'실패'); }
-}catch(e){ if(msg) msg.textContent='❌ '+e.message; }
+    btnDone(_usSnBtn,'저장 완료');
+  } else { if(msg) msg.textContent='❌ '+(d.error||'실패'); btnDone(_usSnBtn,'',true); }
+}catch(e){ if(msg) msg.textContent='❌ '+e.message; btnDone(_usSnBtn,'',true); }
 }
 function usAdminRenderStockPanel(sector){
 const title=document.getElementById('us-admin-panel-title');
@@ -5665,13 +5692,16 @@ async function usAdminAddSectorPrompt(){
 const inp=document.getElementById('us-new-sector-name');
 const name=(inp?inp.value:prompt('추가할 US 섹터명을 입력하세요\n예: 우주항공, 핀테크')||'').trim();
 if(!name){showUsSectorMsg('err','섹터명을 입력하세요');return;}
+const _usSecBtn=inp?inp.nextElementSibling:null;
+btnLoading(_usSecBtn,'추가 중...');
 try{
 const r=await _usAdminApi('us_add_sector',{sector:name});
 if(!r.ok)throw new Error(r.error||'실패');
 showUsSectorMsg('ok',`"${name}" 섹터 추가 완료`);
+btnDone(_usSecBtn,'추가 완료');
 if(inp) inp.value='';
 await _usRefreshWatchList();
-}catch(e){showUsSectorMsg('err',e.message);}
+}catch(e){showUsSectorMsg('err',e.message);btnDone(_usSecBtn,'',true);}
 }
 async function usAdminDelSector(sector){
 if(!confirm(`"${sector}" 섹터와 전체 종목을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`))return;
@@ -5702,10 +5732,13 @@ const ticker=(document.getElementById('us-add-stock-ticker')?.value||'').trim();
 const memo=(document.getElementById('us-add-stock-memo')?.value||'').trim();
 if(!name){showUsAdminMsg('err','종목명을 입력하세요');return;}
 if(!_usAdminSelSector){showUsAdminMsg('err','좌측에서 섹터를 먼저 선택하세요');return;}
+const _usStockBtn=document.querySelector('#us-add-stock-section .admin-add-btn')||document.querySelector('[onclick="usAdminDoAddStock()"]');
+btnLoading(_usStockBtn,'추가 중...');
 try{
 const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||'',memo:memo||'',type:(document.getElementById('us-add-stock-type')?.value||'STOCK')});
 if(!r.ok)throw new Error(r.error||'실패');
 showUsAdminMsg('ok',`"${name}" 추가 완료`);
+btnDone(_usStockBtn,'추가 완료');
 const nameEl=document.getElementById('us-add-stock-name');
 const tickerEl=document.getElementById('us-add-stock-ticker');
 const memoEl=document.getElementById('us-add-stock-memo');
@@ -5715,7 +5748,7 @@ if(tickerEl) tickerEl.value='';
 if(memoEl) memoEl.value='';
 if(typeEl) typeEl.value='STOCK';
 await _usRefreshWatchList();
-}catch(e){showUsAdminMsg('err',e.message);}
+}catch(e){showUsAdminMsg('err',e.message);btnDone(_usStockBtn,'',true);}
 }
 
 // ── US 주목 섹터 관리 ──────────────────────────────────────────────
@@ -6045,6 +6078,8 @@ const sectorName=panel.dataset.sector;
 const market=panel.dataset.market||'kr';
 const memo=document.getElementById('sector-note-memo').value.trim();
 const link=document.getElementById('sector-note-link').value.trim();
+const _snBtn=panel.querySelector('.admin-add-btn');
+btnLoading(_snBtn,'저장 중...');
 const msg=document.getElementById('sector-note-msg');
 try{
   const pw=ADMIN_CONFIG.PW_HASH||'';
@@ -6058,11 +6093,14 @@ try{
     if(market==='us'){if(!S.usNotes)S.usNotes={};S.usNotes[sectorName]={memo,link};}
     else{if(!S.krNotes)S.krNotes={};S.krNotes[sectorName]={memo,link};}
     if(msg){msg.textContent='✅ 저장 완료';setTimeout(()=>msg.textContent='',2000);}
+    btnDone(_snBtn,'저장 완료');
   } else {
     if(msg){msg.textContent='❌ '+(d.error||'실패');}
+    btnDone(_snBtn,'',true);
   }
 }catch(e){
   if(msg){msg.textContent='❌ '+e.message;}
+  btnDone(_snBtn,'',true);
 }
 }
 function renderStockList(sec, sectorName){
@@ -6223,7 +6261,7 @@ const name=document.getElementById('new-sector-name').value.trim();
 if(!name){showMsg('sector-msg','섹터명을 입력하세요.',true);return;}
 if(ADM.sectors.find(s=>s.sector===name)){showMsg('sector-msg','이미 존재하는 섹터입니다.',true);return;}
 const btn=document.querySelector('#new-sector-name+button');
-btn.disabled=true; btn.innerHTML='<span class="admin-spinner"></span>';
+btnLoading(btn,'추가 중...');
 try{
 const res=await adminPost('add_sector',{sector:name});
 document.getElementById('new-sector-name').value='';
@@ -6236,8 +6274,8 @@ document.getElementById('admin-sector-count').textContent=ADM.sectors.length+'�
 await loadAdminSectors();
 }
 S.krListLoaded=false; S.krLoaded=false; S.krListAt=0;
-}catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);}
-btn.disabled=false; btn.innerHTML='추가';
+}catch(e){showMsg('sector-msg','❌ 오류: '+e.message,true);btnDone(btn,'',true);}
+btnDone(btn,'추가 완료');
 }
 async function deleteSector(sectorName){
 if(!confirm('"'+sectorName+'" 섹터와 모든 종목을 삭제하시겠습니까?')) return;
@@ -6381,7 +6419,7 @@ showMsg('stock-msg', '시장구분(KOSPI/KOSDAQ)을 선택하세요.', true); re
 if (!ticker) showMsg('stock-msg', 'ℹ️ 티커 없이 추가합니다. 등락률 자동계산이 안 될 수 있습니다.', false);
 }
 const btn = document.querySelector('#add-stock-section .admin-add-btn');
-btn.disabled = true; btn.innerHTML = '<span class="admin-spinner"></span>';
+btnLoading(btn, '추가 중...');
 try {
 await adminPost('add_stock', { sector, stock_name: name, ticker, memo });
 document.getElementById('new-stock-name').value = '';
@@ -6392,11 +6430,11 @@ _selectedStockTicker = '';
 showStockAutoInfo(null);
 if (document.getElementById('stock-ticker-preview')) document.getElementById('stock-ticker-preview').style.display = 'none';
 showMsg('stock-msg', '✅ "' + name + '" 추가 완료! (티커: ' + (ticker||'없음') + ')', false);
+btnDone(btn, '추가 완료');
 S.krListLoaded = false; S.krLoaded = false; S.krListAt = 0;
 await loadAdminSectors();
 selectSector(sector);
-} catch(e) { showMsg('stock-msg', '❌ 오류: ' + e.message, true); }
-btn.disabled = false; btn.innerHTML = '추가';
+} catch(e) { showMsg('stock-msg', '❌ 오류: ' + e.message, true); btnDone(btn,'',true); }
 }
 async function deleteStock(sectorName, stockName){
 if(!confirm('"'+stockName+'"을(를) 삭제하시겠습니까?')) return;
