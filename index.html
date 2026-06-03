@@ -2479,12 +2479,15 @@ api('kr_today', 0).catch(()=>null),
 d = histData;
 document.getElementById('kr-status').textContent='누적 '+d.count+'일치';
 if(todayData){
-// ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음, S.krToday를 null로 유지
-if(!todayData.noTrading && (
+// ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음
+if(todayData.noTrading){
+// noTrading 정보 보존 (데이터 로딩중 방지)
+S.krToday = {noTrading:true, reason:todayData.reason||'', date:todayData.date||''};
+} else if(
   Object.keys(todayData.sectors||{}).length > 0 ||
   Object.keys(todayData.majorIndex||{}).length > 0 ||
   Object.keys(todayData.marketBreadth||{}).length > 0
-)){
+){
 S.krToday = todayData;
 if(Object.keys(todayData.sectors||{}).length > 0) updateRealtimeTime();
 } else {
@@ -2507,11 +2510,14 @@ document.getElementById('kr-table').innerHTML=
 async function loadKrToday(){
 try{
 const d=await api('kr_today',0);
-if(!d.noTrading && (
+if(d.noTrading){
+// 휴장일/장전: noTrading 정보 보존 (데이터 로딩중 방지)
+S.krToday={noTrading:true, reason:d.reason||'', date:d.date||''};
+} else if(
   Object.keys(d.sectors||{}).length > 0 ||
   Object.keys(d.majorIndex||{}).length > 0 ||
   Object.keys(d.marketBreadth||{}).length > 0
-)){
+){
 S.krToday=d;
 if(Object.keys(d.sectors||{}).length > 0) updateRealtimeTime();
 } else {
