@@ -373,6 +373,19 @@ async def main():
         print('=== KR/US 모두 장외 — 스킵 ===')
         return
 
+    # ── KR 휴장일 체크 (구글캘린더 공휴일 + Config 임시휴장일) ──────
+    # 장중이더라도 GAS에서 휴장 판단 시 KR 수집 스킵
+    if kr_open:
+        try:
+            resp = requests.get(GAS_URL, params={'type': 'is_kr_trading_day', '_t': int(time.time())}, timeout=15)
+            td = resp.json().get('data', {})
+            if not td.get('is_open', True):
+                reason = td.get('reason', '휴장')
+                print(f'  [KR] 휴장 감지: {reason} → KR 수집 스킵')
+                kr_open = False
+        except Exception as e:
+            print(f'  [KR] 휴장 체크 실패 (스킵, 장중으로 간주): {e}')
+
     # ── KR 수집 (장중일 때만) ─────────────────────────────────────
     chg_map = {}
     code_to_sectors = {}
