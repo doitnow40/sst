@@ -261,6 +261,28 @@ async function handleScheduled(event, env, ctx) {
     console.log('[cron] 장외/주말 - 스킵');
     return;
   }
+
+  // ── GAS 휴장일 체크 (임시공휴일·선거일 등) ──────────────────
+  if (env.GAS_WEBAPP_URL) {
+    try {
+      const res = await fetch(
+        `${env.GAS_WEBAPP_URL}?type=is_kr_trading_day&_t=${Date.now()}`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if (res.ok) {
+        const body = await res.json();
+        const td = body.data || body;
+        if (td.is_open === false) {
+          console.log(`[cron] GAS 휴장일 감지: ${td.reason||'휴장'} → 스킵`);
+          return;
+        }
+      }
+    } catch (e) {
+      // 조회 실패 시 개장일로 간주 (안전 우선)
+      console.log(`[cron] 휴장일 체크 실패 (개장일로 간주): ${e.message}`);
+    }
+  }
+
   ctx.waitUntil(collectAndStore(env));
 }
 
@@ -290,7 +312,18 @@ async function handleFetch(request, env) {
         JSON.stringify({ ok: false, error: 'KV에 데이터 없음 (장 시작 전이거나 수집 대기 중)', type }),
         { status: 404, headers: CORS });
     }
-    return new Response(JSON.stringify({ ok: true, data: JSON.parse(raw) }),
+    const parsed = JSON.parse(raw);
+
+    // ── 날짜 검증: KV 데이터가 오늘 날짜가 아니면 noTrading 반환 ──
+    // 날짜가 바뀌는 순간 자동 무효화 (수동 삭제 불필요)
+    if (parsed.date && parsed.date !== todayKST(nowKST())) {
+      console.log(`[fetch] KV 날짜 불일치: KV=${parsed.date}, today=${todayKST(nowKST())} → noTrading 반환`);
+      return new Response(
+        JSON.stringify({ ok: true, data: { noTrading: true, reason: '날짜 변경 (전일 캐시)', date: todayKST(nowKST()) } }),
+        { status: 200, headers: CORS });
+    }
+
+    return new Response(JSON.stringify({ ok: true, data: parsed }),
       { status: 200, headers: CORS });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: `Worker 오류: ${e.message}` }),
