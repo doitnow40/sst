@@ -3003,8 +3003,9 @@ var _kstPreMarket =!_kstIsWeekend&&_kstMin<540;                // 00:00~09:00
 // 오늘 데이터 표시 여부
 // 장중: 실시간값, 장마감후: 마지막값 유지(00:00까지), 장전/주말: '오늘 데이터 없음'
 var _isHoliday=!!(S.krToday&&S.krToday.is_holiday);
+var _holidayReason=_isHoliday?('휴장일 ('+((S.krToday&&S.krToday.reason)||'공휴일')+')'):'';
 var _showTodayData=!_isHoliday&&(_kstMarketOpen||_kstAfterClose); // 장중 or 장마감후(평일, 휴장일 제외)
-var _noDataReason=_kstIsWeekend?'주말':(_isHoliday?'휴장일 ('+(S.krToday.reason||'공휴일')+')'):(_kstPreMarket?'장전 (09:00 이후 표시)':null);
+var _noDataReason=_kstIsWeekend?'주말':(_isHoliday?_holidayReason:(_kstPreMarket?'장전 (09:00 이후 표시)':null));
 // ★ 최근 영업일: 장중/장마감 무관하게 항상 직전 영업일(f[1]) 표시
 //   GAS 시트는 영업일만 기록 → f[1]이 곧 가장 최근 직전 영업일 (휴일 자동 건너뜀)
 //   f[1]이 없으면(데이터 부족) f[0]으로 fallback
