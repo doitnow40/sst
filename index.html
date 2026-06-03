@@ -684,6 +684,7 @@ style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;b
 <div class="admin-tab" onclick="switchAdminTab('us-mgmt',this)">🇺🇸 US 섹터/종목 관리</div>
 <div class="admin-tab" onclick="switchAdminTab('us-watch',this)">🇺🇸 US 주목 섹터</div>
 <div class="admin-tab" onclick="switchAdminTab('memo',this)">📝 History 메모</div>
+<div class="admin-tab" onclick="switchAdminTab('holiday',this)">🗓️ 임시휴장일</div>
 <div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
 </div>
 <div id="admin-tab-stats">
@@ -875,6 +876,22 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
   </div>
 </div>
 </div><!-- /#admin-tab-memo -->
+<div id="admin-tab-holiday" style="display:none">
+<div style="max-width:520px">
+  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:10px">🗓️ KR 임시휴장일 관리</div>
+  <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.8">
+    선거일·임시공휴일 등 법정 외 휴장일을 등록합니다.<br>
+    등록된 날짜는 <b>fetch_naver.py</b>가 KR 데이터 수집을 자동 스킵합니다.<br>
+    형식: <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:monospace">YYYY-MM-DD</code>
+  </div>
+  <div id="holiday-list" style="margin-bottom:14px;min-height:40px"></div>
+  <div class="admin-input-row">
+    <input class="admin-input" id="new-holiday-date" type="date" style="max-width:160px">
+    <button class="admin-add-btn" onclick="addHoliday()">추가</button>
+  </div>
+  <div class="admin-msg" id="holiday-msg"></div>
+</div>
+</div>
 <div id="admin-tab-techref" style="display:none">
 <div class="stats-embed-wrap" style="max-width:820px">
 
@@ -5366,6 +5383,8 @@ document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'n
 document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
 document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none';
 document.getElementById('admin-tab-memo').style.display=tab==='memo'?'':'none';
+document.getElementById('admin-tab-holiday').style.display=tab==='holiday'?'':'none';
+if(tab==='holiday') loadHolidays();
 // 메모 탭 열 때 날짜 기본값 세팅 (최근 영업일)
 if(tab==='memo'){
   const today=new Date().toISOString().slice(0,10);
@@ -7077,6 +7096,47 @@ function closeHelpModal(){
   document.getElementById('help-modal').style.display = 'none';
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeHelpModal(); });
+
+// ── 임시휴장일 관리 ────────────────────────────────────────────────
+async function loadHolidays(){
+  try{
+    const res=await api('kr_extra_holidays',0,true);
+    renderHolidayList(res.holidays||[]);
+  }catch(e){console.error('휴장일 로드 실패',e);}
+}
+function renderHolidayList(list){
+  const el=document.getElementById('holiday-list');
+  if(!el)return;
+  if(!list.length){el.innerHTML='<div style="font-size:11px;color:var(--text-muted)">등록된 임시휴장일 없음</div>';return;}
+  el.innerHTML=list.map(d=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;margin-bottom:5px;font-size:12px">
+      <span style="font-family:monospace;color:#ffb74d">${d}</span>
+      <button onclick="removeHoliday('${d}')" class="admin-del-btn" style="margin-left:auto">삭제</button>
+    </div>`).join('');
+}
+async function addHoliday(){
+  const inp=document.getElementById('new-holiday-date');
+  const date=(inp?.value||'').trim();
+  if(!date){showMsg('holiday-msg','날짜를 선택하세요.',true);return;}
+  const btn=inp.nextElementSibling;
+  btnLoading(btn,'추가 중...');
+  try{
+    await adminPost('add_holiday',{date});
+    inp.value='';
+    btnDone(btn,'추가 완료');
+    showMsg('holiday-msg','✅ '+date+' 추가 완료',false);
+    await loadHolidays();
+  }catch(e){showMsg('holiday-msg','❌ '+e.message,true);btnDone(btn,'',true);}
+}
+async function removeHoliday(date){
+  if(!confirm(date+' 휴장일을 삭제하시겠습니까?'))return;
+  try{
+    await adminPost('remove_holiday',{date});
+    showMsg('holiday-msg','✅ '+date+' 삭제 완료',false);
+    await loadHolidays();
+  }catch(e){showMsg('holiday-msg','❌ '+e.message,true);}
+}
+
 </script>
 <!-- ===== /HELP MODAL ===== -->
 
