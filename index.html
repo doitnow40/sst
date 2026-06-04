@@ -2320,7 +2320,24 @@ if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes(
   try{
     const workerUrl=`${REALTIME_WORKER_URL}?type=${type}&_t=${Date.now()}`;
     const wr=await fetch(workerUrl,{cache:'no-store'});
-    if(wr.ok){const wj=await wr.json();if(wj.ok)return wj.data;}
+    if(wr.ok){
+      const wj=await wr.json();
+      if(wj.ok){
+        const wdata=wj.data;
+        // ── Worker 날짜 검증: KV 데이터가 오늘 날짜인지 확인 ──
+        if(wdata&&wdata.date){
+          const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+          const todayStr=kst.getFullYear()+'-'+String(kst.getMonth()+1).padStart(2,'0')+'-'+String(kst.getDate()).padStart(2,'0');
+          if(wdata.date!==todayStr){
+            console.warn('[api] Worker 날짜 불일치 (KV='+wdata.date+', today='+todayStr+') → GAS fallback');
+          } else {
+            return wdata;
+          }
+        } else {
+          return wdata;
+        }
+      }
+    }
   }catch(e){console.warn('[api] Worker fallback to GAS:',e.message);}
 }
 // GAS 웹앱 호출 (기존 로직 그대로 / Worker fallback)
@@ -5044,12 +5061,19 @@ async function refreshKrToday(btn){
 if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
 S.krToday=null;
 try{
-const d=await api('kr_today',0);
-S.krToday=d;
-S.krStocks=null; // ★ 수동 갱신 시 kr_stocks 캐시 무효화
-updateRealtimeTime();
+// ★ forceRefresh=true: GAS 캐시 무시하고 최신 데이터 강제 수집
+const d=await api('kr_today',0,true);
+if(d&&d.noTrading){
+  S.krToday={noTrading:true,reason:d.reason||'',date:d.date||''};
+} else if(d&&(Object.keys(d.sectors||{}).length>0||Object.keys(d.majorIndex||{}).length>0)){
+  S.krToday=d;
+  S.krStocks=null; // ★ 수동 갱신 시 kr_stocks 캐시 무효화
+  updateRealtimeTime();
+} else {
+  S.krToday=null;
+}
 renderKr();
-}catch(e){}
+}catch(e){console.warn('[refreshKrToday]',e);}
 if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
 }
 async function refreshUsToday(btn){
