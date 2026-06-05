@@ -1855,6 +1855,7 @@ function closeGroupSheet() {
 let _logoTapCount = 0, _logoTapTimer = null;
 function _logoTap() {
   go('kr-history', null);
+  loadSisterSites(); // 자매 사이트 비동기 로드
   _logoTapCount++;
   if (_logoTapTimer) clearTimeout(_logoTapTimer);
   _logoTapTimer = setTimeout(function() { _logoTapCount = 0; }, 2000);
