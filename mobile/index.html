@@ -1855,7 +1855,6 @@ function closeGroupSheet() {
 let _logoTapCount = 0, _logoTapTimer = null;
 function _logoTap() {
   go('kr-history', null);
-  loadSisterSites(); // 자매 사이트 비동기 로드
   _logoTapCount++;
   if (_logoTapTimer) clearTimeout(_logoTapTimer);
   _logoTapTimer = setTimeout(function() { _logoTapCount = 0; }, 2000);
@@ -7573,5 +7572,10 @@ async function removeSisterSite(idx){
   <div style="width:100%;height:1px;background:rgba(79,195,247,.2);margin-bottom:14px"></div>
   <div id="memo-popup-content" style="font-size:13px;color:#e2e8f0;line-height:1.8;white-space:pre-wrap;font-family:var(--font-body)"></div>
 </div>
+<script>
+// 자매 사이트 — 모든 JS 로드 완료 후 실행
+if(typeof loadSisterSites==='function') loadSisterSites();
+else window.addEventListener('load', function(){ if(typeof loadSisterSites==='function') loadSisterSites(); });
+</script>
 </body>
 </html>
