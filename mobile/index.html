@@ -3135,8 +3135,13 @@ const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd=_isBdrTd?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrTd}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
 });
+const krDateStr=String(row[0]||'').trim().slice(0,10);
 const krMemo=row[krMemoIdx]||'';
-t+=`<td style="min-width:80px;font-size:9px;color:${krMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;font-family:var(--font-body)">${krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
+const krMemoEsc=krMemo.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+const krMemoDisplay=krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';
+const krMemoStyle=krMemo?'cursor:pointer;':'';
+const krMemoTitle=krMemo?'title="클릭하여 메모 전체 보기"':'';
+t+=`<td ${krMemoTitle} onclick="${krMemo?`showMemoPopup('${krDateStr}','${krMemoEsc}')`:''}" style="min-width:80px;font-size:9px;color:${krMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;font-family:var(--font-body);${krMemoStyle}">${krMemoDisplay}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -4937,8 +4942,13 @@ const isW=US_WATCHED_SECTORS.has(name);
 const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
 t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
 });
+const usDateStr=String(row[0]||'').trim().slice(0,10);
 const usMemo=row[usMemoIdx]||'';
-t+=`<td style="min-width:120px;max-width:260px;background:#0f1e30;color:${usMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15)">${usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
+const usMemoEsc=usMemo.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+const usMemoDisplay=usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';
+const usMemoStyle=usMemo?'cursor:pointer;':'';
+const usMemoTitle=usMemo?'title="클릭하여 메모 전체 보기"':'';
+t+=`<td ${usMemoTitle} onclick="${usMemo?`showMemoPopup('${usDateStr}','${usMemoEsc}')`:''}" style="min-width:120px;max-width:260px;background:#0f1e30;color:${usMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15);${usMemoStyle}">${usMemoDisplay}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -7436,8 +7446,36 @@ async function removeHoliday(date){
   }catch(e){showMsg('holiday-msg','❌ '+e.message,true);}
 }
 
+
+// ── 메모 팝업 ────────────────────────────────────────────────────
+function showMemoPopup(dateStr, memo) {
+  if (!memo || !memo.trim()) return;
+  document.getElementById('memo-popup-date').textContent = '📝 ' + dateStr;
+  document.getElementById('memo-popup-content').textContent = memo;
+  document.getElementById('memo-popup-overlay').style.display = 'block';
+  document.getElementById('memo-popup').style.display = 'block';
+}
+function closeMemoPopup() {
+  document.getElementById('memo-popup-overlay').style.display = 'none';
+  document.getElementById('memo-popup').style.display = 'none';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeMemoPopup();
+});
+
 </script>
 <!-- ===== /HELP MODAL ===== -->
 
+
+<!-- ── 메모 팝업 ── -->
+<div id="memo-popup-overlay" onclick="closeMemoPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998"></div>
+<div id="memo-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#0d1e30;border:1px solid #2a4a6e;border-radius:12px;padding:20px 24px;max-width:600px;width:90vw;max-height:75vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.7)">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div id="memo-popup-date" style="font-size:13px;font-weight:700;color:#90caf9;font-family:var(--font-mono)"></div>
+    <button onclick="closeMemoPopup()" style="background:none;border:none;color:#8a9ab5;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
+  </div>
+  <div style="width:100%;height:1px;background:rgba(79,195,247,.2);margin-bottom:14px"></div>
+  <div id="memo-popup-content" style="font-size:13px;color:#e2e8f0;line-height:1.8;white-space:pre-wrap;font-family:var(--font-body)"></div>
+</div>
 </body>
 </html>
