@@ -2510,6 +2510,7 @@ document.getElementById('kr-status').textContent='⚠️ 데모 모드';
 }else{
 // ★ 단일 진실 공급원: kr_today(KV) 만 사용, kr_list 초기 병렬 로드 제거
 // kr_stocks(팝업용)는 팝업 열 때 지연 로드
+loadSisterSites(); // 자매 사이트 사이드바 비동기 로드
 const [histData, todayData] = await Promise.all([
 api('kr_history', 365),
 api('kr_today', 0).catch(()=>null),
