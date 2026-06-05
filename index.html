@@ -251,8 +251,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 </div>
 <div class="sidebar-divider"></div>
-<div class="nav-group-label">미국 시장 🇺🇸</div>
-<div class="nav-item" id="nav-us-history" onclick="go('us-history',this)">
+<div class="nav-item" id="nav-us-history" onclick="toggleSubMenu('sub-us',this);go('us-history',this)">
 <span class="nav-icon">📈</span><span>미국 섹터 History</span><span class="nav-chevron">›</span>
 </div>
 <div class="sub-menu" id="sub-us">
@@ -264,7 +263,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div class="nav-group-label">🔗 자매 사이트</div>
 <div id="sister-sites-nav"></div>
 <div class="sidebar-divider"></div>
-<div class="nav-group-label">도움말</div>
+<div class="nav-group-label">❓ 도움말</div>
 <div class="nav-item" id="nav-about" onclick="go('about',this)">
 <span class="nav-icon">ℹ️</span><span>이 서비스에 대해</span>
 </div>
@@ -639,6 +638,7 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다. (VIX는 별�
 </div>
 </div>
 </div>
+<div style="height:250px"></div>
 </div>
 <div id="page-admin" style="display:none">
 <div class="page-header">
