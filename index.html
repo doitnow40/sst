@@ -242,19 +242,19 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 ">📌 <span id="pin-label" style="font-size:9px;font-family:var(--font-mono)">고정</span>
 </button>
 </div>
-<div class="nav-item" id="nav-kr-history" onclick="go('kr-history',this)">
+<div class="nav-item open" id="nav-kr-history" onclick="toggleSubMenu('sub-kr',this);go('kr-history',this)">
 <span class="nav-icon">📊</span><span>한국 섹터 History</span><span class="nav-chevron">›</span>
 </div>
-<div class="sub-menu" id="sub-kr">
+<div class="sub-menu open" id="sub-kr">
 <div class="nav-item sub" id="nav-kr-list" onclick="go('kr-list',this)">
 <span class="nav-icon">📋</span><span>섹터 종목 List</span>
 </div>
 </div>
 <div class="sidebar-divider"></div>
-<div class="nav-item" id="nav-us-history" onclick="go('us-history',this)">
+<div class="nav-item open" id="nav-us-history" onclick="toggleSubMenu('sub-us',this);go('us-history',this)">
 <span class="nav-icon">📈</span><span>미국 섹터 History</span><span class="nav-chevron">›</span>
 </div>
-<div class="sub-menu" id="sub-us">
+<div class="sub-menu open" id="sub-us">
 <div class="nav-item sub" id="nav-us-list" onclick="go('us-list',this)">
 <span class="nav-icon">📋</span><span>섹터 종목 List</span>
 </div>
@@ -5178,12 +5178,19 @@ function reinitAdfit(pageId){
     clone.parentNode.insertBefore(sc,clone.nextSibling);
   });
 }
+function toggleSubMenu(subId,el){
+  const sub=document.getElementById(subId);
+  if(!sub)return;
+  const isOpen=sub.classList.contains('open');
+  sub.classList.toggle('open',!isOpen);
+  el.classList.toggle('open',!isOpen);
+}
 function go(page,el){
 PAGES.forEach(p=>{const e=document.getElementById('page-'+p);if(e)e.style.display='none';});
 const pe=document.getElementById('page-'+page);if(pe)pe.style.display='block';
 reinitAdfit(page);
-if(['kr-history','kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
-if(['us-history','us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
+if(['kr-list'].includes(page)){document.getElementById('sub-kr').classList.add('open');document.getElementById('nav-kr-history').classList.add('open');}
+if(['us-list'].includes(page)){document.getElementById('sub-us').classList.add('open');document.getElementById('nav-us-history').classList.add('open');}
 document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','us-active'));
 const ne=document.getElementById('nav-'+page);if(ne)ne.classList.add(['us-history','us-list'].includes(page)?'us-active':'active');
 if(page==='about'){
