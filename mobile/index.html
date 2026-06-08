@@ -738,10 +738,6 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       </div>
     </div>
     <div class="about-section">
-      <div class="about-section-title">🔗 자매 사이트</div>
-      <div class="about-section-body" id="sister-sites-nav" style="padding:8px 14px">
-        <div style="font-size:11px;color:var(--text-muted)">로딩 중...</div>
-      </div>
       <div class="about-section-title">📌 서비스 소개</div>
       <div class="about-section-body">
         <strong>Stock Sector Tracker Map</strong>는 한국과 미국 주식시장의 <strong>섹터별 일일 등락률 흐름</strong>을 한눈에 파악할 수 있도록 만든 무료 정보 서비스입니다.<br><br>
@@ -847,7 +843,6 @@ style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;b
 <div class="admin-tab" onclick="switchAdminTab('us-watch',this)">🇺🇸 US 주목 섹터</div>
 <div class="admin-tab" onclick="switchAdminTab('memo',this)">📝 History 메모</div>
 <div class="admin-tab" onclick="switchAdminTab('holiday',this)">🗓️ 임시휴장일</div>
-<div class="admin-tab" onclick="switchAdminTab('siteconfig',this)">⚙️ Config</div>
 <div class="admin-tab" onclick="switchAdminTab('techref',this)">🔧 기술 주석</div>
 </div>
 <div id="admin-tab-stats">
@@ -1055,23 +1050,6 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
   <div class="admin-msg" id="holiday-msg"></div>
 </div>
 </div>
-<div id="admin-tab-siteconfig" style="display:none">
-<div style="max-width:520px">
-  <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:10px">🔗 자매 사이트 관리</div>
-  <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;line-height:1.8">
-    좌측 메뉴바 '자매 사이트' 섹션에 표시될 외부 링크를 관리합니다.
-  </div>
-  <div id="sister-sites-list" style="margin-bottom:14px;min-height:40px"></div>
-  <div style="font-size:10px;font-weight:700;color:var(--text-muted);margin-bottom:6px">+ 새 사이트 추가</div>
-  <div class="admin-input-row" style="flex-wrap:wrap;gap:6px">
-    <input class="admin-input" id="new-site-title" placeholder="사이트 제목 (예: 밸류체인 블로그)" style="flex:1;min-width:140px">
-    <input class="admin-input" id="new-site-url" placeholder="https://example.com/" style="flex:2;min-width:200px">
-    <button class="admin-add-btn" onclick="addSisterSite()">추가</button>
-  </div>
-  <div class="admin-msg" id="sister-site-msg"></div>
-</div>
-</div>
-
 <div id="admin-tab-techref" style="display:none">
 <div class="stats-embed-wrap" style="max-width:820px">
 
@@ -2306,8 +2284,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const _usIsPrevMode = !!(prevDate);
       // ★ 채권 섹터(장기채권/단기채권/하이일드): 종목 팝업 대신 설명 표시
       const _bondInfo = {
-        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리입니다.<br>값이 높을수록 시장이 인플레이션·성장을 높게 전망한다는 신호입니다.', source:'CBOE: INDEXCBOE:TNX', link:'https://finance.yahoo.com/quote/%5ETNX/' },
-        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준(Fed) 기준금리 정책에 가장 민감하게 반응하는 금리입니다.<br>장단기 스프레드(10년 - 2년) 계산에 주로 활용됩니다.', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://finance.yahoo.com/quote/%5ETWOYEAR/' },
+        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리입니다.<br>값이 높을수록 시장이 인플레이션·성장을 높게 전망한다는 신호입니다.', source:'CBOE: INDEXCBOE:TNX', link:'https://kr.tradingview.com/symbols/TVC-US10Y/' },
+        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준(Fed) 기준금리 정책에 가장 민감하게 반응하는 금리입니다.<br>장단기 스프레드(10년 - 2년) 계산에 주로 활용됩니다.', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://kr.tradingview.com/symbols/TVC-US02Y/' },
         '하이일드': { title:'📊 하이일드 스프레드 (OAS)', desc:'하이일드(고수익) 회사채와 미국 국채 간 금리 차이(스프레드)입니다.<br>값이 높을수록 신용위험이 크고, 낮을수록 시장이 안정적임을 의미합니다.', source:'FRED: BAMLH0A0HYM2 (ICE BofA US HY Index OAS)', link:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
       };
       if (_bondInfo[sectorName]) {
@@ -2691,24 +2669,7 @@ if(REALTIME_TYPES.has(type)&&REALTIME_WORKER_URL&&!REALTIME_WORKER_URL.includes(
   try{
     const workerUrl=`${REALTIME_WORKER_URL}?type=${type}&_t=${Date.now()}`;
     const wr=await fetch(workerUrl,{cache:'no-store'});
-    if(wr.ok){
-      const wj=await wr.json();
-      if(wj.ok){
-        const wdata=wj.data;
-        // ── Worker 날짜 검증: KV 데이터가 오늘 날짜인지 확인 ──
-        if(wdata&&wdata.date){
-          const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-          const todayStr=kst.getFullYear()+'-'+String(kst.getMonth()+1).padStart(2,'0')+'-'+String(kst.getDate()).padStart(2,'0');
-          if(wdata.date!==todayStr){
-            console.warn('[api] Worker 날짜 불일치 (KV='+wdata.date+', today='+todayStr+') → GAS fallback');
-          } else {
-            return wdata;
-          }
-        } else {
-          return wdata;
-        }
-      }
-    }
+    if(wr.ok){const wj=await wr.json();if(wj.ok)return wj.data;}
   }catch(e){console.warn('[api] Worker fallback to GAS:',e.message);}
 }
 // GAS 웹앱 호출 (기존 로직 그대로 / Worker fallback)
@@ -2853,15 +2814,12 @@ if(watchedData && watchedData.sectors){
 }
 document.getElementById('kr-status').textContent='누적 '+d.count+'일치';
 if(todayData){
-// ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음
-if(todayData.noTrading){
-// noTrading 정보 보존 (데이터 로딩중 방지)
-S.krToday = {noTrading:true, reason:todayData.reason||'', date:todayData.date||''};
-} else if(
+// ★ noTrading=true: 장전/주말/공휴일 → 오늘 데이터 없음, S.krToday를 null로 유지
+if(!todayData.noTrading && (
   Object.keys(todayData.sectors||{}).length > 0 ||
   Object.keys(todayData.majorIndex||{}).length > 0 ||
   Object.keys(todayData.marketBreadth||{}).length > 0
-){
+)){
 S.krToday = todayData;
 if(Object.keys(todayData.sectors||{}).length > 0) updateRealtimeTime();
 } else {
@@ -2884,14 +2842,11 @@ document.getElementById('kr-table').innerHTML=
 async function loadKrToday(){
 try{
 const d=await api('kr_today',0);
-if(d.noTrading){
-// 휴장일/장전: noTrading 정보 보존 (데이터 로딩중 방지)
-S.krToday={noTrading:true, reason:d.reason||'', date:d.date||''};
-} else if(
+if(!d.noTrading && (
   Object.keys(d.sectors||{}).length > 0 ||
   Object.keys(d.majorIndex||{}).length > 0 ||
   Object.keys(d.marketBreadth||{}).length > 0
-){
+)){
 S.krToday=d;
 if(Object.keys(d.sectors||{}).length > 0) updateRealtimeTime();
 } else {
@@ -3157,13 +3112,8 @@ const _isBdrTd=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd=_isBdrTd?"border-left:3px solid #000;":"";
 t+=`<td class="${isW?'watched-col':''}" style="${_bdrTd}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
 });
-const krDateStr=String(row[0]||'').trim().slice(0,10);
 const krMemo=row[krMemoIdx]||'';
-const krMemoEsc=krMemo.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
-const krMemoDisplay=krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';
-const krMemoStyle=krMemo?'cursor:pointer;':'';
-const krMemoTitle=krMemo?'title="클릭하여 메모 전체 보기"':'';
-t+=`<td ${krMemoTitle} onclick="${krMemo?`showMemoPopup('${krDateStr}','${krMemoEsc}')`:''}" style="min-width:80px;font-size:9px;color:${krMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;font-family:var(--font-body);${krMemoStyle}">${krMemoDisplay}</td>`;
+t+=`<td style="min-width:80px;font-size:9px;color:${krMemo?'#c8d8f0':'var(--text-muted)'};text-align:left;padding:3px 8px;white-space:nowrap;overflow:hidden;font-family:var(--font-body)">${krMemo?krMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -3386,10 +3336,8 @@ var _kstAfterClose=!_kstIsWeekend&&_kstMin>=930&&_kstMin<1440; // 15:30~24:00
 var _kstPreMarket =!_kstIsWeekend&&_kstMin<540;                // 00:00~09:00
 // 오늘 데이터 표시 여부
 // 장중: 실시간값, 장마감후: 마지막값 유지(00:00까지), 장전/주말: '오늘 데이터 없음'
-var _isHoliday=!!(S.krToday&&S.krToday.noTrading);
-var _holidayReason=_isHoliday?('휴장일 ('+((S.krToday&&S.krToday.reason)||'공휴일')+')'):'';
-var _showTodayData=!_isHoliday&&(_kstMarketOpen||_kstAfterClose); // 장중 or 장마감후(평일, 휴장일 제외)
-var _noDataReason=_kstIsWeekend?'주말':(_isHoliday?_holidayReason:(_kstPreMarket?'장전 (09:00 이후 표시)':null));
+var _showTodayData=_kstMarketOpen||_kstAfterClose; // 장중 or 장마감후(평일)
+var _noDataReason=_kstIsWeekend?'주말':(_kstPreMarket?'장전 (09:00 이후 표시)':null);
 // ★ 최근 영업일: 장중/장마감 무관하게 항상 직전 영업일(f[1]) 표시
 //   GAS 시트는 영업일만 기록 → f[1]이 곧 가장 최근 직전 영업일 (휴일 자동 건너뜀)
 //   f[1]이 없으면(데이터 부족) f[0]으로 fallback
@@ -4964,13 +4912,8 @@ const isW=US_WATCHED_SECTORS.has(name);
 const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
 t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
 });
-const usDateStr=String(row[0]||'').trim().slice(0,10);
 const usMemo=row[usMemoIdx]||'';
-const usMemoEsc=usMemo.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
-const usMemoDisplay=usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):'';
-const usMemoStyle=usMemo?'cursor:pointer;':'';
-const usMemoTitle=usMemo?'title="클릭하여 메모 전체 보기"':'';
-t+=`<td ${usMemoTitle} onclick="${usMemo?`showMemoPopup('${usDateStr}','${usMemoEsc}')`:''}" style="min-width:120px;max-width:260px;background:#0f1e30;color:${usMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15);${usMemoStyle}">${usMemoDisplay}</td>`;
+t+=`<td style="min-width:120px;max-width:260px;background:#0f1e30;color:${usMemo?'#e8f4fd':'#2a3a4a'};font-size:9px;text-align:left;padding:4px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-body);border-left:1px solid rgba(79,195,247,.15)">${usMemo?usMemo.replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}</td>`;
 t+='</tr>';
 });
 t+='</tbody></table>';
@@ -5371,7 +5314,7 @@ f.forEach(row=>{
 t+=`<tr><td>${row[0]||''}</td>`;
 sectorHdrs.forEach((name,ci)=>{
 const val=row[ci+1];let c;
-if(KR_FIXED[name]?.type==='ADR')c=adrCell(val);else if(KR_FIXED[name]?.type==='FNG')c=fngCell(val);else c=pctCell(val,15);
+if(KR_FIXED[name]?.type==='ADR')c=adrCell(val);else c=pctCell(val,15);
 const isW=WATCHED_SECTORS.has(name);
 const _isBdrTd2=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
 const _bdrTd2=_isBdrTd2?"border-left:3px solid #000;":"";
@@ -5439,19 +5382,12 @@ async function refreshKrToday(btn){
 if(btn){btn.disabled=true;btn.textContent='갱신 중...';}
 S.krToday=null;
 try{
-// ★ forceRefresh=true: GAS 캐시 무시하고 최신 데이터 강제 수집
-const d=await api('kr_today',0,true);
-if(d&&d.noTrading){
-  S.krToday={noTrading:true,reason:d.reason||'',date:d.date||''};
-} else if(d&&(Object.keys(d.sectors||{}).length>0||Object.keys(d.majorIndex||{}).length>0)){
-  S.krToday=d;
-  S.krStocks=null; // ★ 수동 갱신 시 kr_stocks 캐시 무효화
-  updateRealtimeTime();
-} else {
-  S.krToday=null;
-}
+const d=await api('kr_today',0);
+S.krToday=d;
+S.krStocks=null; // ★ 수동 갱신 시 kr_stocks 캐시 무효화
+updateRealtimeTime();
 renderKr();
-}catch(e){console.warn('[refreshKrToday]',e);}
+}catch(e){}
 if(btn){btn.disabled=false;btn.textContent='🔄 오늘 데이터 갱신';}
 }
 async function refreshUsToday(btn){
@@ -5793,8 +5729,6 @@ if(btn) btn.classList.add('active');
 document.getElementById('admin-tab-stats').style.display=tab==='stats'?'':'none';
 document.getElementById('admin-tab-mgmt').style.display=tab==='mgmt'?'':'none';
 document.getElementById('admin-tab-watch').style.display=tab==='watch'?'':'none';
-document.getElementById('admin-tab-siteconfig').style.display=tab==='siteconfig'?'':'none';
-if(tab==='siteconfig') loadSisterSitesMgmt();
 document.getElementById('admin-tab-techref').style.display=tab==='techref'?'':'none';
 document.getElementById('admin-tab-us-mgmt').style.display=tab==='us-mgmt'?'':'none';
 document.getElementById('admin-tab-us-watch').style.display=tab==='us-watch'?'':'none';
@@ -7470,112 +7404,8 @@ async function removeHoliday(date){
   }catch(e){showMsg('holiday-msg','❌ '+e.message,true);}
 }
 
-
-// ── 메모 팝업 ────────────────────────────────────────────────────
-function showMemoPopup(dateStr, memo) {
-  if (!memo || !memo.trim()) return;
-  document.getElementById('memo-popup-date').textContent = '📝 ' + dateStr;
-  document.getElementById('memo-popup-content').textContent = memo;
-  document.getElementById('memo-popup-overlay').style.display = 'block';
-  document.getElementById('memo-popup').style.display = 'block';
-}
-function closeMemoPopup() {
-  document.getElementById('memo-popup-overlay').style.display = 'none';
-  document.getElementById('memo-popup').style.display = 'none';
-}
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeMemoPopup();
-});
-
-
-// ── 자매 사이트 ────────────────────────────────────────────────
-async function loadSisterSites(){
-  try{
-    const d=await api('sister_sites',0,true);
-    renderSisterSitesNav(d.sites||[]);
-  }catch(e){ console.warn('[SisterSites] 로드 실패',e); }
-}
-function renderSisterSitesNav(sites){
-  const el=document.getElementById('sister-sites-nav');
-  if(!el) return;
-  if(!sites||!sites.length){
-    el.innerHTML='<div style="font-size:11px;color:var(--text-muted)">등록된 사이트 없음</div>';
-    return;
-  }
-  el.innerHTML=sites.map(function(s){
-    return '<a href="'+s.url+'" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">'+
-      '<span>🌐</span><span style="flex:1;font-size:12px;color:var(--text-primary)">'+s.title+'</span>'+
-      '<span style="font-size:10px;color:var(--text-muted)">↗</span></a>';
-  }).join('');
-}
-async function loadSisterSitesMgmt(){
-  try{
-    const d=await api('sister_sites',0,true);
-    renderSisterSitesMgmt(d.sites||[]);
-  }catch(e){ showMsg('sister-site-msg','❌ 로드 실패: '+e.message,true); }
-}
-function renderSisterSitesMgmt(sites){
-  const el=document.getElementById('sister-sites-list');
-  if(!el) return;
-  if(!sites||!sites.length){
-    el.innerHTML='<div style="font-size:11px;color:var(--text-muted)">등록된 사이트 없음</div>';
-    return;
-  }
-  el.innerHTML=sites.map(function(s,i){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;margin-bottom:5px">'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:11px;font-weight:700;color:var(--text-primary)">'+s.title+'</div>'+
-        '<div style="font-size:9px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.url+'</div>'+
-      '</div>'+
-      '<button onclick="removeSisterSite('+i+')" class="admin-del-btn">삭제</button>'+
-    '</div>';
-  }).join('');
-}
-async function addSisterSite(){
-  const title=(document.getElementById('new-site-title')?.value||'').trim();
-  const url=(document.getElementById('new-site-url')?.value||'').trim();
-  if(!title){showMsg('sister-site-msg','사이트 제목을 입력하세요.',true);return;}
-  if(!url||!/^https?:\/\//.test(url)){showMsg('sister-site-msg','올바른 URL을 입력하세요. (https://...)',true);return;}
-  const btn=document.querySelector('#admin-tab-siteconfig .admin-add-btn');
-  btnLoading(btn,'추가 중...');
-  try{
-    await adminPost('add_sister_site',{title,url});
-    document.getElementById('new-site-title').value='';
-    document.getElementById('new-site-url').value='';
-    btnDone(btn,'추가 완료');
-    showMsg('sister-site-msg','✅ 추가 완료',false);
-    await loadSisterSitesMgmt();
-    await loadSisterSites(); // 사이드바 즉시 갱신
-  }catch(e){showMsg('sister-site-msg','❌ '+e.message,true);btnDone(btn,'',true);}
-}
-async function removeSisterSite(idx){
-  if(!confirm('삭제하시겠습니까?'))return;
-  try{
-    await adminPost('remove_sister_site',{idx});
-    showMsg('sister-site-msg','✅ 삭제 완료',false);
-    await loadSisterSitesMgmt();
-    await loadSisterSites();
-  }catch(e){showMsg('sister-site-msg','❌ '+e.message,true);}
-}
-
 </script>
 <!-- ===== /HELP MODAL ===== -->
 
-
-<!-- ── 메모 팝업 ── -->
-<div id="memo-popup-overlay" onclick="closeMemoPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998"></div>
-<div id="memo-popup" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#0d1e30;border:1px solid #2a4a6e;border-radius:12px;padding:20px 24px;max-width:600px;width:90vw;max-height:75vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.7)">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <div id="memo-popup-date" style="font-size:13px;font-weight:700;color:#90caf9;font-family:var(--font-mono)"></div>
-    <button onclick="closeMemoPopup()" style="background:none;border:none;color:#8a9ab5;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">✕</button>
-  </div>
-  <div style="width:100%;height:1px;background:rgba(79,195,247,.2);margin-bottom:14px"></div>
-  <div id="memo-popup-content" style="font-size:13px;color:#e2e8f0;line-height:1.8;white-space:pre-wrap;font-family:var(--font-body)"></div>
-</div>
-<script>
-// 자매 사이트 — 모든 JS 로드 완료 후 실행
-if(typeof loadSisterSites==='function') loadSisterSites();
-else window.addEventListener('load', function(){ if(typeof loadSisterSites==='function') loadSisterSites(); });
-</script>
 </body>
 </html>
