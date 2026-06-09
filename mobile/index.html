@@ -6068,7 +6068,10 @@ setTimeout(()=>{el.style.display='none';},4000);
 }
 async function _usAdminApi(action,params){
 const pw_hash=(typeof ADMIN_CONFIG!=='undefined'&&ADMIN_CONFIG.PW_HASH)||'';
-const qs=new URLSearchParams({type:'admin',action,pw_hash,...params}).toString();
+// ★ params 안의 'type'(STOCK/ETF)이 'type=admin'을 덮어쓰는 충돌 방지
+const safeParams=Object.assign({},params);
+if(safeParams.type!==undefined){safeParams.stock_type=safeParams.type;delete safeParams.type;}
+const qs=new URLSearchParams({type:'admin',action,pw_hash,...safeParams}).toString();
 const res=await fetch(GAS_WEBAPP_URL+'?'+qs);
 return await res.json();
 }
