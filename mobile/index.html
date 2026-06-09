@@ -13664,11 +13664,81 @@ function scDrawChart(){
   });
 
   // X축 레이블 단축
-  const dispLabels = allLabels.map(function(l){ return l.slice(5); }); // MM-DD
+  const dispLabels = allLabels.mapconst dispLabels = allLabels.map(function(l){ return l.slice(5); }); // MM-DD
 
   const canvas = document.getElementById('spark-chart-canvas');
   if(!canvas) return;
   if(_scChartInst){ _scChartInst.destroy(); _scChartInst=null; }
+
+  _scChartInst = new Chart(canvas, {
+    type:'line',
+    data:{ labels:dispLabels, datasets:chartDatasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
+          titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+          callbacks:{
+            label:function(ctx){
+              const v=ctx.parsed.y;
+              if(v===null) return null;
+              return ' '+ctx.dataset.label+': '+(v>=0?'+':'')+v.toFixed(2)+'%';
+            }
+          }
+        },
+        datalabels:{ display:false }
+      },
+      scales:{
+        x:{
+          ticks:{
+            color:'#8fa8c8',font:{size:8},
+            maxTicksLimit: allLabels.length>90?10:allLabels.length>30?8:6,
+            maxRotation:0
+          },
+          grid:{color:'rgba(46,58,80,0.3)'},
+          border:{color:'#2e3a50'}
+        },
+        y:{
+          ticks:{
+            color:'#8fa8c8',font:{size:9},
+            callback:function(v){ return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+          },
+          grid:{color:'rgba(46,58,80,0.3)'},
+          border:{color:'#2e3a50'},
+          position:'left'
+        }
+      }
+    }
+  });
+
+  // 범례
+  const legendEl = document.getElementById('spark-chart-legend');
+  if(legendEl){
+    legendEl.innerHTML = chartDatasets.map(function(ds,i){
+      const lastVal = ds.data.filter(function(v){return v!==null;}).slice(-1)[0];
+      const col = _scColors[i % _scColors.length];
+      const dispVal = lastVal!==undefined?(lastVal>=0?'+':'')+lastVal.toFixed(2)+'%':'--';
+      const valCol = lastVal>=0?'#ef5350':'#42a5f5';
+      return '<div class="sc-legend-item">'
+        +'<div class="sc-legend-dot" style="background:'+col+'"></div>'
+        +'<span style="color:var(--text-secondary)">'+ds.label+'</span>'
+        +'<span style="color:'+valCol+';font-family:var(--font-mono);font-weight:700">'+dispVal+'</span>'
+        +'</div>';
+    }).join('');
+  }
+}
+// ── window 전역 등록 (인라인 onclick에서 접근 가능하도록) ──────
+window.toggleSparkMode      = toggleSparkMode;
+window.openSparkChartPopup  = openSparkChartPopup;
+window.closeSparkChartPopup = closeSparkChartPopup;
+window.scSetPeriod          = scSetPeriod;
+window.scSearchSector       = scSearchSector;
+window.scAddSector          = scAddSector;
+window.scRemoveSector       = scRemoveSector;
+window.scCloseDD            = scCloseDD;
 
 
 </script>
