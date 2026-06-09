@@ -1185,6 +1185,7 @@ const US_STATS_EXCLUDE = new Set([
   '장기채권', '단기채권', '하이일드',           // 채권 (YIELD 타입, 절대값)
 ]);
 const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
+var _sparkMode='daily';
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
@@ -2434,12 +2435,32 @@ h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFi
 h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
-function sparkline5row(sectorHdrs, filtered){
+function sparkline5row(sectorHdrs, filtered, isUsMode){
 if(filtered.length<2) return '';
 const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse();
-let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2)">5D 추이<br><span style="color:#ef5350;font-size:7px">▲상승</span>&nbsp;<span style="color:#42a5f5;font-size:7px">▼하락</span></td>`;
+const isCum=(_sparkMode==='cumulative');
+const modeLabel=isCum?'누적':'5D';
+const toggleLabel=isCum?'단순보기':'누적보기';
+let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2);cursor:pointer" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button onclick="toggleSparkMode(this)" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
 sectorHdrs.forEach((name,ci)=>{
-const vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
+let vals;
+if(isCum){
+  // 누적: 복리 누적 수익률
+  const raw=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
+  if(raw.length<2){vals=[];}
+  else{
+    let cum=0;
+    vals=raw.map(function(v,i){
+      if(i===0){cum=0;}else{cum=(1+cum/100)*(1+v/100)*100-100;}
+      return cum;
+    });
+  }
+} else {
+  vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
+}
+const _isUs=!!(isUsMode);
+const _esc=name.replace(/'/g,"\\'");
+const _onclick=`onclick="openSparkChartPopup('${_esc}',${!_isUs})"`;
 if(vals.length>=2){
 const mn=Math.min(...vals),mx=Math.max(...vals);
 const range=mx-mn||0.001;
@@ -2451,9 +2472,9 @@ return `${x.toFixed(1)},${y.toFixed(1)}`;
 }).join(' ');
 const last=vals[vals.length-1],first=vals[0];
 const col=last>first?'#ef5350':last<first?'#42a5f5':'#78909c';
-const svg=`<svg width="${W}" height="${H}" style="display:block;margin:auto"><polyline points="${points}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="1.5" fill="${col}"/></svg>`;
-h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}padding:1px;background:var(--bg-card2)">${svg}</td>`;
-}else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)"></td>`;
+const svg=`<svg width="${W}" height="${H}" style="display:block;margin:auto;cursor:pointer" title="${name} 차트 보기"><polyline points="${points}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="1.5" fill="${col}"/></svg>`;
+h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}padding:1px;background:var(--bg-card2)" ${_onclick}>${svg}</td>`;
+}else h+=`<td style="${(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':''}background:var(--bg-card2)" ${_onclick}></td>`;
 });
 h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
@@ -2716,7 +2737,7 @@ t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
-+sparkline5row(sectorHdrs,f)
++sparkline5row(sectorHdrs,f,false)
 +separatorRow(sectorHdrs.length)
 +'</thead><tbody>';
 if(S.krToday&&S.krToday.sectors){
@@ -4499,7 +4520,7 @@ t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
-+sparkline5row(sh,f)
++sparkline5row(sh,f,true)
 +separatorRow(sh.length)
 +'</thead><tbody>';
 if(S.usToday&&S.usToday.sectors){
@@ -4987,7 +5008,7 @@ t+=`<th class="${isW?'watched-col':''} ${KR_FIXED[name]?'':`sector-clickable`}"
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
-+sparkline5row(sectorHdrs,f)
++sparkline5row(sectorHdrs,f,false)
 +separatorRow(sectorHdrs.length)
 +'</thead><tbody>';
 f.forEach(row=>{
@@ -5035,7 +5056,7 @@ t+=`<th class="${isW?'watched-col':''} sector-clickable"
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
-+sparkline5row(sh,f)
++sparkline5row(sh,f,true)
 +separatorRow(sh.length)
 +'</thead><tbody>';
 f.forEach(row=>{
@@ -5721,7 +5742,10 @@ setTimeout(()=>{el.style.display='none';},4000);
 }
 async function _usAdminApi(action,params){
 const pw_hash=(typeof ADMIN_CONFIG!=='undefined'&&ADMIN_CONFIG.PW_HASH)||'';
-const qs=new URLSearchParams({type:'admin',action,pw_hash,...params}).toString();
+// ★ params 안의 'type'(STOCK/ETF)이 'type=admin'을 덮어쓰는 충돌 방지
+const safeParams=Object.assign({},params);
+if(safeParams.type!==undefined){safeParams.stock_type=safeParams.type;delete safeParams.type;}
+const qs=new URLSearchParams({type:'admin',action,pw_hash,...safeParams}).toString();
 const res=await fetch(GAS_WEBAPP_URL+'?'+qs);
 return await res.json();
 }
@@ -7159,9 +7183,381 @@ async function removeHoliday(date){
     await loadHolidays();
   }catch(e){showMsg('holiday-msg','❌ '+e.message,true);}
 }
+// ═══════════════════════════════════════════════════════════════
+// ── 스파크라인 모드 (daily / cumulative) ────────────────────────
+// ═══════════════════════════════════════════════════════════════
+function toggleSparkMode(btn){
+  _sparkMode = _sparkMode==='daily'?'cumulative':'daily';
+  if(btn){
+    btn.textContent = _sparkMode==='daily'?'누적보기':'단순보기';
+    btn.title = _sparkMode==='daily'?'누적 수익률 모드로 전환':'일간 등락률 모드로 전환';
+  }
+  renderKr(); renderUs();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ── 스파크 차트 팝업 상태 ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+var _scIsKr = true;
+var _scSectors = [];       // 현재 선택된 섹터 목록
+var _scPeriod = 30;        // 현재 선택 기간(일수), 0=YTD
+var _scChartInst = null;   // Chart.js 인스턴스
+var _scColors = [
+  '#4fc3f7','#ef5350','#66bb6a','#ffa726','#ab47bc',
+  '#26c6da','#ff7043','#9ccc65','#ec407a','#42a5f5',
+  '#ffca28','#8d6e63','#78909c','#26a69a','#7e57c2'
+];
+
+function openSparkChartPopup(sectorName, isKr){
+  _scIsKr = isKr;
+  _scSectors = [sectorName];
+  _scPeriod = 30;
+  document.getElementById('spark-chart-backdrop').classList.add('active');
+  document.getElementById('spark-chart-popup').classList.add('open');
+  // 기간 버튼 초기화
+  document.querySelectorAll('.sc-period-btn').forEach(function(b){
+    b.classList.remove('active','us-active');
+    if(b.dataset.days==='30') b.classList.add(isKr?'active':'us-active');
+  });
+  document.getElementById('spark-chart-title').textContent =
+    (isKr?'🇰🇷':'🇺🇸') + ' ' + sectorName + ' — 누적 수익률';
+  document.addEventListener('keydown', _scEscHandler);
+  scRenderTags();
+  scDrawChart();
+}
+
+function closeSparkChartPopup(){
+  document.getElementById('spark-chart-backdrop').classList.remove('active');
+  document.getElementById('spark-chart-popup').classList.remove('open');
+  document.removeEventListener('keydown', _scEscHandler);
+  if(_scChartInst){ _scChartInst.destroy(); _scChartInst=null; }
+}
+
+function _scEscHandler(e){ if(e.key==='Escape') closeSparkChartPopup(); }
+
+function scSetPeriod(days, btn){
+  _scPeriod = days;
+  document.querySelectorAll('.sc-period-btn').forEach(function(b){
+    b.classList.remove('active','us-active');
+  });
+  btn.classList.add(_scIsKr?'active':'us-active');
+  scDrawChart();
+}
+
+// ── 섹터 태그 렌더 ────────────────────────────────────────────
+function scRenderTags(){
+  const wrap = document.getElementById('spark-sector-tags');
+  if(!wrap) return;
+  wrap.innerHTML = _scSectors.map(function(name, i){
+    const col = _scColors[i % _scColors.length];
+    const esc = name.replace(/'/g,"\'");
+    return '<span class="sc-sector-tag" style="background:'+col+'22;border-color:'+col+';color:'+col+'">'
+      + name
+      + '<span class="sc-tag-x" onclick="scRemoveSector(''+esc+'')">✕</span>'
+      + '</span>';
+  }).join('');
+}
+
+function scRemoveSector(name){
+  if(_scSectors.length<=1) return; // 최소 1개 유지
+  _scSectors = _scSectors.filter(function(s){ return s!==name; });
+  scRenderTags();
+  scDrawChart();
+}
+
+function scAddSector(name){
+  if(_scSectors.indexOf(name)>=0) return;
+  if(_scSectors.length>=8){ alert('최대 8개 섹터까지 비교할 수 있습니다.'); return; }
+  _scSectors.push(name);
+  scRenderTags();
+  scDrawChart();
+  document.getElementById('spark-chart-title').textContent =
+    (_scIsKr?'🇰🇷':'🇺🇸') + ' 섹터 비교 — 누적 수익률';
+  const inp = document.getElementById('spark-sector-search');
+  if(inp) inp.value='';
+  scCloseDD();
+}
+
+// ── 섹터 검색 드롭다운 ────────────────────────────────────────
+function scSearchSector(q){
+  const dd = document.getElementById('spark-sector-dropdown');
+  if(!dd) return;
+  const D = _scIsKr ? S.krD : S.usD;
+  if(!D || !D.headers) { dd.style.display='none'; return; }
+  const exclude = _scIsKr ? KR_STATS_EXCLUDE : US_STATS_EXCLUDE;
+  const all = D.headers.slice(1).filter(function(h){
+    return !exclude.has(h) && _scSectors.indexOf(h)<0 &&
+      (!q || h.toLowerCase().indexOf(q.toLowerCase())>=0);
+  });
+  if(!all.length){ dd.style.display='none'; return; }
+  dd.innerHTML = all.slice(0,20).map(function(name){
+    const esc=name.replace(/'/g,"\'");
+    return '<div class="sc-dd-item" onmousedown="scAddSector(''+esc+'')">'+name+'</div>';
+  }).join('');
+  dd.style.display='block';
+  dd.classList.add('open');
+}
+
+function scCloseDD(){
+  const dd=document.getElementById('spark-sector-dropdown');
+  if(dd){ dd.style.display='none'; dd.classList.remove('open'); }
+}
+
+// ── 누적 수익률 계산 ──────────────────────────────────────────
+function scCalcCumulative(rows, headers, sectorName, periodDays){
+  const idx = headers.indexOf(sectorName);
+  if(idx<0) return {labels:[],data:[]};
+  const now = new Date();
+  const ytdStart = new Date(now.getFullYear(),0,1);
+
+  // rows는 최신순 → 오래된순으로 reverse
+  let pts = rows.map(function(r){ return {date:r[0], val:parseFloat(r[idx])}; })
+    .filter(function(p){ return !isNaN(p.val); })
+    .reverse(); // 오래된 → 최신
+
+  // 기간 필터
+  if(periodDays===0){
+    // YTD: 올해 1월1일부터
+    pts = pts.filter(function(p){
+      const d = new Date(String(p.date).slice(0,10));
+      return d >= ytdStart;
+    });
+  } else if(periodDays>0){
+    const cutoff = new Date(now.getTime() - periodDays*24*3600*1000);
+    pts = pts.filter(function(p){
+      const d = new Date(String(p.date).slice(0,10));
+      return d >= cutoff;
+    });
+  }
+
+  if(!pts.length) return {labels:[],data:[]};
+
+  // 복리 누적 계산: 첫날 기준 0%
+  let cum = 0;
+  const labels = [], data = [];
+  pts.forEach(function(p, i){
+    if(i===0){ cum=0; }
+    else { cum = (1+cum/100)*(1+p.val/100)*100 - 100; }
+    labels.push(String(p.date).slice(0,10));
+    data.push(Math.round(cum*100)/100);
+  });
+  return {labels:labels, data:data};
+}
+
+// ── Chart.js 렌더 ─────────────────────────────────────────────
+function scDrawChart(){
+  const D = _scIsKr ? S.krD : S.usD;
+  if(!D || !D.headers || !D.rows) return;
+
+  // 각 섹터 데이터 계산
+  const datasets = _scSectors.map(function(name, i){
+    const col = _scColors[i % _scColors.length];
+    const result = scCalcCumulative(D.rows, D.headers, name, _scPeriod);
+    return { name:name, col:col, labels:result.labels, data:result.data };
+  });
+
+  // 가장 긴 labels 사용 (합집합)
+  const allLabels = [];
+  const labelSet = {};
+  datasets.forEach(function(ds){
+    ds.labels.forEach(function(l){ if(!labelSet[l]){ labelSet[l]=true; allLabels.push(l); } });
+  });
+  allLabels.sort();
+
+  // 각 데이터셋을 공통 labels에 맞게 정렬·보간
+  const chartDatasets = datasets.map(function(ds, i){
+    const map = {};
+    ds.labels.forEach(function(l,j){ map[l]=ds.data[j]; });
+    const aligned = allLabels.map(function(l){ return map[l]!==undefined?map[l]:null; });
+    return {
+      label: ds.name,
+      data: aligned,
+      borderColor: ds.col,
+      backgroundColor: ds.col+'22',
+      borderWidth: 2,
+      pointRadius: allLabels.length>60?0:2,
+      pointHoverRadius: 4,
+      tension: 0.3,
+      fill: false,
+      spanGaps: true,
+    };
+  });
+
+  // X축 레이블 단축
+  const dispLabels = allLabels.map(function(l){ return l.slice(5); }); // MM-DD
+
+  const canvas = document.getElementById('spark-chart-canvas');
+  if(!canvas) return;
+  if(_scChartInst){ _scChartInst.destroy(); _scChartInst=null; }
+
+  _scChartInst = new Chart(canvas, {
+    type:'line',
+    data:{ labels:dispLabels, datasets:chartDatasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'#1a2332',borderColor:'#2e3a50',borderWidth:1,
+          titleColor:'#e8edf5',bodyColor:'#8a9ab5',
+          callbacks:{
+            label:function(ctx){
+              const v=ctx.parsed.y;
+              if(v===null) return null;
+              return ' '+ctx.dataset.label+': '+(v>=0?'+':'')+v.toFixed(2)+'%';
+            }
+          }
+        },
+        datalabels:{ display:false }
+      },
+      scales:{
+        x:{
+          ticks:{
+            color:'#8fa8c8',font:{size:8},
+            maxTicksLimit: allLabels.length>90?10:allLabels.length>30?8:6,
+            maxRotation:0
+          },
+          grid:{color:'rgba(46,58,80,0.3)'},
+          border:{color:'#2e3a50'}
+        },
+        y:{
+          ticks:{
+            color:'#8fa8c8',font:{size:9},
+            callback:function(v){ return (v>=0?'+':'')+v.toFixed(1)+'%'; }
+          },
+          grid:{color:'rgba(46,58,80,0.3)'},
+          border:{color:'#2e3a50'},
+          position:'left'
+        }
+      }
+    }
+  });
+
+  // 범례
+  const legendEl = document.getElementById('spark-chart-legend');
+  if(legendEl){
+    legendEl.innerHTML = chartDatasets.map(function(ds,i){
+      const lastVal = ds.data.filter(function(v){return v!==null;}).slice(-1)[0];
+      const col = _scColors[i % _scColors.length];
+      const dispVal = lastVal!==undefined?(lastVal>=0?'+':'')+lastVal.toFixed(2)+'%':'--';
+      const valCol = lastVal>=0?'#ef5350':'#42a5f5';
+      return '<div class="sc-legend-item">'
+        +'<div class="sc-legend-dot" style="background:'+col+'"></div>'
+        +'<span style="color:var(--text-secondary)">'+ds.label+'</span>'
+        +'<span style="color:'+valCol+';font-family:var(--font-mono);font-weight:700">'+dispVal+'</span>'
+        +'</div>';
+    }).join('');
+  }
+}
+
 
 </script>
 <!-- ===== /HELP MODAL ===== -->
 
+<!-- ===== SPARK CHART POPUP ===== -->
+<style>
+#spark-chart-overlay{position:fixed;inset:0;z-index:4000;pointer-events:none}
+#spark-chart-overlay.active{pointer-events:auto}
+#spark-chart-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4000;display:none}
+#spark-chart-backdrop.active{display:block}
+#spark-chart-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+  width:min(720px,96vw);max-height:85vh;
+  background:var(--bg-card);border:1px solid var(--border-light);
+  border-radius:14px;box-shadow:0 12px 48px rgba(0,0,0,.8);
+  display:flex;flex-direction:column;
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:4001;
+}
+#spark-chart-popup.open{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+#spark-chart-header{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;background:var(--bg-card2);
+  border-radius:14px 14px 0 0;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+#spark-chart-title{font-size:13px;font-weight:700;color:var(--text-primary);flex:1}
+#spark-chart-close{
+  width:24px;height:24px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.08);color:var(--text-secondary);
+  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;flex-shrink:0;
+}
+#spark-chart-close:hover{background:rgba(239,83,80,.3);color:#ef5350}
+#spark-chart-controls{
+  display:flex;align-items:center;gap:6px;padding:8px 14px;
+  border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;
+}
+.sc-period-btn{
+  padding:3px 10px;border-radius:5px;font-size:10px;font-family:var(--font-mono);
+  border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);
+  cursor:pointer;transition:all .15s;
+}
+.sc-period-btn:hover{border-color:var(--border-light);color:var(--text-primary)}
+.sc-period-btn.active{background:rgba(79,195,247,.2);border-color:var(--accent-kr);color:var(--accent-kr);font-weight:700}
+.sc-period-btn.us-active{background:rgba(239,83,80,.2);border-color:var(--accent-us);color:var(--accent-us);font-weight:700}
+#spark-sector-tags{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
+.sc-sector-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--font-mono);
+  cursor:pointer;border:1px solid transparent;transition:all .15s;white-space:nowrap;
+}
+.sc-sector-tag .sc-tag-x{font-size:9px;opacity:.7;margin-left:2px}
+.sc-sector-tag:hover .sc-tag-x{opacity:1}
+#spark-sector-search{
+  background:var(--bg-darkest);border:1px solid var(--border);color:var(--text-primary);
+  padding:3px 8px;border-radius:5px;font-size:11px;width:120px;outline:none;
+  font-family:var(--font-body);
+}
+#spark-sector-search:focus{border-color:var(--accent-kr)}
+#spark-sector-search::placeholder{color:var(--text-muted)}
+#spark-chart-body{flex:1;overflow-y:auto;padding:10px 14px 14px;min-height:0}
+#spark-chart-canvas-wrap{position:relative;height:300px;width:100%}
+#spark-sector-dropdown{
+  position:absolute;top:100%;left:0;
+  background:var(--bg-card);border:1px solid var(--border-light);
+  border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.6);
+  max-height:200px;overflow-y:auto;z-index:10;width:200px;display:none;margin-top:3px;
+}
+#spark-sector-dropdown.open{display:block}
+.sc-dd-item{
+  padding:6px 12px;font-size:11px;cursor:pointer;color:var(--text-secondary);
+  border-bottom:1px solid rgba(46,58,80,.3);transition:background .1s;
+}
+.sc-dd-item:hover{background:rgba(79,195,247,.1);color:var(--text-primary)}
+.sc-dd-item:last-child{border-bottom:none}
+#spark-chart-legend{display:flex;gap:8px;flex-wrap:wrap;padding:6px 0 0;font-size:10px}
+.sc-legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:opacity .15s}
+.sc-legend-item:hover{opacity:.75}
+.sc-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+</style>
+<div id="spark-chart-backdrop" onclick="closeSparkChartPopup()"></div>
+<div id="spark-chart-overlay">
+<div id="spark-chart-popup">
+  <div id="spark-chart-header">
+    <span id="spark-chart-title">&#128200; &#49305;&#53552; &#45204;&#51201; &#49688;&#51775;&#47456;</span>
+    <button id="spark-chart-close" onclick="closeSparkChartPopup()">&#10005;</button>
+  </div>
+  <div id="spark-chart-controls">
+    <div style="display:flex;gap:3px;flex-shrink:0">
+      <button class="sc-period-btn" data-days="30"  onclick="scSetPeriod(30,this)">1개월</button>
+      <button class="sc-period-btn" data-days="90"  onclick="scSetPeriod(90,this)">3개월</button>
+      <button class="sc-period-btn" data-days="180" onclick="scSetPeriod(180,this)">6개월</button>
+      <button class="sc-period-btn" data-days="0"   onclick="scSetPeriod(0,this)">YTD</button>
+      <button class="sc-period-btn" data-days="365" onclick="scSetPeriod(365,this)">1년</button>
+    </div>
+    <div style="position:relative;flex-shrink:0">
+      <input id="spark-sector-search" placeholder="+ 섹터 추가..." autocomplete="off"
+        oninput="scSearchSector(this.value)" onfocus="scSearchSector(this.value)" onblur="setTimeout(()=>scCloseDD(),180)">
+      <div id="spark-sector-dropdown"></div>
+    </div>
+    <div id="spark-sector-tags"></div>
+  </div>
+  <div id="spark-chart-body">
+    <div id="spark-chart-canvas-wrap"><canvas id="spark-chart-canvas"></canvas></div>
+    <div id="spark-chart-legend"></div>
+  </div>
+</div>
+</div>
+<!-- ===== /SPARK CHART POPUP ===== -->
 </body>
 </html>
