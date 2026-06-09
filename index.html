@@ -7450,6 +7450,15 @@ function scDrawChart(){
     }).join('');
   }
 }
+// ── window 전역 등록 (인라인 onclick에서 접근 가능하도록) ──────
+window.toggleSparkMode      = toggleSparkMode;
+window.openSparkChartPopup  = openSparkChartPopup;
+window.closeSparkChartPopup = closeSparkChartPopup;
+window.scSetPeriod          = scSetPeriod;
+window.scSearchSector       = scSearchSector;
+window.scAddSector          = scAddSector;
+window.scRemoveSector       = scRemoveSector;
+window.scCloseDD            = scCloseDD;
 
 
 </script>
