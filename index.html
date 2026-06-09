@@ -1937,8 +1937,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const _usIsPrevMode = !!(prevDate);
       // ★ 채권 섹터(장기채권/단기채권/하이일드): 종목 팝업 대신 설명 표시
       const _bondInfo = {
-        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리입니다.<br>값이 높을수록 시장이 인플레이션·성장을 높게 전망한다는 신호입니다.', source:'CBOE: INDEXCBOE:TNX', link:'https://finance.yahoo.com/quote/%5ETNX/' },
-        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준(Fed) 기준금리 정책에 가장 민감하게 반응하는 금리입니다.<br>장단기 스프레드(10년 - 2년) 계산에 주로 활용됩니다.', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://finance.yahoo.com/quote/%5ETWOYEAR/' },
+        '장기채권': { title:'🏦 미국 10년물 국채 수익률', desc:'미국 국채 중 가장 대표적인 장기 벤치마크 금리입니다.<br>값이 높을수록 시장이 인플레이션·성장을 높게 전망한다는 신호입니다.', source:'CBOE: INDEXCBOE:TNX', link:'https://kr.tradingview.com/symbols/TVC-US10Y/' },
+        '단기채권': { title:'🏦 미국 2년물 국채 수익률', desc:'연준(Fed) 기준금리 정책에 가장 민감하게 반응하는 금리입니다.<br>장단기 스프레드(10년 - 2년) 계산에 주로 활용됩니다.', source:'CBOE: INDEXCBOE:TNX2YR', link:'https://kr.tradingview.com/symbols/TVC-US02Y/' },
         '하이일드': { title:'📊 하이일드 스프레드 (OAS)', desc:'하이일드(고수익) 회사채와 미국 국채 간 금리 차이(스프레드)입니다.<br>값이 높을수록 신용위험이 크고, 낮을수록 시장이 안정적임을 의미합니다.', source:'FRED: BAMLH0A0HYM2 (ICE BofA US HY Index OAS)', link:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2' },
       };
       if (_bondInfo[sectorName]) {
@@ -4526,10 +4526,17 @@ const _usPreMarket=!_usWeekend&&etMinTotal<570;
 // 장 마감 후: ET 16:00 이후
 const _usAfterHours=!_usWeekend&&etMinTotal>=960;
 const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
-// 오늘 행 추가 조건: 미리 존재하지 않고, 주말 아니고, 실데이터 있고, 장 중 또는 장 마감 후
 // ET 기준 오늘 날짜 문자열 (YYYY-MM-DD)
 const etTodayStr=nowET.getFullYear()+'-'+String(nowET.getMonth()+1).padStart(2,'0')+'-'+String(nowET.getDate()).padStart(2,'0');
-if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usHasData&&!_usPreMarket){
+// ★ 주식 휴장일(주말/공휴일) 판단: BTC/ETH 값만 있고 주식 섹터 값이 없는 경우
+// _usWeekend 외에도 공휴일(평일이지만 주식 섹터 전부 null) 판단
+const _usStockSectors=sh.filter(n=>n!=='BTC'&&n!=='ETH');
+const _usHasStockData=_usStockSectors.some(n=>todayMap[n]!==undefined&&todayMap[n]!==null&&!isNaN(parseFloat(todayMap[n])));
+const _usHasBtcEth=(todayMap['BTC']!==undefined&&todayMap['BTC']!==null&&!isNaN(parseFloat(todayMap['BTC'])))||(todayMap['ETH']!==undefined&&todayMap['ETH']!==null&&!isNaN(parseFloat(todayMap['ETH'])));
+// 주식 휴장일: 주말 OR (평일이지만 주식 데이터 없고 BTC/ETH만 있음)
+const _usHoliday=_usWeekend||(!_usHasStockData&&_usHasBtcEth&&!_usPreMarket);
+if(todayDate&&!_usAlreadyExists&&!_usHoliday&&_usHasData&&!_usPreMarket){
+// ── 영업일 장중/장마감 후: 정상 오늘 행 ────────────────────────────
 t+=`<tr style="background:rgba(239,83,80,.07);border-bottom:1px solid rgba(239,83,80,.3)">`;
 t+=`<td style="color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)">${dateCell(todayDate,false,"color:var(--accent-us);font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
 sh.forEach((name,_usTdi)=>{
@@ -4542,6 +4549,7 @@ t+=`<td style="${_usTdBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bo
 t+=`<td style="color:var(--text-muted);font-size:9px;text-align:left;padding:3px 8px">-</td>`;
 t+=`</tr>`;
 } else if(todayDate&&!_usAlreadyExists&&!_usWeekend&&_usPreMarket){
+// ── 영업일 장전: 안내 행 ────────────────────────────────────────────
 const latestDate=baseRows.length?baseRows[0][0]:'';
 const etTimeStr=(etHour<10?'0':'')+etHour+':'+(etMin<10?'0':'')+etMin+' ET';
 t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
@@ -4550,14 +4558,29 @@ t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:le
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`<td></td></tr>`;
-} else if(_usWeekend){
-const latestDate=baseRows.length?baseRows[0][0]:'';
+} else if(_usHoliday&&_usHasBtcEth){
+// ── 휴장일(주말/공휴일): BTC/ETH 값만 표시하는 임시 행 ────────────
+// 다음 영업일이 되어 주식 데이터가 들어오면 이 행은 자동으로 사라짐
 const dayNames=['일','월','화','수','목','금','토'];
-t+=`<tr style="background:rgba(255,183,77,.06);border-bottom:1px solid rgba(255,183,77,.25)">`;
+const _holLabel=_usWeekend?`주말(${dayNames[etDow]})`:'주식휴장';
+t+=`<tr data-holiday-row="true" style="background:rgba(255,183,77,.05);border-bottom:1px solid rgba(255,183,77,.2)">`;
 t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(etTodayStr,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:left;padding:6px 10px">`;
-t+=`🏖️ 오늘은 주말(${dayNames[etDow]}요일)입니다. 최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
-t+=`<td></td></tr>`;
+sh.forEach((name,_usTdi)=>{
+const _usTdBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_usTdi))?'border-left:3px solid #000;':'';
+if(name==='BTC'||name==='ETH'){
+  const val=todayMap[name];
+  if(val!==undefined&&val!==null&&!isNaN(parseFloat(val))){
+    const c=usCell(name,val);
+    t+=`<td style="${_usTdBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
+  } else {
+    t+=`<td style="${_usTdBdr}color:var(--text-muted)">-</td>`;
+  }
+} else {
+  t+=`<td style="${_usTdBdr}color:rgba(100,120,150,.35);font-size:8px;text-align:center">${_holLabel}</td>`;
+}
+});
+t+=`<td style="color:var(--text-muted);font-size:9px;text-align:left;padding:3px 8px">-</td>`;
+t+=`</tr>`;
 }
 }
 // ★ KR과 동일한 방식: sh는 메모 제외 섹터만 포함, row[ci+1] 순서 기반 접근
