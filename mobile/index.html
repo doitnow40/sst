@@ -2770,7 +2770,7 @@ const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse();
 const isCum=(_sparkMode==='cumulative');
 const modeLabel=isCum?'누적':'5D';
 const toggleLabel=isCum?'단순보기':'누적보기';
-let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2);cursor:pointer" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button onclick="toggleSparkMode(this)" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
+let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2)" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button data-action="spark-toggle" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid #2e3a50;background:#1e2535;color:#9db3cc;cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
 sectorHdrs.forEach((name,ci)=>{
 let vals;
 if(isCum){
@@ -2788,8 +2788,8 @@ if(isCum){
   vals=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
 }
 const _isUs=!!(isUsMode);
-const _esc=name.replace(/'/g,"\\'");
-const _onclick=`onclick="openSparkChartPopup('${_esc}',${!_isUs})"`;
+const _isKr=!_isUs;
+const _onclick=`data-action="spark-open" data-sector="${name.replace(/"/g,'&quot;')}" data-iskr="${_isKr}"`;
 if(vals.length>=2){
 const mn=Math.min(...vals),mx=Math.max(...vals);
 const range=mx-mn||0.001;
@@ -13731,6 +13731,26 @@ function scDrawChart(){
   }
 }
 // ── window 전역 등록 (인라인 onclick에서 접근 가능하도록) ──────
+
+// ── 스파크라인 이벤트 위임 (data-action 방식) ──────────────────
+document.addEventListener('click', function(e){
+  // 토글 버튼
+  var btn = e.target.closest('[data-action="spark-toggle"]');
+  if(btn){
+    _sparkMode = _sparkMode==='daily'?'cumulative':'daily';
+    btn.textContent = _sparkMode==='daily'?'누적보기':'단순보기';
+    renderKr(); renderUs();
+    return;
+  }
+  // 스파크라인 td 클릭
+  var td = e.target.closest('[data-action="spark-open"]');
+  if(td){
+    var sector = td.getAttribute('data-sector');
+    var isKr   = td.getAttribute('data-iskr')==='true';
+    if(sector) openSparkChartPopup(sector, isKr);
+    return;
+  }
+});
 window.toggleSparkMode      = toggleSparkMode;
 window.openSparkChartPopup  = openSparkChartPopup;
 window.closeSparkChartPopup = closeSparkChartPopup;
