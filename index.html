@@ -1185,6 +1185,7 @@ const US_STATS_EXCLUDE = new Set([
   '장기채권', '단기채권', '하이일드',           // 채권 (YIELD 타입, 절대값)
 ]);
 const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
+var _sparkMode='daily';
 const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
@@ -7185,7 +7186,6 @@ async function removeHoliday(date){
 // ═══════════════════════════════════════════════════════════════
 // ── 스파크라인 모드 (daily / cumulative) ────────────────────────
 // ═══════════════════════════════════════════════════════════════
-var _sparkMode = 'daily'; // 'daily' | 'cumulative'
 function toggleSparkMode(btn){
   _sparkMode = _sparkMode==='daily'?'cumulative':'daily';
   if(btn){
