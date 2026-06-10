@@ -2508,6 +2508,17 @@ if(!todayData.noTrading && (
 )){
 S.krToday = todayData;
 if(Object.keys(todayData.sectors||{}).length > 0) updateRealtimeTime();
+// ★ majorIndex가 비어있으면 GAS kr_today에서 직접 보완 (Worker KV에 지수 없을 때)
+if(!Object.keys(S.krToday.majorIndex||{}).length){
+  fetch(GAS_WEBAPP_URL+'?type=kr_today&_t='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(j.ok&&j.data&&j.data.majorIndex&&Object.keys(j.data.majorIndex).length){
+        S.krToday.majorIndex=j.data.majorIndex;
+        renderKr();
+      }
+    }).catch(function(){});
+}
 } else {
 S.krToday = null;
 }
