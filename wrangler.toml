@@ -37,4 +37,4 @@ id = "1fc0b0b7b18049e3b057ed56442d5404"   # ← 실제 KV namespace ID로 교체
 # KST 환산: 09:00~15:55 (장중 전체 커버)
 # Cloudflare Cron은 GitHub Actions와 달리 지연/누락 없이 정확히 실행됨
 [triggers]
-crons = ["*/5 0-6 * * 1-5"]
+crons = ["*/5 0-7 * * 1-5"]
