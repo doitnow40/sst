@@ -2528,6 +2528,9 @@ updateSheetReadTime(d.sheetReadAt);
 S.krD=d; S.krOk=true;
 renderKr();
 loadSectorNotes('kr'); // ★ 섹터 메모/링크 비동기 로드
+// ★ [방향B] 오늘 데이터 없으면 GAS kr_today 직접 호출 fallback
+// Worker Cron 미실행(GitHub Actions 지연/중단) 시 자동 보완
+_krTodayFallbackIfNeeded();
 // ★ US 데이터 백그라운드 프리로드 (KR 렌더 완료 1.5초 후)
 if (!S.usOk) { setTimeout(function(){ if(!S.usOk) loadUs(); }, 1500); }
 }catch(e){
@@ -7462,6 +7465,66 @@ document.addEventListener('keydown', function(e) {
 });
 window.showMemoPopup = showMemoPopup;
 window.closeMemoPopup = closeMemoPopup;
+
+// ═══════════════════════════════════════════════════════════════
+// ── [방향B] KR 오늘 데이터 자동 fallback ────────────────────────
+// Worker Cron이 실행 안 됐거나 KV에 오늘 데이터가 없을 때
+// GAS kr_today를 직접 호출해서 자동 보완
+// ═══════════════════════════════════════════════════════════════
+var _krFallbackTimer = null;
+var _krFallbackAttempts = 0;
+var _krFallbackMaxAttempts = 6; // 최대 6회 (5분 간격 → 30분)
+
+function _krTodayFallbackIfNeeded() {
+  // 이미 오늘 섹터 데이터가 있으면 불필요
+  if (S.krToday && Object.keys(S.krToday.sectors||{}).length > 0) return;
+
+  // 장중/장마감후 평일에만 실행
+  var kst = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  var dow = kst.getDay();
+  var hhmm = kst.getHours()*100 + kst.getMinutes();
+  var isMarketTime = dow>=1 && dow<=5 && hhmm>=900 && hhmm<=1600;
+  if (!isMarketTime) return;
+
+  console.warn('[KR fallback] S.krToday 없음 → GAS 직접 조회 시작');
+  _krFallbackAttempts = 0;
+  _krFallbackPoll();
+}
+
+async function _krFallbackPoll() {
+  _krFallbackAttempts++;
+  console.log('[KR fallback] 시도 ' + _krFallbackAttempts + '/' + _krFallbackMaxAttempts);
+
+  try {
+    var r = await fetch(GAS_WEBAPP_URL + '?type=kr_today&_t=' + Date.now(), {cache:'no-store'});
+    var j = await r.json();
+    var d = j.ok ? j.data : null;
+
+    if (d && !d.noTrading && Object.keys(d.sectors||{}).length > 0) {
+      // 데이터 있음 → S.krToday 세팅 후 렌더
+      console.log('[KR fallback] 데이터 수신 완료 → 렌더링');
+      S.krToday = d;
+      updateRealtimeTime();
+      renderKr();
+      // majorIndex도 보완
+      if (!Object.keys(d.majorIndex||{}).length) {
+        // majorIndex 별도 보완은 이미 renderKr 내부 로직이 처리
+      }
+      return; // 성공 → 종료
+    }
+  } catch(e) {
+    console.warn('[KR fallback] 오류:', e.message);
+  }
+
+  // 데이터 아직 없음 → 재시도
+  if (_krFallbackAttempts < _krFallbackMaxAttempts) {
+    var delay = _krFallbackAttempts <= 2 ? 30000 : 60000; // 처음 2회 30초, 이후 60초
+    console.log('[KR fallback] ' + delay/1000 + '초 후 재시도...');
+    _krFallbackTimer = setTimeout(_krFallbackPoll, delay);
+  } else {
+    console.warn('[KR fallback] 최대 시도 횟수 초과. 수동 갱신 필요.');
+  }
+}
 </script>
 <!-- ===== /HELP MODAL ===== -->
 
