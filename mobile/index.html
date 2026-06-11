@@ -34,6 +34,20 @@ function btnDone(btn, text, isErr) {
     btn.innerHTML = btn._origHTML || btn.innerHTML;
   }
 }
+/* ── 도움말 팝업 ── */
+function openHelpModal(){
+  var isAdmin = !!document.querySelector('#page-admin[style*="block"]');
+  document.getElementById('help-modal-title').textContent = isAdmin ? '도움말 (관리자)' : '도움말';
+  document.getElementById('help-modal-body').innerHTML = isAdmin ? _helpContentAdmin() : _helpContentUser();
+  document.getElementById('help-modal-overlay').style.display = 'block';
+  var m = document.getElementById('help-modal');
+  m.style.display = 'flex';
+  m.style.flexDirection = 'column';
+}
+function closeHelpModal(){
+  document.getElementById('help-modal-overlay').style.display = 'none';
+  document.getElementById('help-modal').style.display = 'none';
+}
 window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-3PTKMRYZZ3');</script>
 <style>
 :root {
@@ -7305,7 +7319,7 @@ setInterval(_syncBadges, 60000);
 
 <!-- ===== HELP MODAL ===== -->
 <div id="help-modal-overlay" onclick="closeHelpModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
-<div id="help-modal" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9001;width:min(96vw,680px);max-height:88vh;background:var(--bg-dark);border:1px solid var(--border-light);border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)" class="help-modal-box help-modal-hidden">
+<div id="help-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9001;width:min(96vw,680px);max-height:88vh;background:var(--bg-dark);border:1px solid var(--border-light);border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)" class="help-modal-box">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">❓</span>
@@ -7317,8 +7331,7 @@ setInterval(_syncBadges, 60000);
 </div>
 
 <style>
-.help-modal-hidden{display:none}
-.help-modal-box{display:flex;flex-direction:column}
+.help-modal-box{flex-direction:column}
 .help-section{margin-bottom:18px}
 .help-section-title{font-size:11px;font-weight:700;color:var(--accent-kr);letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
 .help-section-title.admin-color{color:#ff9800}
@@ -7426,11 +7439,13 @@ function openHelpModal(){
   document.getElementById('help-modal-title').textContent = isAdmin ? '도움말 (관리자)' : '도움말';
   document.getElementById('help-modal-body').innerHTML = isAdmin ? _helpContentAdmin() : _helpContentUser();
   document.getElementById('help-modal-overlay').style.display = 'block';
-  document.getElementById('help-modal').classList.remove('help-modal-hidden');
+  const m = document.getElementById('help-modal');
+  m.style.display = 'flex';
+  m.style.flexDirection = 'column';
 }
 function closeHelpModal(){
   document.getElementById('help-modal-overlay').style.display = 'none';
-  document.getElementById('help-modal').classList.add('help-modal-hidden');
+  document.getElementById('help-modal').style.display = 'none';
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeHelpModal(); });
 
