@@ -455,9 +455,9 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     <div class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
-    <button id="refresh-kr-btn" onclick="refreshKrToday(this)" class="mob-hdr-btn" title="오늘 실시간 행만 빠르게 갱신">
+    <button id="refresh-all-btn" onclick="refreshAllData()" class="mob-hdr-btn" title="이미 서버에 저장된 최신 데이터를 화면에 즉시 반영">
       <span style="font-size:11px">🔄</span>
-      <span>오늘 갱신</span>
+      <span>새로고침</span>
     </button>
     <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
       <span style="font-size:11px">📡</span>
@@ -494,7 +494,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-notice-bar kr">
       <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
-      <button onclick="refreshKrToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;white-space:nowrap">🔄 오늘 갱신</button>
+      <button onclick="refreshKrToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;white-space:nowrap">🔄 오늘 데이터 갱신</button>
     </div>
     <div class="mob-controls">
       <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
@@ -617,7 +617,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-notice-bar us">
       <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
-      <button onclick="refreshUsToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;white-space:nowrap">🔄 오늘 갱신</button>
+      <button onclick="refreshUsToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;white-space:nowrap">🔄 오늘 데이터 갱신</button>
     </div>
     <div class="mob-controls">
       <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -7305,7 +7305,7 @@ setInterval(_syncBadges, 60000);
 
 <!-- ===== HELP MODAL ===== -->
 <div id="help-modal-overlay" onclick="closeHelpModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)"></div>
-<div id="help-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9001;width:min(96vw,680px);max-height:88vh;background:var(--bg-dark);border:1px solid var(--border-light);border-radius:12px;overflow:hidden;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.7)">
+<div id="help-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9001;width:min(96vw,680px);max-height:88vh;background:var(--bg-dark);border:1px solid var(--border-light);border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7)" class="help-modal-box">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">❓</span>
@@ -7317,6 +7317,7 @@ setInterval(_syncBadges, 60000);
 </div>
 
 <style>
+.help-modal-box{flex-direction:column}
 .help-section{margin-bottom:18px}
 .help-section-title{font-size:11px;font-weight:700;color:var(--accent-kr);letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
 .help-section-title.admin-color{color:#ff9800}
