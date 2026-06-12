@@ -4903,6 +4903,7 @@ if(usTreemapMode==='watch'){
   usActiveSet=usDefSet;
   if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='';
 }
+var usAvgMap={};
 aFT.forEach(function(d){usAvgMap[d.name]=d.avg;});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
