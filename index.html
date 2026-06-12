@@ -315,9 +315,18 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div class="controls-bar">
 <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
-<button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
-<button class="range-btn" onclick="setKrRange(132,this)">6개월</button>
-<button class="range-btn" onclick="setKrRange(365,this)">1년</button>
+<button class="range-btn" onclick="setKrRange(130,this)">6개월</button>
+<button class="range-btn" onclick="setKrRange('ytd',this)">YTD</button>
+<button class="range-btn" onclick="setKrRange(261,this)">1년</button>
+<button class="range-btn" id="kr-range-custom-btn" onclick="setKrRange('custom',this)">사용자정의 ▼</button>
+<div id="kr-custom-range-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:6px 8px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
+  <input type="date" id="kr-custom-from" style="font-size:9px;padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
+  <input type="date" id="kr-custom-to" style="font-size:9px;padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <button onclick="applyKrCustomRange()" style="font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;font-family:var(--font-mono)">적용</button>
+  <span id="kr-custom-range-err" style="font-size:9px;color:#ef5350;display:none"></span>
+</div>
 <div class="font-ctrl">
 <span class="font-ctrl-label">글자 크기</span>
 <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
@@ -340,12 +349,21 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
 <button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()">📊 통계 숨기기</button>
 <div class="chart-ctrl-group" id="kr-analytics-period-controls">
-<button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
-<button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(66,this)">1개월+</button>
+<button class="chart-period-btn kr active" onclick="setKrChartPeriod(0,this)">오늘</button>
+<button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
+<button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
+<button class="chart-period-btn kr" onclick="setKrChartPeriod(130,this)">6개월</button>
+<button class="chart-period-btn kr" onclick="setKrChartPeriod('ytd',this)">YTD</button>
+<button class="chart-period-btn kr" onclick="setKrChartPeriod(261,this)">1년</button>
+<button class="chart-period-btn kr" id="kr-chart-custom-btn" onclick="setKrChartPeriod('custom',this)">사용자정의 ▼</button>
+<div id="kr-chart-custom-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:5px 7px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
+  <input type="date" id="kr-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
+  <input type="date" id="kr-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <button onclick="applyKrChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;font-family:var(--font-mono)">적용</button>
+  <span id="kr-chart-custom-err" style="font-size:9px;color:#ef5350;display:none"></span>
+</div>
 </div>
 <button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
 <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
@@ -440,9 +458,18 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div class="controls-bar">
 <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
-<button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
-<button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
-<button class="range-btn" onclick="setUsRange(365,this)">1년</button>
+<button class="range-btn" onclick="setUsRange(130,this)">6개월</button>
+<button class="range-btn" onclick="setUsRange('ytd',this)">YTD</button>
+<button class="range-btn" onclick="setUsRange(261,this)">1년</button>
+<button class="range-btn" id="us-range-custom-btn" onclick="setUsRange('custom',this)">사용자정의 ▼</button>
+<div id="us-custom-range-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:6px 8px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
+  <input type="date" id="us-custom-from" style="font-size:9px;padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
+  <input type="date" id="us-custom-to" style="font-size:9px;padding:3px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <button onclick="applyUsCustomRange()" style="font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;font-family:var(--font-mono)">적용</button>
+  <span id="us-custom-range-err" style="font-size:9px;color:#ef5350;display:none"></span>
+</div>
 <div class="font-ctrl">
 <span class="font-ctrl-label">글자 크기</span>
 <button class="font-btn" onclick="changeFontSize(-1)" title="작게">−</button>
@@ -465,12 +492,21 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
 <button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()">📊 통계 숨기기</button>
 <div class="chart-ctrl-group" id="us-analytics-period-controls">
-<button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
-<button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(66,this)">1개월+</button>
+<button class="chart-period-btn us active" onclick="setUsChartPeriod(0,this)">오늘</button>
+<button class="chart-period-btn us" onclick="setUsChartPeriod(10,this)">2주</button>
+<button class="chart-period-btn us" onclick="setUsChartPeriod(22,this)">1개월</button>
+<button class="chart-period-btn us" onclick="setUsChartPeriod(130,this)">6개월</button>
+<button class="chart-period-btn us" onclick="setUsChartPeriod('ytd',this)">YTD</button>
+<button class="chart-period-btn us" onclick="setUsChartPeriod(261,this)">1년</button>
+<button class="chart-period-btn us" id="us-chart-custom-btn" onclick="setUsChartPeriod('custom',this)">사용자정의 ▼</button>
+<div id="us-chart-custom-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:5px 7px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
+  <input type="date" id="us-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
+  <input type="date" id="us-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
+  <button onclick="applyUsChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;font-family:var(--font-mono)">적용</button>
+  <span id="us-chart-custom-err" style="font-size:9px;color:#ef5350;display:none"></span>
+</div>
 </div>
 <button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
 <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
@@ -571,7 +607,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239
 · 기본 표시: <strong>최근 1개월(약 22 영업일)</strong> — 한 화면에 모두 표시<br>
 · 1개월 초과분: <strong>세로 스크롤바</strong>로 확인 가능 (스크롤하면 과거 데이터 탐색)<br>
 · 최대 제공 범위: <strong>최대 1년(약 250 영업일)</strong> — 1년 이전 데이터는 표시하지 않음<br>
-· 표 하단의 <strong>1개월 / 3개월 / 6개월 / 1년</strong> 버튼으로 표시 기간을 변경할 수 있으며, 이 버튼은 하단 표에만 영향을 주고 상단 차트에는 영향을 주지 않습니다.<br><br>
+· 표 하단의 <strong>1개월 / 6개월 / YTD / 1년 / 사용자정의</strong> 버튼으로 표시 기간을 변경할 수 있으며, 이 버튼은 하단 표에만 영향을 주고 상단 차트에는 영향을 주지 않습니다.<br><br>
 <strong>주요지수 / ADR</strong><br>
 코스피·코스닥은 당일 지수 등락률을 표시합니다. <strong>ADR(등락비율)</strong>은 상승 종목 수를 하락 종목 수로 나눈 비율로, 100% 기준으로 100 초과 시 상승 종목이 더 많음을 의미합니다. 시장의 내부 건강도를 파악하는 데 유용합니다.<br><br>
 <strong>색상 기준</strong><br>
@@ -608,7 +644,7 @@ ETF 등락률 기준: ±6% 범위에서 색상이 포화됩니다. (VIX는 별�
 <strong>📊 최근 영업일 박스 / 오늘 섹터 박스</strong><br>
 페이지 상단 요약 박스에서 <strong>최근 영업일</strong>은 장중·장마감 무관하게 항상 <strong>직전 영업일</strong>의 확정 데이터를 표시합니다. <strong>오늘 섹터</strong> 박스는 오늘 장중 실시간 데이터가 있을 때만 표시됩니다.<br><br>
 <strong>📈 추이 차트</strong><br>
-선택한 기간(1주·2주·1개월) 동안 각 섹터의 등락률 변화를 선 그래프로 표시합니다. 기본적으로 해당 기간 상위 5개 섹터와 주요 지수만 표시되며, 범례를 클릭해 원하는 섹터를 추가로 켜고 끌 수 있습니다.<br><br>
+선택한 기간(2주·1개월·6개월 등) 동안 각 섹터의 등락률 변화를 선 그래프로 표시합니다. 기본적으로 해당 기간 상위 5개 섹터와 주요 지수만 표시되며, 범례를 클릭해 원하는 섹터를 추가로 켜고 끌 수 있습니다.<br><br>
 <strong>🏆 랭킹 차트</strong><br>
 선택한 기간 동안의 평균 등락률을 기준으로 섹터를 순위별로 정렬하여 표시합니다. 어느 섹터에 시장의 관심이 집중되고 있는지 빠르게 파악할 수 있습니다.<br><br>
 <strong>🗓️ 히트맵 차트</strong><br>
@@ -2914,7 +2950,7 @@ return _krColgroup+row;
 }
 let krChart=null;
 let krChartAllOn=true;
-let krChartPeriod=5;
+let krChartPeriod=22;
 let krChartType='line';
 let krChartCumulative=false; // false=단순, true=누적
 let krActiveSet=null; // 활성 섹터 Set (null=초기화 전)
@@ -3272,9 +3308,52 @@ y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#
 }
 
 function setKrChartPeriod(days,btn){
-krChartPeriod=days;
+if(days!=='custom'){
+  var cr=document.getElementById('kr-chart-custom-row');
+  if(cr) cr.style.display='none';
+}
+if(days==='custom'){
+  var cr=document.getElementById('kr-chart-custom-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  document.querySelectorAll('.chart-period-btn.kr').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  return;
+}
+var numDays=days;
+if(days==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+krChartPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.kr').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
+renderKrChart();
+}
+function applyKrChartCustom(){
+var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
+var err=document.getElementById('kr-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+// 날짜 범위에 맞는 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+krChartPeriod=numDays;
+// custom 범위를 rows 필터로 저장
+S.krChartCustomFrom=from; S.krChartCustomTo=to; S.krChartCustomActive=true;
 renderKrChart();
 }
 function setKrChartType(type,btn){
@@ -3363,7 +3442,7 @@ krChartAllOn=true; return;
 const chartRows=[...rows.slice(0,krChartPeriod)].reverse();
 const excludeFromChart=KR_STATS_EXCLUDE;
 const sectorNames=H.slice(1).filter(h=>!excludeFromChart.has(h));
-const periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
+const periodLabel=krChartPeriod===10?'2주':krChartPeriod===22?'1개월':krChartPeriod===130?'6개월':krChartPeriod===261?'1년':krChartPeriod===0?'오늘':'전체';
 if(krChartType==='heatmap'){
 document.getElementById('kr-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
 if(krChart){krChart.destroy();krChart=null;}
@@ -3710,14 +3789,55 @@ if(S.krD){var H=S.krD.headers,rows=S.krD.rows,ex=new Set(['날짜','ADR피','ADR
 }
 let usChart=null;
 let usChartAllOn=true;
-let usChartPeriod=5;
+let usChartPeriod=22;
 let usChartType='line';
 let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
-usChartPeriod=days;
+if(days!=='custom'){
+  var cr=document.getElementById('us-chart-custom-row');
+  if(cr) cr.style.display='none';
+}
+if(days==='custom'){
+  var cr=document.getElementById('us-chart-custom-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  document.querySelectorAll('.chart-period-btn.us').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  return;
+}
+var numDays=days;
+if(days==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+usChartPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.us').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
+renderUsChart();
+}
+function applyUsChartCustom(){
+var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
+var err=document.getElementById('us-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+usChartPeriod=numDays;
+S.usChartCustomFrom=from; S.usChartCustomTo=to; S.usChartCustomActive=true;
 renderUsChart();
 }
 function setUsChartType(type,btn){
@@ -3804,7 +3924,7 @@ usChartAllOn=true; return;
 }
 const chartRows=[...rows.slice(0,usChartPeriod)].reverse();
 const sectorNames=H.slice(1);
-const periodLabel=usChartPeriod===5?'1주':usChartPeriod===10?'2주':usChartPeriod===0?'오늘':'1개월';
+const periodLabel=usChartPeriod===10?'2주':usChartPeriod===22?'1개월':usChartPeriod===130?'6개월':usChartPeriod===261?'1년':usChartPeriod===0?'오늘':'전체';
 if(usChartType==='heatmap'){
 document.getElementById('us-chart-title').textContent=`🗓️ 섹터 히트맵 (최근 ${periodLabel})`;
 if(usChart){usChart.destroy();usChart=null;}
@@ -4072,11 +4192,10 @@ if(S.usD){var H=S.usD.headers,rows=S.usD.rows,ah=H.slice(1);var cr=usAnalyticsPe
 }
 function periodText(days){
 if(days===0)return '오늘 실시간';
-if(days===5)return '최근 1주 (5일)';
 if(days===10)return '최근 2주 (10일)';
-if(days===15)return '최근 3주 (15일)';
 if(days===22)return '최근 1개월 (22일)';
-if(days===66)return '최근 1개월+ (66일)';
+if(days===130)return '최근 6개월 (130일)';
+if(days===261)return '최근 1년 (261일)';
 return '최근 '+days+'일';
 }
 function _renderHtmlBars(cid,avgArr,isUp){
@@ -4440,7 +4559,7 @@ var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
 // ── 누적 버튼 표시 ──
 var _p=krAnalyticsPeriod||krChartPeriod;
-var periodLabel=_p===5?'1주':_p===10?'2주':_p===15?'3주':_p===0?'오늘':_p===66?'1개월+':_p===22?'1개월':'전체';
+var periodLabel=_p===10?'2주':_p===22?'1개월':_p===130?'6개월':_p===261?'1년':_p===0?'오늘':'전체';
 var krCumBtn=document.getElementById('kr-cum-toggle-btn');
 if(krCumBtn){
   krCumBtn.style.display='';
@@ -4687,7 +4806,7 @@ var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
 // ── 누적 버튼 표시 ──
 var _up=usAnalyticsPeriod||usChartPeriod;
-var usPeriodLabel=_up===5?'1주':_up===10?'2주':_up===15?'3주':_up===0?'오늘':_up===66?'1개월+':_up===22?'1개월':'전체';
+var usPeriodLabel=_up===10?'2주':_up===22?'1개월':_up===130?'6개월':_up===261?'1년':_up===0?'오늘':'전체';
 var usCumBtnT=document.getElementById('us-cum-toggle-btn');
 if(usCumBtnT){
   usCumBtnT.style.display='';
@@ -5267,17 +5386,104 @@ document.querySelectorAll('#page-us-history .chart-toggle-all:not(#us-chart-visi
 if(btn) btn.textContent=usChartVisible?'🙈 차트숨기기':'👁️ 차트보이기';
 }
 function setKrRange(d,b){
-S.krR=d;
+// 사용자정의 행 닫기 (custom 아닌 버튼 클릭 시)
+if(d!=='custom'){
+  var cr=document.getElementById('kr-custom-range-row');
+  if(cr) cr.style.display='none';
+}
+if(d==='custom'){
+  var cr=document.getElementById('kr-custom-range-row');
+  if(cr){
+    cr.style.display='flex';
+    // 기본값 세팅 (From: 1개월 전, To: 오늘)
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('kr-custom-from'); var ti=document.getElementById('kr-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  S.krR=d;
+  document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
+  b.classList.add('active-kr');
+  return;
+}
+var numDays=d;
+if(d==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+S.krR=numDays;
 document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
 b.classList.add('active-kr');
-applyTableScroll('kr-table', d);
+applyTableScroll('kr-table', numDays);
+if(S.krOk) renderKrTableOnly();
+}
+function applyKrCustomRange(){
+var fi=document.getElementById('kr-custom-from'); var ti=document.getElementById('kr-custom-to');
+var err=document.getElementById('kr-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.krCustomFrom=from; S.krCustomTo=to;
+// 영업일 기준 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.krR=numDays||1;
+applyTableScroll('kr-table',S.krR);
 if(S.krOk) renderKrTableOnly();
 }
 function setUsRange(d,b){
-S.usR=d;
+if(d!=='custom'){
+  var cr=document.getElementById('us-custom-range-row');
+  if(cr) cr.style.display='none';
+}
+if(d==='custom'){
+  var cr=document.getElementById('us-custom-range-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('us-custom-from'); var ti=document.getElementById('us-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  S.usR=d;
+  document.querySelectorAll('#page-us-history .range-btn').forEach(x=>x.classList.remove('active-us'));
+  b.classList.add('active-us');
+  return;
+}
+var numDays=d;
+if(d==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+S.usR=numDays;
 document.querySelectorAll('#page-us-history .range-btn').forEach(x=>x.classList.remove('active-us'));
 b.classList.add('active-us');
-applyTableScroll('us-table', d);
+applyTableScroll('us-table', numDays);
+if(S.usOk) renderUsTableOnly();
+}
+function applyUsCustomRange(){
+var fi=document.getElementById('us-custom-from'); var ti=document.getElementById('us-custom-to');
+var err=document.getElementById('us-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.usCustomFrom=from; S.usCustomTo=to;
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.usR=numDays||1;
+applyTableScroll('us-table',S.usR);
 if(S.usOk) renderUsTableOnly();
 }
 // 범위에 따라 table-scroll 세로스크롤 적용
