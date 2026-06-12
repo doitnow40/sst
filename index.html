@@ -194,9 +194,9 @@ th.sector-clickable:hover{filter:brightness(1.35)}
 .chart-legend-item.hidden-legend{opacity:.35;}
 .chart-legend-dot{width:18px;height:2px;border-radius:1px;flex-shrink:0;}
 /* ── 섹터 선택 드롭다운 ── */
-.sector-picker-wrap{position:relative;display:inline-block;}
-.sector-picker-btn{font-size:8px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap;}
-.sector-picker-btn:hover{border-color:var(--border-light);color:var(--text-primary);}
+.sector-picker-wrap{position:relative;display:inline-flex;align-items:center;}
+.sector-picker-btn{font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,193,7,.5);background:rgba(255,193,7,.1);color:#ffc107;cursor:pointer;transition:all .15s;white-space:nowrap;font-weight:600;}
+.sector-picker-btn:hover{border-color:#ffc107;color:#ffe57f;background:rgba(255,193,7,.2);}
 .sector-picker-btn.active-kr{border-color:var(--accent-kr);color:var(--accent-kr);background:rgba(79,195,247,.1);}
 .sector-picker-btn.active-us{border-color:var(--accent-us);color:var(--accent-us);background:rgba(239,83,80,.1);}
 .sector-picker-panel{position:absolute;top:calc(100% + 4px);right:0;z-index:500;width:200px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden;display:none;}
