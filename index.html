@@ -4287,7 +4287,7 @@ _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHe
 }
 var cr=[...rows.slice(0,krAnalyticsPeriod)].reverse();
 var allAvg=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display=''; var modeBtns2=document.getElementById('kr-treemap-mode-btns'); if(modeBtns2)modeBtns2.style.display='none'; _renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
+var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display=''; _renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
 }
 function _renderKrRiseFall(allAvg){
 _renderHtmlBars('kr-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
@@ -4716,9 +4716,6 @@ if(usAnalyticsPeriod===0){
   var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
 // 기간 모드: 추이 차트 + 히트맵
-if(modeBtns)modeBtns.style.display='none';
-if(toggleBtn)toggleBtn.style.display='';
-if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
 var _rkPeriod=rk.filter(function(n){return!US_STATS_EXCLUDE.has(n);});
 var allAvg=_rkPeriod.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
@@ -4847,6 +4844,8 @@ if(usTreModeBtns) usTreModeBtns.style.display='flex';
 if(usTop20Btn) usTop20Btn.style.display='none';
 if(usWatchBtn) usWatchBtn.style.display='';
 if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
+var usTogBtn=document.getElementById('us-chart-toggleall-btn');
+if(usTogBtn) usTogBtn.style.display='';
 wrap.style.height='280px'; wrap.style.overflowY='';
 if(!wrap.querySelector('canvas#us-chart-canvas')){
   wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
