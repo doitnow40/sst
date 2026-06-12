@@ -4497,8 +4497,30 @@ var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['S&P500','�
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
-var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
+// ── 누적 버튼 표시 ──
+var _up=usAnalyticsPeriod||usChartPeriod;
+var usPeriodLabel=_up===5?'1주':_up===10?'2주':_up===15?'3주':_up===0?'오늘':_up===66?'1개월+':_up===22?'1개월':'전체';
+var usCumBtnT=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnT){
+  usCumBtnT.style.display='';
+  usCumBtnT.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtnT.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtnT.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtnT.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+var ds=ah.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=usChartCumulative?toCumulative(rawData):rawData;
+var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
 var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE))); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+if(usChartCumulative){
+  document.getElementById('us-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+usPeriodLabel+')';
+  if(!opts.plugins.tooltip) opts.plugins.tooltip={};
+  if(!opts.plugins.tooltip.callbacks) opts.plugins.tooltip.callbacks={};
+  opts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  opts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('us-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+usPeriodLabel+')';
+}
 usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
 }
 function _renderUsHeatmap(cr,H,ah,today){
