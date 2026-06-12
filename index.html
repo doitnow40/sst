@@ -4278,6 +4278,8 @@ var p=document.getElementById('kr-analytics-panels');
 if(p){p.style.display=krAllChartsVisible?'':'none';}
 }
 function setKrTreemapMode(mode){
+  // watch 버튼을 다시 누르면 top20으로 토글
+  if(mode==='watch'&&krTreemapMode==='watch') mode='top20';
   krTreemapMode=mode;
   var b1=document.getElementById('kr-tm-btn-top20');
   var b2=document.getElementById('kr-tm-btn-watch');
@@ -4601,7 +4603,8 @@ if(modeBtns) modeBtns.style.display='flex';
 if(top20Btn) top20Btn.style.display='none';
 if(watchBtn) watchBtn.style.display='';
 if(cumBtn) cumBtn.style.display='';
-if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
 var aFT=sn.filter(function(n){return !KR_STATS_EXCLUDE.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
@@ -4617,12 +4620,10 @@ if(krTreemapMode==='watch'){
   krActiveSet=new Set(Array.from(WATCHED_SECTORS).filter(function(n){return sn.indexOf(n)>=0;}));
   if(pickerWrap) pickerWrap.style.display='none';
 } else {
-  // Top5 기본 초기화
-  if(!krActiveSet){
-    var defSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
-    defSet.add('코스피'); defSet.add('코스닥');
-    krActiveSet=defSet;
-  }
+  // Top5 기본 초기화 — watch에서 돌아올 때도 리셋
+  var defSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+  defSet.add('코스피'); defSet.add('코스닥');
+  krActiveSet=defSet;
   if(pickerWrap) pickerWrap.style.display='';
 }
 var krAvgMap={};
@@ -4690,6 +4691,8 @@ wrap.innerHTML=html+'</tbody></table>';
 var usAnalyticsPeriod=0, usAnalyticsVisible=true, usAllChartsVisible=true;
 var usTreemapMode="top20"; // "top20" | "watch"
 function setUsTreemapMode(mode){
+  // watch 버튼을 다시 누르면 top20으로 토글
+  if(mode==='watch'&&usTreemapMode==='watch') mode='top20';
   usTreemapMode=mode;
   document.getElementById('us-tm-btn-top20').className='tm-mode-btn'+(mode==='top20'?' active-us':'');
   document.getElementById('us-tm-btn-watch').className='tm-mode-btn'+(mode==='watch'?' active-us':'');
@@ -4876,9 +4879,8 @@ if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
 var usTogBtn=document.getElementById('us-chart-toggleall-btn');
 if(usTogBtn) usTogBtn.style.display='';
 wrap.style.height='280px'; wrap.style.overflowY='';
-if(!wrap.querySelector('canvas#us-chart-canvas')){
-  wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
-}
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas2=document.getElementById('us-chart-canvas');
 if(!canvas2){return;}
 // ★ Top5 선정 시 달러/VIX/채권/하이일드 제외
@@ -4895,12 +4897,10 @@ if(usTreemapMode==='watch'){
   usActiveSet=new Set(Array.from(US_WATCHED_SECTORS).filter(function(n){return rk.indexOf(n)>=0;}));
   if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
 } else {
-  // ── usActiveSet 초기화 ──
-  if(!usActiveSet){
-    var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
-    ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
-    usActiveSet=usDefSet;
-  }
+  // ── usActiveSet 초기화 — watch에서 돌아올 때도 리셋 ──
+  var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+  ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
+  usActiveSet=usDefSet;
   if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='';
 }
 aFT.forEach(function(d){usAvgMap[d.name]=d.avg;});
