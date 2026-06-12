@@ -3536,9 +3536,10 @@ if(btn){
   btn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
   btn.style.color=krChartCumulative?'var(--accent-kr)':'';
 }
-// Analytics 페이지면 renderKrAnalytics, History 페이지면 renderKrChart
-const analyticsEl=document.getElementById('page-kr-analytics');
-if(analyticsEl&&analyticsEl.style.display!=='none') renderKrAnalytics();
+// Analytics 섹션이 표시 중이면 renderKrAnalytics, 아니면 renderKrChart
+const analyticsSection=document.getElementById('kr-analytics-section');
+const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
+if(analyticsVisible) renderKrAnalytics();
 else renderKrChart();
 }
 // ── 누적 수익률 변환 (복리) ───────────────────────────────────
@@ -3893,9 +3894,10 @@ if(btn){
   btn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
   btn.style.color=usChartCumulative?'var(--accent-us)':'';
 }
-// Analytics 페이지면 renderUsAnalytics, History 페이지면 renderUsChart
-const analyticsEl=document.getElementById('page-us-analytics');
-if(analyticsEl&&analyticsEl.style.display!=='none') renderUsAnalytics();
+// Analytics 섹션이 표시 중이면 renderUsAnalytics, 아니면 renderUsChart
+const analyticsSection=document.getElementById('us-analytics-section');
+const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
+if(analyticsVisible) renderUsAnalytics();
 else renderUsChart();
 }
 function toggleUsReverse(btn){
@@ -4266,7 +4268,8 @@ var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
 // ── 누적 버튼 표시 ──
-var periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':krChartPeriod===66?'1개월+':'1개월';
+var _p=krAnalyticsPeriod||krChartPeriod;
+var periodLabel=_p===5?'1주':_p===10?'2주':_p===15?'3주':_p===0?'오늘':_p===66?'1개월+':_p===22?'1개월':'전체';
 var krCumBtn=document.getElementById('kr-cum-toggle-btn');
 if(krCumBtn){
   krCumBtn.style.display='';
