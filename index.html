@@ -343,6 +343,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
+<button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 6px;display:none">📈 누적보기</button>
 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
 </div>
 <div class="chart-body" id="kr-chart-body" style="padding:8px">
@@ -462,6 +463,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
+<button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 6px;display:none">📈 누적보기</button>
 <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
 </div>
 <div class="chart-body" id="us-chart-body" style="padding:8px">
@@ -2880,6 +2882,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;
 let krChartType='line';
+let krChartCumulative=false; // false=단순, true=누적
 let krRankLimit=30;
 let usRankLimit=null;
 let krHeatmapReverse=true;
@@ -3253,6 +3256,10 @@ revBtn.style.borderColor=krHeatmapReverse?'var(--accent-kr)':'';
 revBtn.style.color=krHeatmapReverse?'var(--accent-kr)':'';
 }
 }
+// 누적 버튼: line 타입일 때만 표시
+const krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn) krCumBtn.style.display=(type==='line')?'':'none';
+if(type!=='line') krChartCumulative=false;
 renderKrChart();
 }
 function renderKrChart(){
@@ -3519,6 +3526,28 @@ krChartAllOn=!krChartAllOn;
 krChart.data.datasets.forEach((_,i)=>{krChart.getDatasetMeta(i).hidden=!krChartAllOn;});
 krChart.update();
 }
+// ── KR 누적/단순 토글 ─────────────────────────────────────────
+function toggleKrCumulative(){
+krChartCumulative=!krChartCumulative;
+const btn=document.getElementById('kr-cum-toggle-btn');
+if(btn){
+  btn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  btn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  btn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  btn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
+renderKrChart();
+}
+// ── 누적 수익률 변환 (복리) ───────────────────────────────────
+function toCumulative(arr){
+const out=[];let cum=0;
+for(const v of arr){
+  if(v===null||v===undefined||isNaN(v)){out.push(null);continue;}
+  cum=cum===0?v:((1+cum/100)*(1+v/100)-1)*100;
+  out.push(Math.round(cum*100)/100);
+}
+return out;
+}
 function toggleKrReverse(btn){
 krHeatmapReverse=!krHeatmapReverse;
 btn.style.background=krHeatmapReverse?'rgba(79,195,247,0.2)':'';
@@ -3531,6 +3560,7 @@ let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=5;
 let usChartType='line';
+let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
 usChartPeriod=days;
@@ -3553,6 +3583,10 @@ revBtn.style.borderColor=usHeatmapReverse?'var(--accent-us)':'';
 revBtn.style.color=usHeatmapReverse?'var(--accent-us)':'';
 }
 }
+// 누적 버튼: line 타입일 때만 표시
+const usCumBtn=document.getElementById('us-cum-toggle-btn');
+if(usCumBtn) usCumBtn.style.display=(type==='line')?'':'none';
+if(type!=='line') usChartCumulative=false;
 renderUsChart();
 }
 function renderUsChart(){
@@ -3817,6 +3851,26 @@ hidden:!top5.has(name)};
 const usOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
 usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
 usOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+// ── 누적 버튼 표시 ──
+const usCumBtn=document.getElementById('us-cum-toggle-btn');
+if(usCumBtn){
+  usCumBtn.style.display='';
+  usCumBtn.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtn.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtn.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+// 누적 모드 시 데이터 변환
+if(usChartCumulative){
+  datasets.forEach(ds2=>{if(ds2.data) ds2.data=toCumulative(ds2.data);});
+  document.getElementById('us-chart-title').textContent=`📈 섹터별 누적 수익률 추이 (최근 ${periodLabel})`;
+  if(!usOpts.plugins) usOpts.plugins={};
+  if(!usOpts.plugins.tooltip) usOpts.plugins.tooltip={};
+  if(!usOpts.plugins.tooltip.callbacks) usOpts.plugins.tooltip.callbacks={};
+  usOpts.plugins.tooltip.callbacks.label=ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y>=0?'+':''}${ctx.parsed.y.toFixed(2)}% (누적)`;
+} else {
+  document.getElementById('us-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
+}
 usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
 usChartAllOn=true;
 }
@@ -3825,6 +3879,18 @@ if(!usChart) return;
 usChartAllOn=!usChartAllOn;
 usChart.data.datasets.forEach((_,i)=>{usChart.getDatasetMeta(i).hidden=!usChartAllOn;});
 usChart.update();
+}
+// ── US 누적/단순 토글 ─────────────────────────────────────────
+function toggleUsCumulative(){
+usChartCumulative=!usChartCumulative;
+const btn=document.getElementById('us-cum-toggle-btn');
+if(btn){
+  btn.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  btn.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  btn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  btn.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+renderUsChart();
 }
 function toggleUsReverse(btn){
 usHeatmapReverse=!usHeatmapReverse;
@@ -4193,8 +4259,29 @@ var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); top5.add('코
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
-var ds=fn.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!top5.has(n)};});
-krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:CHART_OPTS_BASE}); krChartAllOn=true;
+// ── 누적 버튼 표시 ──
+var krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn){
+  krCumBtn.style.display='';
+  krCumBtn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  krCumBtn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  krCumBtn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  krCumBtn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
+var ds=fn.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=krChartCumulative?toCumulative(rawData):rawData;
+var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!top5.has(n)};});
+var krOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
+if(krChartCumulative){
+  document.getElementById('kr-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+periodLabel+')';
+  if(!krOpts.plugins) krOpts.plugins={};
+  if(!krOpts.plugins.tooltip) krOpts.plugins.tooltip={};
+  if(!krOpts.plugins.tooltip.callbacks) krOpts.plugins.tooltip.callbacks={};
+  krOpts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+} else {
+  document.getElementById('kr-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+periodLabel+')';
+}
+krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:krOpts}); krChartAllOn=true;
 }
 function _renderKrHeatmap(cr,H,sn,today){
 var wrap=document.getElementById('kr-heatmap-wrap'); if(!wrap)return;
