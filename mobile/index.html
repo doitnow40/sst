@@ -647,9 +647,18 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-controls">
       <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
-      <button class="range-btn" onclick="setKrRange(66,this)">3개월</button>
-      <button class="range-btn" onclick="setKrRange(132,this)">6개월</button>
-      <button class="range-btn" onclick="setKrRange(365,this)">1년</button>
+      <button class="range-btn" onclick="setKrRange(130,this)">6개월</button>
+      <button class="range-btn" onclick="setKrRange('ytd',this)">YTD</button>
+      <button class="range-btn" onclick="setKrRange(261,this)">1년</button>
+      <button class="range-btn" id="kr-range-custom-btn" onclick="setKrRange('custom',this)">직접입력 ▼</button>
+      <div id="kr-custom-range-row" style="display:none;align-items:center;gap:5px;width:100%;margin-top:4px;padding:5px 6px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">From</span>
+        <input type="date" id="kr-custom-from" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);flex:1">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">To</span>
+        <input type="date" id="kr-custom-to" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);flex:1">
+        <button onclick="applyKrCustomRange()" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;white-space:nowrap">적용</button>
+        <span id="kr-custom-range-err" style="font-size:8px;color:#ef5350;display:none"></span>
+      </div>
       <div class="font-ctrl">
         <span class="font-ctrl-label">크기</span>
         <button class="font-btn" onclick="changeFontSize(-1)">−</button>
@@ -671,15 +680,24 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
         <button class="chart-toggle-all" id="kr-analytics-hide-btn" onclick="toggleKrAnalytics()">📊 통계 숨기기</button>
         <div class="chart-ctrl-group" id="kr-analytics-period-controls">
-          <button class="chart-period-btn kr active" onclick="setKrAnalyticsPeriod(0,this)">📡 오늘</button>
-          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(5,this)">1주</button>
-          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(10,this)">2주</button>
-          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(15,this)">3주</button>
-          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(22,this)">1개월</button>
-          <button class="chart-period-btn kr" onclick="setKrAnalyticsPeriod(66,this)">1개월+</button>
+          <button class="chart-period-btn kr active" onclick="setKrChartPeriod(0,this)">오늘</button>
+          <button class="chart-period-btn kr" onclick="setKrChartPeriod(10,this)">2주</button>
+          <button class="chart-period-btn kr" onclick="setKrChartPeriod(22,this)">1개월</button>
+          <button class="chart-period-btn kr" onclick="setKrChartPeriod(130,this)">6개월</button>
+          <button class="chart-period-btn kr" onclick="setKrChartPeriod('ytd',this)">YTD</button>
+          <button class="chart-period-btn kr" onclick="setKrChartPeriod(261,this)">1년</button>
         </div>
+        <button class="chart-toggle-all" id="kr-chart-custom-btn" onclick="setKrChartPeriod('custom',this)" style="font-size:8px;padding:2px 6px;white-space:nowrap">직접입력 ▼</button>
         <button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
         <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
+      </div>
+      <div id="kr-chart-custom-row" style="display:none;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">From</span>
+        <input type="date" id="kr-chart-custom-from" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);flex:1">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">To</span>
+        <input type="date" id="kr-chart-custom-to" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);flex:1">
+        <button onclick="applyKrChartCustom()" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;white-space:nowrap">적용</button>
+        <span id="kr-chart-custom-err" style="font-size:8px;color:#ef5350;display:none"></span>
       </div>
       <div id="kr-analytics-panels" class="analytics-panels-wrap">
         <div class="analytics-center-col">
@@ -694,7 +712,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
                   <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
                   <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목</button>
                 </div>
-                <button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 5px;display:none">📈 누적보기</button>
+                <button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 5px">📈 누적보기</button>
                 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 5px">전체 ON/OFF</button>
                 <div class="sector-picker-wrap" id="kr-sector-picker-wrap" style="display:none">
                   <button class="sector-picker-btn" id="kr-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('kr-sector-picker-panel'),this,false)">📋 섹터선택</button>
@@ -776,9 +794,18 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-controls">
       <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
-      <button class="range-btn" onclick="setUsRange(66,this)">3개월</button>
-      <button class="range-btn" onclick="setUsRange(132,this)">6개월</button>
-      <button class="range-btn" onclick="setUsRange(365,this)">1년</button>
+      <button class="range-btn" onclick="setUsRange(130,this)">6개월</button>
+      <button class="range-btn" onclick="setUsRange('ytd',this)">YTD</button>
+      <button class="range-btn" onclick="setUsRange(261,this)">1년</button>
+      <button class="range-btn" id="us-range-custom-btn" onclick="setUsRange('custom',this)">직접입력 ▼</button>
+      <div id="us-custom-range-row" style="display:none;align-items:center;gap:5px;width:100%;margin-top:4px;padding:5px 6px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">From</span>
+        <input type="date" id="us-custom-from" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);flex:1">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">To</span>
+        <input type="date" id="us-custom-to" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);flex:1">
+        <button onclick="applyUsCustomRange()" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;white-space:nowrap">적용</button>
+        <span id="us-custom-range-err" style="font-size:8px;color:#ef5350;display:none"></span>
+      </div>
       <div class="font-ctrl">
         <span class="font-ctrl-label">크기</span>
         <button class="font-btn" onclick="changeFontSize(-1)">−</button>
@@ -800,15 +827,24 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
       <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
         <button class="chart-toggle-all" id="us-analytics-hide-btn" onclick="toggleUsAnalytics()">📊 통계 숨기기</button>
         <div class="chart-ctrl-group" id="us-analytics-period-controls">
-          <button class="chart-period-btn us active" onclick="setUsAnalyticsPeriod(0,this)">📡 오늘</button>
-          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(5,this)">1주</button>
-          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(10,this)">2주</button>
-          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(15,this)">3주</button>
-          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(22,this)">1개월</button>
-          <button class="chart-period-btn us" onclick="setUsAnalyticsPeriod(66,this)">1개월+</button>
+          <button class="chart-period-btn us active" onclick="setUsChartPeriod(0,this)">오늘</button>
+          <button class="chart-period-btn us" onclick="setUsChartPeriod(10,this)">2주</button>
+          <button class="chart-period-btn us" onclick="setUsChartPeriod(22,this)">1개월</button>
+          <button class="chart-period-btn us" onclick="setUsChartPeriod(130,this)">6개월</button>
+          <button class="chart-period-btn us" onclick="setUsChartPeriod('ytd',this)">YTD</button>
+          <button class="chart-period-btn us" onclick="setUsChartPeriod(261,this)">1년</button>
         </div>
+        <button class="chart-toggle-all" id="us-chart-custom-btn" onclick="setUsChartPeriod('custom',this)" style="font-size:8px;padding:2px 6px;white-space:nowrap">직접입력 ▼</button>
         <button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
         <div style="margin-left:auto;font-size:8px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
+      </div>
+      <div id="us-chart-custom-row" style="display:none;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">From</span>
+        <input type="date" id="us-chart-custom-from" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);flex:1">
+        <span style="font-size:8px;color:var(--text-muted);white-space:nowrap">To</span>
+        <input type="date" id="us-chart-custom-to" style="font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);flex:1">
+        <button onclick="applyUsChartCustom()" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;white-space:nowrap">적용</button>
+        <span id="us-chart-custom-err" style="font-size:8px;color:#ef5350;display:none"></span>
       </div>
       <div id="us-analytics-panels" class="analytics-panels-wrap">
         <div class="analytics-center-col">
@@ -823,7 +859,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
                   <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
                   <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목</button>
                 </div>
-                <button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 5px;display:none">📈 누적보기</button>
+                <button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 5px">📈 누적보기</button>
                 <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 5px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
                 <div class="sector-picker-wrap" id="us-sector-picker-wrap" style="display:none">
                   <button class="sector-picker-btn" id="us-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('us-sector-picker-panel'),this,true)">📋 섹터선택</button>
@@ -3370,7 +3406,7 @@ return _krColgroup+row;
 }
 let krChart=null;
 let krChartAllOn=true;
-let krChartPeriod=5;
+let krChartPeriod=22;
 let krChartType='line';
 let krChartCumulative=false; // false=단순, true=누적
 let krActiveSet=null;
@@ -3728,10 +3764,91 @@ y:{ticks:{color:'#e8edf5',font:{size:9}},grid:{color:'#1e2535'},border:{color:'#
 }
 
 function setKrChartPeriod(days,btn){
-krChartPeriod=days;
+if(days!=='custom'){
+  var cr=document.getElementById('kr-chart-custom-row');
+  if(cr) cr.style.display='none';
+}
+if(days==='custom'){
+  var cr=document.getElementById('kr-chart-custom-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  document.querySelectorAll('.chart-period-btn.kr').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  return;
+}
+var numDays=days;
+if(days==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+krChartPeriod=numDays;
+krAnalyticsPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.kr').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-renderKrChart();
+// Analytics 기간 레이블 동기화
+var lbl=document.getElementById('kr-analytics-period-label');
+if(lbl)lbl.textContent='기간: '+periodText(numDays);
+// 누적버튼: 오늘(0)이면 dim, 기간이 있으면 활성
+var cumBtnSync=document.getElementById('kr-cum-toggle-btn');
+if(cumBtnSync){
+  cumBtnSync.style.opacity=numDays===0?'0.35':'';
+  cumBtnSync.style.pointerEvents=numDays===0?'none':'';
+  cumBtnSync.title=numDays===0?'추이차트 기간 선택 시 사용 가능':'';
+}
+if(S.krD) renderKrAnalytics(); else renderKrChart();
+}
+function applyKrChartCustom(){
+var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
+var err=document.getElementById('kr-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+// 날짜 범위에 맞는 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+krChartPeriod=numDays;
+krAnalyticsPeriod=numDays;
+S.krChartCustomFrom=from; S.krChartCustomTo=to; S.krChartCustomActive=true;
+var lbl2=document.getElementById('kr-analytics-period-label');
+if(lbl2)lbl2.textContent='기간: 사용자정의';
+var cumBtnSync2=document.getElementById('kr-cum-toggle-btn');
+if(cumBtnSync2){cumBtnSync2.style.opacity='';cumBtnSync2.style.pointerEvents='';cumBtnSync2.title='';}
+if(S.krD) renderKrAnalytics(); else renderKrChart();
+}
+function applyKrChartCustom(){
+var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
+var err=document.getElementById('kr-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+// 날짜 범위에 맞는 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+krChartPeriod=numDays;
+krAnalyticsPeriod=numDays;
+S.krChartCustomFrom=from; S.krChartCustomTo=to; S.krChartCustomActive=true;
+var lbl2=document.getElementById('kr-analytics-period-label');
+if(lbl2)lbl2.textContent='기간: 사용자정의';
+var cumBtnSync2=document.getElementById('kr-cum-toggle-btn');
+if(cumBtnSync2){cumBtnSync2.style.opacity='';cumBtnSync2.style.pointerEvents='';cumBtnSync2.title='';}
+if(S.krD) renderKrAnalytics(); else renderKrChart();
 }
 function setKrChartType(type,btn){
 krChartType=type;
@@ -4100,10 +4217,15 @@ if(btn){
   btn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
   btn.style.color=krChartCumulative?'var(--accent-kr)':'';
 }
+// 누적보기는 추이차트(line) 전용 — Analytics 기간이 0(트리맵)이어도 추이차트만 다시 그림
 const analyticsSection=document.getElementById('kr-analytics-section');
 const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
-if(analyticsVisible) renderKrAnalytics();
-else renderKrChart();
+if(analyticsVisible&&krAnalyticsPeriod>0){
+  // Analytics 기간이 실제 기간(>0)일 때만 Analytics 재렌더
+  if(typeof renderKrAnalytics==='function') renderKrAnalytics();
+} else {
+  renderKrChart();
+}
 }
 function toggleUsCumulative(){
 usChartCumulative=!usChartCumulative;
@@ -4114,10 +4236,14 @@ if(btn){
   btn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
   btn.style.color=usChartCumulative?'var(--accent-us)':'';
 }
+// 누적보기는 추이차트(line) 전용 — Analytics 기간이 0(트리맵)이어도 추이차트만 다시 그림
 const analyticsSection=document.getElementById('us-analytics-section');
 const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
-if(analyticsVisible) renderUsAnalytics();
-else renderUsChart();
+if(analyticsVisible&&usAnalyticsPeriod>0){
+  if(typeof renderUsAnalytics==='function') renderUsAnalytics();
+} else {
+  renderUsChart();
+}
 }
 function krChartToggleAll(){
 if(!krChart) return;
@@ -4137,15 +4263,92 @@ if(S.krD){var H=S.krD.headers,rows=S.krD.rows,ex=new Set(['날짜','ADR피','ADR
 }
 let usChart=null;
 let usChartAllOn=true;
-let usChartPeriod=5;
+let usChartPeriod=22;
 let usChartType='line';
 let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
-usChartPeriod=days;
+if(days!=='custom'){
+  var cr=document.getElementById('us-chart-custom-row');
+  if(cr) cr.style.display='none';
+}
+if(days==='custom'){
+  var cr=document.getElementById('us-chart-custom-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  document.querySelectorAll('.chart-period-btn.us').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  return;
+}
+var numDays=days;
+if(days==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+usChartPeriod=numDays;
+usAnalyticsPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.us').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-renderUsChart();
+var lblUs=document.getElementById('us-analytics-period-label');
+if(lblUs)lblUs.textContent='기간: '+periodText(numDays);
+var usCumBtnSync=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnSync){
+  usCumBtnSync.style.opacity=numDays===0?'0.35':'';
+  usCumBtnSync.style.pointerEvents=numDays===0?'none':'';
+  usCumBtnSync.title=numDays===0?'추이차트 기간 선택 시 사용 가능':'';
+}
+if(S.usD) renderUsAnalytics(); else renderUsChart();
+}
+function applyUsChartCustom(){
+var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
+var err=document.getElementById('us-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+usChartPeriod=numDays;
+usAnalyticsPeriod=numDays;
+S.usChartCustomFrom=from; S.usChartCustomTo=to; S.usChartCustomActive=true;
+var lblUs2=document.getElementById('us-analytics-period-label');
+if(lblUs2)lblUs2.textContent='기간: 사용자정의';
+var usCumBtnSync2=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnSync2){usCumBtnSync2.style.opacity='';usCumBtnSync2.style.pointerEvents='';usCumBtnSync2.title='';}
+if(S.usD) renderUsAnalytics(); else renderUsChart();
+}
+function applyUsChartCustom(){
+var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
+var err=document.getElementById('us-chart-custom-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
+usChartPeriod=numDays;
+usAnalyticsPeriod=numDays;
+S.usChartCustomFrom=from; S.usChartCustomTo=to; S.usChartCustomActive=true;
+var lblUs2=document.getElementById('us-analytics-period-label');
+if(lblUs2)lblUs2.textContent='기간: 사용자정의';
+var usCumBtnSync2=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnSync2){usCumBtnSync2.style.opacity='';usCumBtnSync2.style.pointerEvents='';usCumBtnSync2.title='';}
+if(S.usD) renderUsAnalytics(); else renderUsChart();
 }
 function setUsChartType(type,btn){
 usChartType=type;
@@ -4450,11 +4653,10 @@ if(S.usD){var H=S.usD.headers,rows=S.usD.rows,ah=H.slice(1);var cr=usAnalyticsPe
 }
 function periodText(days){
 if(days===0)return '오늘 실시간';
-if(days===5)return '최근 1주 (5일)';
 if(days===10)return '최근 2주 (10일)';
-if(days===15)return '최근 3주 (15일)';
 if(days===22)return '최근 1개월 (22일)';
-if(days===66)return '최근 1개월+ (66일)';
+if(days===130)return '최근 6개월 (130일)';
+if(days===261)return '최근 1년 (261일)';
 return '최근 '+days+'일';
 }
 function _renderHtmlBars(cid,avgArr,isUp){
@@ -4494,6 +4696,8 @@ var p=document.getElementById('kr-analytics-panels');
 if(p){p.style.display=krAllChartsVisible?'':'none';}
 }
 function setKrTreemapMode(mode){
+  // watch 버튼을 다시 누르면 top20으로 토글
+  if(mode==='watch'&&krTreemapMode==='watch') mode='top20';
   krTreemapMode=mode;
   var b1=document.getElementById('kr-tm-btn-top20');
   var b2=document.getElementById('kr-tm-btn-watch');
@@ -4507,6 +4711,13 @@ document.querySelectorAll('#kr-analytics-period-controls .chart-period-btn').for
 btn.classList.add('active');
 var lbl=document.getElementById('kr-analytics-period-label');
 if(lbl)lbl.textContent='기간: '+periodText(days);
+// 누적버튼: 오늘(트리맵)일 때는 비활성화, 기간 있을 때 활성
+var cumBtn=document.getElementById('kr-cum-toggle-btn');
+if(cumBtn){
+  cumBtn.style.opacity=days===0?'0.35':'';
+  cumBtn.style.pointerEvents=days===0?'none':'';
+  cumBtn.title=days===0?'추이차트 기간 선택 시 사용 가능':'';
+}
 renderKrAnalytics();
 }
 function renderKrAnalytics(){
@@ -4525,7 +4736,7 @@ _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHe
 }
 var cr=[...rows.slice(0,krAnalyticsPeriod)].reverse();
 var allAvg=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display=''; var modeBtns2=document.getElementById('kr-treemap-mode-btns'); if(modeBtns2)modeBtns2.style.display='none'; _renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
+var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display=''; _renderKrRiseFall(allAvg); _renderKrTrendChart(cr,H,sn,false); _renderKrHeatmap(cr,H,sn,false);
 }
 function _renderKrRiseFall(allAvg){
 _renderHtmlBars('kr-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
@@ -4535,17 +4746,23 @@ function _renderKrTrendChart(cr,H,sn,today,allAvgIn){
 var wrap=document.getElementById('kr-chart-wrap'); if(!wrap)return;
 if(krChart){krChart.destroy();krChart=null;}
 var toggleBtn=document.getElementById('kr-toggleall-btn');
-if(today){
-// 모드 버튼 표시
 var modeBtns=document.getElementById('kr-treemap-mode-btns');
-if(modeBtns)modeBtns.style.display='flex';
-if(toggleBtn)toggleBtn.style.display='none';
+var top20Btn=document.getElementById('kr-tm-btn-top20');
+var watchBtn=document.getElementById('kr-tm-btn-watch');
+var cumBtn=document.getElementById('kr-cum-toggle-btn');
+var pickerWrap=document.getElementById('kr-sector-picker-wrap');
+if(today){
+// ── 오늘: 트리맵 모드 ──
+// Top20 버튼만 표시 (주목섹터 버튼도 표시), 누적/섹터선택 숨김
+if(modeBtns) modeBtns.style.display='flex';
+if(top20Btn) top20Btn.style.display='';
+if(toggleBtn) toggleBtn.style.display='none';
+if(cumBtn) cumBtn.style.display='none';
+if(pickerWrap) pickerWrap.style.display='none';
 
-// 데이터 준비
 var allData=allAvgIn||[];
 if(!allData.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
 
-// 모드에 따라 사용할 데이터 결정
 var data;
 if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   data=allData.filter(function(d){return WATCHED_SECTORS.has(d.name);});
@@ -4799,32 +5016,75 @@ return;
 }
 
 if(toggleBtn)toggleBtn.style.display='';
-if(!wrap.querySelector('#kr-chart-canvas'))wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
+// ── 비오늘: Top20 숨김, 주목섹터 버튼만 표시, 누적/섹터선택 표시 ──
+if(modeBtns) modeBtns.style.display='flex';
+if(top20Btn) top20Btn.style.display='none';
+if(watchBtn) watchBtn.style.display='';
+if(cumBtn) cumBtn.style.display='';
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
 var aFT=sn.filter(function(n){return !KR_STATS_EXCLUDE.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-// ── krActiveSet 초기화 ──
-if(!krActiveSet){var d0=new Set(aFT.slice(0,5).map(function(d){return d.name;}));d0.add('코스피');d0.add('코스닥');krActiveSet=d0;}
-var krAM={};aFT.forEach(function(d){krAM[d.name]=d.avg;});
-var kpw=document.getElementById('kr-sector-picker-wrap');if(kpw)kpw.style.display='';
-var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{},td=S.krToday?S.krToday.date:'';
-var ld=cr.length?cr[cr.length-1][0]:'',addT=td&&td!==ld&&Object.keys(tm).length>0;
+// ── watch 모드: 주목섹터 추이차트 ──
+if(krTreemapMode==='watch'){
+  if(WATCHED_SECTORS.size===0){
+    wrap.style.height='120px';
+    wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';
+    if(pickerWrap) pickerWrap.style.display='none';
+    return;
+  }
+  // 주목섹터만 activeSet으로 설정
+  krActiveSet=new Set(Array.from(WATCHED_SECTORS).filter(function(n){return sn.indexOf(n)>=0;}));
+  if(pickerWrap) pickerWrap.style.display='none';
+} else {
+  // Top5 기본 초기화 — watch에서 돌아올 때도 리셋
+  var defSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+  defSet.add('코스피'); defSet.add('코스닥');
+  krActiveSet=defSet;
+  if(pickerWrap) pickerWrap.style.display='';
+}
+var krAvgMap={};
+aFT.forEach(function(d){krAvgMap[d.name]=d.avg;});
+var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday.date:'';
+var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
+// ── 누적 버튼 표시 ──
 var _p=krAnalyticsPeriod||krChartPeriod;
-var periodLabel=_p===5?'1주':_p===10?'2주':_p===15?'3주':_p===0?'오늘':_p===66?'1개월+':_p===22?'1개월':'전체';
-var kcb=document.getElementById('kr-cum-toggle-btn');
-if(kcb){kcb.style.display='';kcb.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';kcb.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';kcb.style.borderColor=krChartCumulative?'var(--accent-kr)':'';kcb.style.color=krChartCumulative?'var(--accent-kr)':'';}
-var ds=fn.map(function(n,si){var ci=H.indexOf(n);var rD=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];rD.push(tv!==undefined&&!isNaN(tv)?tv:null);}
-var data=krChartCumulative?toCumulative(rD):rD;
+var periodLabel=_p===10?'2주':_p===22?'1개월':_p===130?'6개월':_p===261?'1년':_p===0?'오늘':'전체';
+var krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn){
+  krCumBtn.style.display='';
+  krCumBtn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  krCumBtn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  krCumBtn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  krCumBtn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
+var ds=fn.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=krChartCumulative?toCumulative(rawData):rawData;
 var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
 return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!krActiveSet.has(n)};});
 var krOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
-if(krChartCumulative){document.getElementById('kr-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+periodLabel+')';if(!krOpts.plugins)krOpts.plugins={};if(!krOpts.plugins.tooltip)krOpts.plugins.tooltip={};if(!krOpts.plugins.tooltip.callbacks)krOpts.plugins.tooltip.callbacks={};krOpts.plugins.tooltip.callbacks.label=function(ctx){return' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};krOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};}
-else{document.getElementById('kr-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+periodLabel+')';}
-krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:krOpts}); krChartAllOn=true;
-_buildCustomLegend(document.getElementById('kr-chart-legend'),krChart,krActiveSet);
-_buildSectorPanel(document.getElementById('kr-sector-picker-panel'),fn.filter(function(n){return !KR_STATS_EXCLUDE.has(n)&&n!=='코스피'&&n!=='코스닥';}),krActiveSet,krAM,false,function(){if(typeof renderKrAnalytics==='function')renderKrAnalytics();else renderKrChart();});
+if(krChartCumulative){
+  document.getElementById('kr-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+periodLabel+')'+(krTreemapMode==='watch'?' · ⭐주목':'');
+  if(!krOpts.plugins) krOpts.plugins={};
+  if(!krOpts.plugins.tooltip) krOpts.plugins.tooltip={};
+  if(!krOpts.plugins.tooltip.callbacks) krOpts.plugins.tooltip.callbacks={};
+  krOpts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  krOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('kr-chart-title').textContent=(krTreemapMode==='watch'?'⭐ 주목섹터 등락률 추이 (최근 '+periodLabel+')':'📈 섹터별 등락률 추이 (최근 '+periodLabel+')');
 }
+krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:krOpts}); krChartAllOn=true;
+var krLegendEl=document.getElementById('kr-chart-legend');
+_buildCustomLegend(krLegendEl, krChart, krActiveSet);
+var krPanelEl=document.getElementById('kr-sector-picker-panel');
+var krPickerSectors=fn.filter(function(n){return !KR_STATS_EXCLUDE.has(n)&&n!=='코스피'&&n!=='코스닥';});
+_buildSectorPanel(krPanelEl, krPickerSectors, krActiveSet, krAvgMap, false, function(){
+  if(typeof renderKrAnalytics==='function') renderKrAnalytics(); else renderKrChart();
+});
+}
+
 function _renderKrHeatmap(cr,H,sn,today){
 var wrap=document.getElementById('kr-heatmap-wrap'); if(!wrap)return;
 if(today){
@@ -4849,6 +5109,8 @@ wrap.innerHTML=html+'</tbody></table>';
 var usAnalyticsPeriod=0, usAnalyticsVisible=true, usAllChartsVisible=true;
 var usTreemapMode="top20"; // "top20" | "watch"
 function setUsTreemapMode(mode){
+  // watch 버튼을 다시 누르면 top20으로 토글
+  if(mode==='watch'&&usTreemapMode==='watch') mode='top20';
   usTreemapMode=mode;
   document.getElementById('us-tm-btn-top20').className='tm-mode-btn'+(mode==='top20'?' active-us':'');
   document.getElementById('us-tm-btn-watch').className='tm-mode-btn'+(mode==='watch'?' active-us':'');
@@ -4872,6 +5134,12 @@ document.querySelectorAll('#us-analytics-period-controls .chart-period-btn').for
 btn.classList.add('active');
 var lbl=document.getElementById('us-analytics-period-label');
 if(lbl)lbl.textContent='기간: '+periodText(days);
+var cumBtn=document.getElementById('us-cum-toggle-btn');
+if(cumBtn){
+  cumBtn.style.opacity=days===0?'0.35':'';
+  cumBtn.style.pointerEvents=days===0?'none':'';
+  cumBtn.title=days===0?'추이차트 기간 선택 시 사용 가능':'';
+}
 renderUsAnalytics();
 }
 function renderUsAnalytics(){
@@ -4898,9 +5166,6 @@ if(usAnalyticsPeriod===0){
   var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
 // 기간 모드: 추이 차트 + 히트맵
-if(modeBtns)modeBtns.style.display='none';
-if(toggleBtn)toggleBtn.style.display='';
-if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
 var cr=[...rows.slice(0,usAnalyticsPeriod)].reverse();
 var _rkPeriod=rk.filter(function(n){return!US_STATS_EXCLUDE.has(n);});
 var allAvg=_rkPeriod.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
@@ -4913,8 +5178,18 @@ _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].
 function _renderUsTrendChart(cr,H,rk,today,allAvgIn){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
+var usTreModeBtns=document.getElementById('us-treemap-mode-btns');
+var usTop20Btn=document.getElementById('us-tm-btn-top20');
+var usWatchBtn=document.getElementById('us-tm-btn-watch');
+var usCumBtnCtrl=document.getElementById('us-cum-toggle-btn');
+var usPickerWrapCtrl=document.getElementById('us-sector-picker-wrap');
 if(today){
 // ── US 오늘: Finviz 스타일 트리맵 ──────────────────────────────
+// Top20/주목섹터 버튼 표시, 누적/섹터선택 숨김
+if(usTreModeBtns) usTreModeBtns.style.display='flex';
+if(usTop20Btn) usTop20Btn.style.display='';
+if(usCumBtnCtrl) usCumBtnCtrl.style.display='none';
+if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
 var allData=allAvgIn||[];
 if(!allData.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
 
@@ -5014,36 +5289,74 @@ return;
 }
 var ah=H.slice(1);
 // ★ 기간 모드 진입 시 wrap을 canvas로 초기화 (트리맵 HTML 잔존 방지)
+// ── 비오늘: Top20 숨김, 주목섹터만 표시, 누적/섹터선택 표시 ──
+if(usTreModeBtns) usTreModeBtns.style.display='flex';
+if(usTop20Btn) usTop20Btn.style.display='none';
+if(usWatchBtn) usWatchBtn.style.display='';
+if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
+var usTogBtn=document.getElementById('us-chart-toggleall-btn');
+if(usTogBtn) usTogBtn.style.display='';
 wrap.style.height='280px'; wrap.style.overflowY='';
-if(!wrap.querySelector('canvas#us-chart-canvas')){
-  wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
-}
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas2=document.getElementById('us-chart-canvas');
 if(!canvas2){return;}
 // ★ Top5 선정 시 달러/VIX/채권/하이일드 제외
 var _aFTEx=US_STATS_EXCLUDE;
 var aFT=rk.filter(function(n){return !US_STATS_EXCLUDE.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-// ── usActiveSet 초기화 ──
-if(!usActiveSet){var ud0=new Set(aFT.slice(0,5).map(function(d){return d.name;}));['S&P500','나스닥'].forEach(function(n){ud0.add(n);});usActiveSet=ud0;}
-var usAM={};aFT.forEach(function(d){usAM[d.name]=d.avg;});
-var upw=document.getElementById('us-sector-picker-wrap');if(upw)upw.style.display='';
-var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{},ud=S.usToday?S.usToday.date:'';
-var ld=cr.length?cr[cr.length-1][0]:'',addT=ud&&ud!==ld&&Object.keys(um).length>0;
+// ── watch 모드: 주목섹터 추이차트 ──
+if(usTreemapMode==='watch'){
+  if(US_WATCHED_SECTORS.size===0){
+    wrap.style.height='120px';
+    wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';
+    if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
+    return;
+  }
+  usActiveSet=new Set(Array.from(US_WATCHED_SECTORS).filter(function(n){return rk.indexOf(n)>=0;}));
+  if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
+} else {
+  // ── usActiveSet 초기화 — watch에서 돌아올 때도 리셋 ──
+  var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+  ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
+  usActiveSet=usDefSet;
+  if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='';
+}
+var usAvgMap={};
+aFT.forEach(function(d){usAvgMap[d.name]=d.avg;});
+var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
+var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
+// ── 누적 버튼 텍스트 갱신 ──
 var _up=usAnalyticsPeriod||usChartPeriod;
-var usPL=_up===5?'1주':_up===10?'2주':_up===15?'3주':_up===0?'오늘':_up===66?'1개월+':_up===22?'1개월':'전체';
-var ucb=document.getElementById('us-cum-toggle-btn');
-if(ucb){ucb.style.display='';ucb.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';ucb.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';ucb.style.borderColor=usChartCumulative?'var(--accent-us)':'';ucb.style.color=usChartCumulative?'var(--accent-us)':'';}
-var ds=ah.map(function(n,si){var ci=H.indexOf(n);var rD=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];rD.push(tv!==undefined&&!isNaN(tv)?tv:null);}
-var data=usChartCumulative?toCumulative(rD):rD;
+var usPeriodLabel=_up===10?'2주':_up===22?'1개월':_up===130?'6개월':_up===261?'1년':_up===0?'오늘':'전체';
+if(usCumBtnCtrl){
+  usCumBtnCtrl.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtnCtrl.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtnCtrl.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtnCtrl.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+var ds=ah.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=usChartCumulative?toCumulative(rawData):rawData;
 var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';
 return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!usActiveSet.has(n)};});
-var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
-if(usChartCumulative){document.getElementById('us-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+usPL+')';if(!opts.plugins.tooltip)opts.plugins.tooltip={};if(!opts.plugins.tooltip.callbacks)opts.plugins.tooltip.callbacks={};opts.plugins.tooltip.callbacks.label=function(ctx){return' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};opts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};}
-else{document.getElementById('us-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+usPL+')';}
+var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE))); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+if(usChartCumulative){
+  document.getElementById('us-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+usPeriodLabel+')'+(usTreemapMode==='watch'?' · ⭐주목':'');
+  if(!opts.plugins.tooltip) opts.plugins.tooltip={};
+  if(!opts.plugins.tooltip.callbacks) opts.plugins.tooltip.callbacks={};
+  opts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  opts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('us-chart-title').textContent=(usTreemapMode==='watch'?'⭐ 주목섹터 등락률 추이 (최근 '+usPeriodLabel+')':'📈 섹터별 등락률 추이 (최근 '+usPeriodLabel+')');
+}
 usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
-_buildCustomLegend(document.getElementById('us-chart-legend'),usChart,usActiveSet);
-_buildSectorPanel(document.getElementById('us-sector-picker-panel'),ah.filter(function(n){return !US_STATS_EXCLUDE.has(n);}),usActiveSet,usAM,true,function(){if(typeof renderUsAnalytics==='function')renderUsAnalytics();else renderUsChart();});
+var usLegendEl=document.getElementById('us-chart-legend');
+_buildCustomLegend(usLegendEl, usChart, usActiveSet);
+var usPanelEl=document.getElementById('us-sector-picker-panel');
+var usPickerSectors=ah.filter(function(n){return !US_STATS_EXCLUDE.has(n);});
+_buildSectorPanel(usPanelEl, usPickerSectors, usActiveSet, usAvgMap, true, function(){
+  if(typeof renderUsAnalytics==='function') renderUsAnalytics(); else renderUsChart();
+});
 }
 function _renderUsHeatmap(cr,H,ah,today){
 var wrap=document.getElementById('us-heatmap-wrap'); if(!wrap)return;
@@ -5600,17 +5913,139 @@ document.querySelectorAll('#page-us-history .chart-toggle-all:not(#us-chart-visi
 if(btn) btn.textContent=usChartVisible?'🙈 차트숨기기':'👁️ 차트보이기';
 }
 function setKrRange(d,b){
-S.krR=d;
+// 사용자정의 행 닫기 (custom 아닌 버튼 클릭 시)
+if(d!=='custom'){
+  var cr=document.getElementById('kr-custom-range-row');
+  if(cr) cr.style.display='none';
+}
+if(d==='custom'){
+  var cr=document.getElementById('kr-custom-range-row');
+  if(cr){
+    cr.style.display='flex';
+    // 기본값 세팅 (From: 1개월 전, To: 오늘)
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('kr-custom-from'); var ti=document.getElementById('kr-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  S.krR=d;
+  document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
+  b.classList.add('active-kr');
+  return;
+}
+var numDays=d;
+if(d==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+S.krR=numDays;
 document.querySelectorAll('#page-kr-history .range-btn').forEach(x=>x.classList.remove('active-kr'));
 b.classList.add('active-kr');
-applyTableScroll('kr-table', d);
+applyTableScroll('kr-table', numDays);
+if(S.krOk) renderKrTableOnly();
+}
+function applyKrCustomRange(){
+var fi=document.getElementById('kr-custom-from'); var ti=document.getElementById('kr-custom-to');
+var err=document.getElementById('kr-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.krCustomFrom=from; S.krCustomTo=to;
+// 영업일 기준 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.krR=numDays||1;
+applyTableScroll('kr-table',S.krR);
+if(S.krOk) renderKrTableOnly();
+}
+function applyKrCustomRange(){
+var fi=document.getElementById('kr-custom-from'); var ti=document.getElementById('kr-custom-to');
+var err=document.getElementById('kr-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.krCustomFrom=from; S.krCustomTo=to;
+// 영업일 기준 행 수 계산
+var numDays=0;
+if(S.krD&&S.krD.rows){
+  S.krD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.krR=numDays||1;
+applyTableScroll('kr-table',S.krR);
 if(S.krOk) renderKrTableOnly();
 }
 function setUsRange(d,b){
-S.usR=d;
+if(d!=='custom'){
+  var cr=document.getElementById('us-custom-range-row');
+  if(cr) cr.style.display='none';
+}
+if(d==='custom'){
+  var cr=document.getElementById('us-custom-range-row');
+  if(cr){
+    cr.style.display='flex';
+    var today=new Date(); var mm1=new Date(today); mm1.setMonth(mm1.getMonth()-1);
+    var fmt=function(dt){return dt.toISOString().slice(0,10);};
+    var fi=document.getElementById('us-custom-from'); var ti=document.getElementById('us-custom-to');
+    if(fi&&!fi.value) fi.value=fmt(mm1);
+    if(ti&&!ti.value) ti.value=fmt(today);
+  }
+  S.usR=d;
+  document.querySelectorAll('#page-us-history .range-btn').forEach(x=>x.classList.remove('active-us'));
+  b.classList.add('active-us');
+  return;
+}
+var numDays=d;
+if(d==='ytd'){
+  var now=new Date(); var jan1=new Date(now.getFullYear(),0,1);
+  var diff=Math.floor((now-jan1)/(1000*60*60*24));
+  numDays=Math.max(1,Math.round(diff*5/7));
+}
+S.usR=numDays;
 document.querySelectorAll('#page-us-history .range-btn').forEach(x=>x.classList.remove('active-us'));
 b.classList.add('active-us');
-applyTableScroll('us-table', d);
+applyTableScroll('us-table', numDays);
+if(S.usOk) renderUsTableOnly();
+}
+function applyUsCustomRange(){
+var fi=document.getElementById('us-custom-from'); var ti=document.getElementById('us-custom-to');
+var err=document.getElementById('us-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.usCustomFrom=from; S.usCustomTo=to;
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.usR=numDays||1;
+applyTableScroll('us-table',S.usR);
+if(S.usOk) renderUsTableOnly();
+}
+function applyUsCustomRange(){
+var fi=document.getElementById('us-custom-from'); var ti=document.getElementById('us-custom-to');
+var err=document.getElementById('us-custom-range-err');
+if(!fi||!ti) return;
+var from=fi.value; var to=ti.value;
+if(!from||!to){if(err){err.textContent='From, To 날짜를 모두 입력하세요';err.style.display='';} return;}
+if(from>to){if(err){err.textContent='From이 To보다 늦을 수 없습니다';err.style.display='';} return;}
+if(err) err.style.display='none';
+S.usCustomFrom=from; S.usCustomTo=to;
+var numDays=0;
+if(S.usD&&S.usD.rows){
+  S.usD.rows.forEach(function(r){var d=r[0];if(d>=from&&d<=to)numDays++;});
+}
+S.usR=numDays||1;
+applyTableScroll('us-table',S.usR);
 if(S.usOk) renderUsTableOnly();
 }
 // 범위에 따라 table-scroll 세로스크롤 적용
@@ -9477,7 +9912,7 @@ return _krColgroup+row;
 }
 let krChart=null;
 let krChartAllOn=true;
-let krChartPeriod=5;
+let krChartPeriod=22;
 let krChartType='line';
 let krChartCumulative=false; // false=단순, true=누적
 let krRankLimit=30;
@@ -10129,7 +10564,7 @@ if(S.krD){var H=S.krD.headers,rows=S.krD.rows,ex=new Set(['날짜','ADR피','ADR
 }
 let usChart=null;
 let usChartAllOn=true;
-let usChartPeriod=5;
+let usChartPeriod=22;
 let usChartType='line';
 let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
@@ -10885,8 +11320,18 @@ _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].
 function _renderUsTrendChart(cr,H,rk,today,allAvgIn){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
+var usTreModeBtns=document.getElementById('us-treemap-mode-btns');
+var usTop20Btn=document.getElementById('us-tm-btn-top20');
+var usWatchBtn=document.getElementById('us-tm-btn-watch');
+var usCumBtnCtrl=document.getElementById('us-cum-toggle-btn');
+var usPickerWrapCtrl=document.getElementById('us-sector-picker-wrap');
 if(today){
 // ── US 오늘: Finviz 스타일 트리맵 ──────────────────────────────
+// Top20/주목섹터 버튼 표시, 누적/섹터선택 숨김
+if(usTreModeBtns) usTreModeBtns.style.display='flex';
+if(usTop20Btn) usTop20Btn.style.display='';
+if(usCumBtnCtrl) usCumBtnCtrl.style.display='none';
+if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
 var allData=allAvgIn||[];
 if(!allData.length){wrap.style.height='80px';wrap.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div>';return;}
 
@@ -10986,22 +11431,74 @@ return;
 }
 var ah=H.slice(1);
 // ★ 기간 모드 진입 시 wrap을 canvas로 초기화 (트리맵 HTML 잔존 방지)
+// ── 비오늘: Top20 숨김, 주목섹터만 표시, 누적/섹터선택 표시 ──
+if(usTreModeBtns) usTreModeBtns.style.display='flex';
+if(usTop20Btn) usTop20Btn.style.display='none';
+if(usWatchBtn) usWatchBtn.style.display='';
+if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
+var usTogBtn=document.getElementById('us-chart-toggleall-btn');
+if(usTogBtn) usTogBtn.style.display='';
 wrap.style.height='280px'; wrap.style.overflowY='';
-if(!wrap.querySelector('canvas#us-chart-canvas')){
-  wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
-}
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas2=document.getElementById('us-chart-canvas');
 if(!canvas2){return;}
 // ★ Top5 선정 시 달러/VIX/채권/하이일드 제외
 var _aFTEx=US_STATS_EXCLUDE;
 var aFT=rk.filter(function(n){return !US_STATS_EXCLUDE.has(n);}).map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){if(String(r[ci])==='휴장')return NaN;return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
-var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['S&P500','나스닥'].forEach(function(n){top5.add(n);});
+// ── watch 모드: 주목섹터 추이차트 ──
+if(usTreemapMode==='watch'){
+  if(US_WATCHED_SECTORS.size===0){
+    wrap.style.height='120px';
+    wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';
+    if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
+    return;
+  }
+  usActiveSet=new Set(Array.from(US_WATCHED_SECTORS).filter(function(n){return rk.indexOf(n)>=0;}));
+  if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
+} else {
+  // ── usActiveSet 초기화 — watch에서 돌아올 때도 리셋 ──
+  var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+  ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
+  usActiveSet=usDefSet;
+  if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='';
+}
+var usAvgMap={};
+aFT.forEach(function(d){usAvgMap[d.name]=d.avg;});
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
-var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
+// ── 누적 버튼 텍스트 갱신 ──
+var _up=usAnalyticsPeriod||usChartPeriod;
+var usPeriodLabel=_up===10?'2주':_up===22?'1개월':_up===130?'6개월':_up===261?'1년':_up===0?'오늘':'전체';
+if(usCumBtnCtrl){
+  usCumBtnCtrl.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtnCtrl.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtnCtrl.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtnCtrl.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+var ds=ah.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=usChartCumulative?toCumulative(rawData):rawData;
+var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';
+return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!usActiveSet.has(n)};});
 var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE))); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+if(usChartCumulative){
+  document.getElementById('us-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+usPeriodLabel+')'+(usTreemapMode==='watch'?' · ⭐주목':'');
+  if(!opts.plugins.tooltip) opts.plugins.tooltip={};
+  if(!opts.plugins.tooltip.callbacks) opts.plugins.tooltip.callbacks={};
+  opts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  opts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('us-chart-title').textContent=(usTreemapMode==='watch'?'⭐ 주목섹터 등락률 추이 (최근 '+usPeriodLabel+')':'📈 섹터별 등락률 추이 (최근 '+usPeriodLabel+')');
+}
 usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
+var usLegendEl=document.getElementById('us-chart-legend');
+_buildCustomLegend(usLegendEl, usChart, usActiveSet);
+var usPanelEl=document.getElementById('us-sector-picker-panel');
+var usPickerSectors=ah.filter(function(n){return !US_STATS_EXCLUDE.has(n);});
+_buildSectorPanel(usPanelEl, usPickerSectors, usActiveSet, usAvgMap, true, function(){
+  if(typeof renderUsAnalytics==='function') renderUsAnalytics(); else renderUsChart();
+});
 }
 function _renderUsHeatmap(cr,H,ah,today){
 var wrap=document.getElementById('us-heatmap-wrap'); if(!wrap)return;
