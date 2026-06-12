@@ -4260,6 +4260,7 @@ var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
 // ── 누적 버튼 표시 ──
+var periodLabel=krChartPeriod===5?'1주':krChartPeriod===10?'2주':krChartPeriod===0?'오늘':'1개월';
 var krCumBtn=document.getElementById('kr-cum-toggle-btn');
 if(krCumBtn){
   krCumBtn.style.display='';
