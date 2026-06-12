@@ -3666,11 +3666,15 @@ if(btn){
   btn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
   btn.style.color=krChartCumulative?'var(--accent-kr)':'';
 }
-// Analytics 섹션이 표시 중이면 renderKrAnalytics, 아니면 renderKrChart
+// 누적보기는 추이차트(line) 전용 — Analytics 기간이 0(트리맵)이어도 추이차트만 다시 그림
 const analyticsSection=document.getElementById('kr-analytics-section');
 const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
-if(analyticsVisible) renderKrAnalytics();
-else renderKrChart();
+if(analyticsVisible&&krAnalyticsPeriod>0){
+  // Analytics 기간이 실제 기간(>0)일 때만 Analytics 재렌더
+  if(typeof renderKrAnalytics==='function') renderKrAnalytics();
+} else {
+  renderKrChart();
+}
 }
 // ── 누적 수익률 변환 (복리) ───────────────────────────────────
 function toCumulative(arr){
@@ -4172,11 +4176,14 @@ if(btn){
   btn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
   btn.style.color=usChartCumulative?'var(--accent-us)':'';
 }
-// Analytics 섹션이 표시 중이면 renderUsAnalytics, 아니면 renderUsChart
+// 누적보기는 추이차트(line) 전용 — Analytics 기간이 0(트리맵)이어도 추이차트만 다시 그림
 const analyticsSection=document.getElementById('us-analytics-section');
 const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
-if(analyticsVisible) renderUsAnalytics();
-else renderUsChart();
+if(analyticsVisible&&usAnalyticsPeriod>0){
+  if(typeof renderUsAnalytics==='function') renderUsAnalytics();
+} else {
+  renderUsChart();
+}
 }
 function toggleUsReverse(btn){
 usHeatmapReverse=!usHeatmapReverse;
@@ -4244,6 +4251,13 @@ document.querySelectorAll('#kr-analytics-period-controls .chart-period-btn').for
 btn.classList.add('active');
 var lbl=document.getElementById('kr-analytics-period-label');
 if(lbl)lbl.textContent='기간: '+periodText(days);
+// 누적버튼: 오늘(트리맵)일 때는 비활성화, 기간 있을 때 활성
+var cumBtn=document.getElementById('kr-cum-toggle-btn');
+if(cumBtn){
+  cumBtn.style.opacity=days===0?'0.35':'';
+  cumBtn.style.pointerEvents=days===0?'none':'';
+  cumBtn.title=days===0?'추이차트 기간 선택 시 사용 가능':'';
+}
 renderKrAnalytics();
 }
 function renderKrAnalytics(){
@@ -4636,6 +4650,12 @@ document.querySelectorAll('#us-analytics-period-controls .chart-period-btn').for
 btn.classList.add('active');
 var lbl=document.getElementById('us-analytics-period-label');
 if(lbl)lbl.textContent='기간: '+periodText(days);
+var cumBtn=document.getElementById('us-cum-toggle-btn');
+if(cumBtn){
+  cumBtn.style.opacity=days===0?'0.35':'';
+  cumBtn.style.pointerEvents=days===0?'none':'';
+  cumBtn.title=days===0?'추이차트 기간 선택 시 사용 가능':'';
+}
 renderUsAnalytics();
 }
 function renderUsAnalytics(){
