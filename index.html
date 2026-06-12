@@ -3631,14 +3631,25 @@ if(addToday){
 const tv=todayMap[name];
 rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);
 }
+const data=krChartCumulative?toCumulative(rawData):rawData;
 const isIndex=name==='코스피'||name==='코스닥';
 const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
-return{label:name,data:rawData,borderColor:color,backgroundColor:color+'22',
+return{label:name,data:data,borderColor:color,backgroundColor:color+'22',
 borderWidth:isIndex?2.5:1.5,pointRadius:isIndex?3:2,pointHoverRadius:6,
 tension:0.3,fill:false,spanGaps:true,order:isIndex?0:1,
 hidden:!krActiveSet.has(name)};
 });
 const krOpts2=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
+if(krChartCumulative){
+document.getElementById('kr-chart-title').textContent=`📈 섹터별 누적 수익률 추이 (최근 ${periodLabel})`;
+if(!krOpts2.plugins) krOpts2.plugins={};
+if(!krOpts2.plugins.tooltip) krOpts2.plugins.tooltip={};
+if(!krOpts2.plugins.tooltip.callbacks) krOpts2.plugins.tooltip.callbacks={};
+krOpts2.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+krOpts2.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
+}
 krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:krOpts2});
 krChartAllOn=true;
 const krLegEl=document.getElementById('kr-chart-legend');
