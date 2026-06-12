@@ -355,18 +355,18 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <button class="chart-period-btn kr" onclick="setKrChartPeriod(130,this)">6개월</button>
 <button class="chart-period-btn kr" onclick="setKrChartPeriod('ytd',this)">YTD</button>
 <button class="chart-period-btn kr" onclick="setKrChartPeriod(261,this)">1년</button>
-<button class="chart-period-btn kr" id="kr-chart-custom-btn" onclick="setKrChartPeriod('custom',this)">사용자정의 ▼</button>
-<div id="kr-chart-custom-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:5px 7px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
-  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
-  <input type="date" id="kr-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
-  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
-  <input type="date" id="kr-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
-  <button onclick="applyKrChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;font-family:var(--font-mono)">적용</button>
-  <span id="kr-chart-custom-err" style="font-size:9px;color:#ef5350;display:none"></span>
 </div>
-</div>
+<button class="chart-toggle-all" id="kr-chart-custom-btn" onclick="setKrChartPeriod('custom',this)" style="font-size:9px;padding:3px 8px;white-space:nowrap">사용자정의 ▼</button>
 <button class="chart-toggle-all" id="kr-chart-all-toggle-btn" onclick="toggleKrAllCharts()">📉 차트 전체 on/off</button>
 <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="kr-analytics-period-label">기간: 최근 1주 (5일)</div>
+</div>
+<div id="kr-chart-custom-row" style="display:none;align-items:center;gap:6px;padding:5px 10px 7px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">From</span>
+  <input type="date" id="kr-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);font-family:var(--font-mono);width:120px">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">To</span>
+  <input type="date" id="kr-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);font-family:var(--font-mono);width:120px">
+  <button onclick="applyKrChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-kr);background:rgba(79,195,247,.15);color:var(--accent-kr);cursor:pointer;font-family:var(--font-mono);white-space:nowrap">적용</button>
+  <span id="kr-chart-custom-err" style="font-size:9px;color:#ef5350;display:none;white-space:nowrap"></span>
 </div>
 <div id="kr-analytics-panels" class="analytics-panels-wrap">
 <div class="analytics-rank-col-rise">
@@ -385,7 +385,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
-<button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 6px;display:none">📈 누적보기</button>
+<button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 6px">📈 누적보기</button>
 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
 <div class="sector-picker-wrap" id="kr-sector-picker-wrap" style="display:none">
   <button class="sector-picker-btn" id="kr-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('kr-sector-picker-panel'),this,false)">📋 섹터선택</button>
@@ -498,18 +498,18 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <button class="chart-period-btn us" onclick="setUsChartPeriod(130,this)">6개월</button>
 <button class="chart-period-btn us" onclick="setUsChartPeriod('ytd',this)">YTD</button>
 <button class="chart-period-btn us" onclick="setUsChartPeriod(261,this)">1년</button>
-<button class="chart-period-btn us" id="us-chart-custom-btn" onclick="setUsChartPeriod('custom',this)">사용자정의 ▼</button>
-<div id="us-chart-custom-row" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;width:100%;margin-top:4px;padding:5px 7px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;">
-  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">From</span>
-  <input type="date" id="us-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
-  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono)">To</span>
-  <input type="date" id="us-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-family:var(--font-mono)">
-  <button onclick="applyUsChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;font-family:var(--font-mono)">적용</button>
-  <span id="us-chart-custom-err" style="font-size:9px;color:#ef5350;display:none"></span>
 </div>
-</div>
+<button class="chart-toggle-all" id="us-chart-custom-btn" onclick="setUsChartPeriod('custom',this)" style="font-size:9px;padding:3px 8px;white-space:nowrap">사용자정의 ▼</button>
 <button class="chart-toggle-all" id="us-chart-all-toggle-btn" onclick="toggleUsAllCharts()">📉 차트 전체 on/off</button>
 <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-family:var(--font-mono)" id="us-analytics-period-label">기간: 최근 1주 (5일)</div>
+</div>
+<div id="us-chart-custom-row" style="display:none;align-items:center;gap:6px;padding:5px 10px 7px;background:var(--bg-card);border-bottom:1px solid var(--border)">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">From</span>
+  <input type="date" id="us-chart-custom-from" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);font-family:var(--font-mono);width:120px">
+  <span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);white-space:nowrap">To</span>
+  <input type="date" id="us-chart-custom-to" style="font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-primary);font-family:var(--font-mono);width:120px">
+  <button onclick="applyUsChartCustom()" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--accent-us);background:rgba(239,83,80,.15);color:var(--accent-us);cursor:pointer;font-family:var(--font-mono);white-space:nowrap">적용</button>
+  <span id="us-chart-custom-err" style="font-size:9px;color:#ef5350;display:none;white-space:nowrap"></span>
 </div>
 <div id="us-analytics-panels" class="analytics-panels-wrap">
 <div class="analytics-rank-col-rise">
@@ -528,7 +528,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
-<button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 6px;display:none">📈 누적보기</button>
+<button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 6px">📈 누적보기</button>
 <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
 <div class="sector-picker-wrap" id="us-sector-picker-wrap" style="display:none">
   <button class="sector-picker-btn" id="us-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('us-sector-picker-panel'),this,true)">📋 섹터선택</button>
@@ -3360,8 +3360,6 @@ function setKrChartType(type,btn){
 krChartType=type;
 document.querySelectorAll('#page-kr-history .chart-type-btn').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-const toggleBtn=document.querySelector('#page-kr-history .chart-toggle-all:last-child');
-if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
 const revBtn=document.getElementById('kr-reverse-btn');
 if(revBtn){
 revBtn.style.display=(type==='heatmap')?'':'none';
@@ -3844,8 +3842,6 @@ function setUsChartType(type,btn){
 usChartType=type;
 document.querySelectorAll('#page-us-history .chart-type-btn').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-const toggleBtn=document.querySelector('#page-us-history .chart-toggle-all:last-child');
-if(toggleBtn) toggleBtn.style.display=(type==='line')?'':'none';
 const revBtn=document.getElementById('us-reverse-btn');
 if(revBtn){
 revBtn.style.display=(type==='heatmap')?'':'none';
