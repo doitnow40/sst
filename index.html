@@ -3333,9 +3333,20 @@ if(days==='ytd'){
   numDays=Math.max(1,Math.round(diff*5/7));
 }
 krChartPeriod=numDays;
+krAnalyticsPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.kr').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-renderKrChart();
+// Analytics 기간 레이블 동기화
+var lbl=document.getElementById('kr-analytics-period-label');
+if(lbl)lbl.textContent='기간: '+periodText(numDays);
+// 누적버튼: 오늘(0)이면 dim, 기간이 있으면 활성
+var cumBtnSync=document.getElementById('kr-cum-toggle-btn');
+if(cumBtnSync){
+  cumBtnSync.style.opacity=numDays===0?'0.35':'';
+  cumBtnSync.style.pointerEvents=numDays===0?'none':'';
+  cumBtnSync.title=numDays===0?'추이차트 기간 선택 시 사용 가능':'';
+}
+if(S.krD) renderKrAnalytics(); else renderKrChart();
 }
 function applyKrChartCustom(){
 var fi=document.getElementById('kr-chart-custom-from'); var ti=document.getElementById('kr-chart-custom-to');
@@ -3352,9 +3363,13 @@ if(S.krD&&S.krD.rows){
 }
 if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
 krChartPeriod=numDays;
-// custom 범위를 rows 필터로 저장
+krAnalyticsPeriod=numDays;
 S.krChartCustomFrom=from; S.krChartCustomTo=to; S.krChartCustomActive=true;
-renderKrChart();
+var lbl2=document.getElementById('kr-analytics-period-label');
+if(lbl2)lbl2.textContent='기간: 사용자정의';
+var cumBtnSync2=document.getElementById('kr-cum-toggle-btn');
+if(cumBtnSync2){cumBtnSync2.style.opacity='';cumBtnSync2.style.pointerEvents='';cumBtnSync2.title='';}
+if(S.krD) renderKrAnalytics(); else renderKrChart();
 }
 function setKrChartType(type,btn){
 krChartType=type;
@@ -3832,9 +3847,18 @@ if(days==='ytd'){
   numDays=Math.max(1,Math.round(diff*5/7));
 }
 usChartPeriod=numDays;
+usAnalyticsPeriod=numDays;
 document.querySelectorAll('.chart-period-btn.us').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-renderUsChart();
+var lblUs=document.getElementById('us-analytics-period-label');
+if(lblUs)lblUs.textContent='기간: '+periodText(numDays);
+var usCumBtnSync=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnSync){
+  usCumBtnSync.style.opacity=numDays===0?'0.35':'';
+  usCumBtnSync.style.pointerEvents=numDays===0?'none':'';
+  usCumBtnSync.title=numDays===0?'추이차트 기간 선택 시 사용 가능':'';
+}
+if(S.usD) renderUsAnalytics(); else renderUsChart();
 }
 function applyUsChartCustom(){
 var fi=document.getElementById('us-chart-custom-from'); var ti=document.getElementById('us-chart-custom-to');
@@ -3850,8 +3874,13 @@ if(S.usD&&S.usD.rows){
 }
 if(!numDays){if(err){err.textContent='해당 기간에 데이터가 없습니다';err.style.display='';} return;}
 usChartPeriod=numDays;
+usAnalyticsPeriod=numDays;
 S.usChartCustomFrom=from; S.usChartCustomTo=to; S.usChartCustomActive=true;
-renderUsChart();
+var lblUs2=document.getElementById('us-analytics-period-label');
+if(lblUs2)lblUs2.textContent='기간: 사용자정의';
+var usCumBtnSync2=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnSync2){usCumBtnSync2.style.opacity='';usCumBtnSync2.style.pointerEvents='';usCumBtnSync2.title='';}
+if(S.usD) renderUsAnalytics(); else renderUsChart();
 }
 function setUsChartType(type,btn){
 usChartType=type;
