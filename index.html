@@ -3872,6 +3872,7 @@ if(usChartCumulative){
   if(!usOpts.plugins.tooltip) usOpts.plugins.tooltip={};
   if(!usOpts.plugins.tooltip.callbacks) usOpts.plugins.tooltip.callbacks={};
   usOpts.plugins.tooltip.callbacks.label=ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y>=0?'+':''}${ctx.parsed.y.toFixed(2)}% (누적)`;
+  usOpts.plugins.tooltip.itemSort=(a,b)=>(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);
 } else {
   document.getElementById('us-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
 }
@@ -4288,6 +4289,7 @@ if(krChartCumulative){
   if(!krOpts.plugins.tooltip) krOpts.plugins.tooltip={};
   if(!krOpts.plugins.tooltip.callbacks) krOpts.plugins.tooltip.callbacks={};
   krOpts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  krOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
 } else {
   document.getElementById('kr-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+periodLabel+')';
 }
