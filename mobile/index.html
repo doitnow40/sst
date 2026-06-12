@@ -670,6 +670,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
                   <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
                   <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목</button>
                 </div>
+                <button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 5px;display:none">📈 누적보기</button>
                 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 5px">전체 ON/OFF</button>
               </div>
               <div class="chart-body" id="kr-chart-body" style="padding:6px 8px">
@@ -793,6 +794,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
                   <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
                   <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목</button>
                 </div>
+                <button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 5px;display:none">📈 누적보기</button>
                 <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 5px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
               </div>
               <div class="chart-body" id="us-chart-body" style="padding:6px 8px">
@@ -3336,6 +3338,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;
 let krChartType='line';
+let krChartCumulative=false; // false=단순, true=누적
 let krRankLimit=30;
 let usRankLimit=null;
 let krHeatmapReverse=true;
@@ -3709,6 +3712,9 @@ revBtn.style.borderColor=krHeatmapReverse?'var(--accent-kr)':'';
 revBtn.style.color=krHeatmapReverse?'var(--accent-kr)':'';
 }
 }
+const krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn) krCumBtn.style.display=(type==='line')?'none':'none'; // 렌더 후 표시
+if(type!=='line') krChartCumulative=false;
 renderKrChart();
 }
 function renderKrChart(){
@@ -3952,13 +3958,23 @@ return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
 }).sort((a,b)=>b.avg-a.avg);
 const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
 top5.add('코스피'); top5.add('코스닥');
+// ── 누적 버튼 표시 ──
+const krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn){
+  krCumBtn.style.display='';
+  krCumBtn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  krCumBtn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  krCumBtn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  krCumBtn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
 const datasets=sectorNames.map((name,si)=>{
 const colIdx=H.indexOf(name);
-const data=chartRows.map(r=>{const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
+const rawData=chartRows.map(r=>{const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
 if(addToday){
 const tv=todayMap[name];
-data.push(tv!==undefined&&!isNaN(tv)?tv:null);
+rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);
 }
+const data=krChartCumulative?toCumulative(rawData):rawData;
 const isIndex=name==='코스피'||name==='코스닥';
 const color=name==='코스피'?'#FFD700':name==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];
 return{label:name,data,borderColor:color,backgroundColor:color+'22',
@@ -3966,8 +3982,57 @@ borderWidth:isIndex?2.5:1.5,pointRadius:isIndex?3:2,pointHoverRadius:6,
 tension:0.3,fill:false,spanGaps:true,order:isIndex?0:1,
 hidden:!top5.has(name)};
 });
-krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:CHART_OPTS_BASE});
+const krOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
+if(krChartCumulative){
+  document.getElementById('kr-chart-title').textContent=`📈 섹터별 누적 수익률 추이 (최근 ${periodLabel})`;
+  if(!krOpts.plugins.tooltip) krOpts.plugins.tooltip={};
+  if(!krOpts.plugins.tooltip.callbacks) krOpts.plugins.tooltip.callbacks={};
+  krOpts.plugins.tooltip.callbacks.label=ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y>=0?'+':''}${ctx.parsed.y.toFixed(2)}% (누적)`;
+  krOpts.plugins.tooltip.itemSort=(a,b)=>(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);
+} else {
+  document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
+}
+krChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:krOpts});
 krChartAllOn=true;
+}
+
+// ── 누적/단순 토글 함수 & 변환 ────────────────────────────────
+function toCumulative(arr){
+const out=[];let cum=0;
+for(const v of arr){
+  if(v===null||v===undefined||isNaN(v)){out.push(null);continue;}
+  cum=cum===0?v:((1+cum/100)*(1+v/100)-1)*100;
+  out.push(Math.round(cum*100)/100);
+}
+return out;
+}
+function toggleKrCumulative(){
+krChartCumulative=!krChartCumulative;
+const btn=document.getElementById('kr-cum-toggle-btn');
+if(btn){
+  btn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  btn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  btn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  btn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
+const analyticsSection=document.getElementById('kr-analytics-section');
+const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
+if(analyticsVisible) renderKrAnalytics();
+else renderKrChart();
+}
+function toggleUsCumulative(){
+usChartCumulative=!usChartCumulative;
+const btn=document.getElementById('us-cum-toggle-btn');
+if(btn){
+  btn.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  btn.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  btn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  btn.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+const analyticsSection=document.getElementById('us-analytics-section');
+const analyticsVisible=analyticsSection&&analyticsSection.style.display!=='none';
+if(analyticsVisible) renderUsAnalytics();
+else renderUsChart();
 }
 function krChartToggleAll(){
 if(!krChart) return;
@@ -3987,6 +4052,7 @@ let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=5;
 let usChartType='line';
+let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
 usChartPeriod=days;
@@ -4009,6 +4075,9 @@ revBtn.style.borderColor=usHeatmapReverse?'var(--accent-us)':'';
 revBtn.style.color=usHeatmapReverse?'var(--accent-us)':'';
 }
 }
+const usCumBtn=document.getElementById('us-cum-toggle-btn');
+if(usCumBtn) usCumBtn.style.display='none'; // 렌더 후 표시
+if(type!=='line') usChartCumulative=false;
 renderUsChart();
 }
 function renderUsChart(){
@@ -4251,13 +4320,23 @@ return{name,avg:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:0};
 }).sort((a,b)=>b.avg-a.avg);
 const top5=new Set(avgForTop.slice(0,5).map(d=>d.name));
 ['SP500','Nasdaq'].forEach(n=>top5.add(n));
+// ── 누적 버튼 표시 ──
+const usCumBtn=document.getElementById('us-cum-toggle-btn');
+if(usCumBtn){
+  usCumBtn.style.display='';
+  usCumBtn.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtn.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtn.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtn.style.color=usChartCumulative?'var(--accent-us)':'';
+}
 const datasets=sectorNames.map((name,si)=>{
 const colIdx=H.indexOf(name);
-const data=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return null;const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
+const rawData=chartRows.map(r=>{if(String(r[colIdx])==='휴장')return null;const v=parseFloat(r[colIdx]);return isNaN(v)?null:v;});
 if(addUsToday){
 const tv=usTodayMap[name];
-data.push(tv!==undefined&&!isNaN(tv)?tv:null);
+rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);
 }
+const data=usChartCumulative?toCumulative(rawData):rawData;
 const m=US_META[name]||{};
 const isMainIndex=['SP500','Nasdaq','DowJones','Russell2K'].includes(name);
 let color=m.bg||CHART_COLORS[si%CHART_COLORS.length];
@@ -4273,6 +4352,14 @@ hidden:!top5.has(name)};
 const usOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
 usOpts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
 usOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+if(usChartCumulative){
+  document.getElementById('us-chart-title').textContent=`📈 섹터별 누적 수익률 추이 (최근 ${periodLabel})`;
+  if(!usOpts.plugins.tooltip.callbacks) usOpts.plugins.tooltip.callbacks={};
+  usOpts.plugins.tooltip.callbacks.label=ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y>=0?'+':''}${ctx.parsed.y.toFixed(2)}% (누적)`;
+  usOpts.plugins.tooltip.itemSort=(a,b)=>(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);
+} else {
+  document.getElementById('us-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
+}
 usChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:usOpts});
 usChartAllOn=true;
 }
@@ -4649,8 +4736,31 @@ var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); top5.add('코
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{}, td=S.krToday?S.krToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=td&&td!==ld&&Object.keys(tm).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[td+'★']:[])];
-var ds=fn.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!top5.has(n)};});
-krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:CHART_OPTS_BASE}); krChartAllOn=true;
+// ── 누적 버튼 표시 ──
+var _p=krAnalyticsPeriod||krChartPeriod;
+var periodLabel=_p===5?'1주':_p===10?'2주':_p===15?'3주':_p===0?'오늘':_p===66?'1개월+':_p===22?'1개월':'전체';
+var krCumBtn=document.getElementById('kr-cum-toggle-btn');
+if(krCumBtn){
+  krCumBtn.style.display='';
+  krCumBtn.textContent=krChartCumulative?'📉 단순보기':'📈 누적보기';
+  krCumBtn.style.background=krChartCumulative?'rgba(79,195,247,0.2)':'';
+  krCumBtn.style.borderColor=krChartCumulative?'var(--accent-kr)':'';
+  krCumBtn.style.color=krChartCumulative?'var(--accent-kr)':'';
+}
+var ds=fn.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=tm[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=krChartCumulative?toCumulative(rawData):rawData;
+var isI=n==='코스피'||n==='코스닥';var col=n==='코스피'?'#FFD700':n==='코스닥'?'#ff9800':CHART_COLORS[si%CHART_COLORS.length];return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isI?2.5:1.5,pointRadius:isI?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isI?0:1,hidden:!top5.has(n)};});
+var krOpts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE)));
+if(krChartCumulative){
+  document.getElementById('kr-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+periodLabel+')';
+  if(!krOpts.plugins.tooltip) krOpts.plugins.tooltip={};
+  if(!krOpts.plugins.tooltip.callbacks) krOpts.plugins.tooltip.callbacks={};
+  krOpts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  krOpts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('kr-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+periodLabel+')';
+}
+krChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:ds},options:krOpts}); krChartAllOn=true;
 }
 function _renderKrHeatmap(cr,H,sn,today){
 var wrap=document.getElementById('kr-heatmap-wrap'); if(!wrap)return;
@@ -4854,8 +4964,30 @@ var top5=new Set(aFT.slice(0,5).map(function(d){return d.name;})); ['S&P500','�
 var um=S.usToday&&S.usToday.sectors?S.usToday.sectors:{}, ud=S.usToday?S.usToday.date:'';
 var ld=cr.length?cr[cr.length-1][0]:'', addT=ud&&ud!==ld&&Object.keys(um).length>0;
 var labels=[...cr.map(function(r){return r[0];}), ...(addT?[ud+'★']:[])];
-var ds=ah.map(function(n,si){var ci=H.indexOf(n);var data=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];data.push(tv!==undefined&&!isNaN(tv)?tv:null);}var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
+// ── 누적 버튼 표시 ──
+var _up=usAnalyticsPeriod||usChartPeriod;
+var usPeriodLabel=_up===5?'1주':_up===10?'2주':_up===15?'3주':_up===0?'오늘':_up===66?'1개월+':_up===22?'1개월':'전체';
+var usCumBtnT=document.getElementById('us-cum-toggle-btn');
+if(usCumBtnT){
+  usCumBtnT.style.display='';
+  usCumBtnT.textContent=usChartCumulative?'📉 단순보기':'📈 누적보기';
+  usCumBtnT.style.background=usChartCumulative?'rgba(239,83,80,0.2)':'';
+  usCumBtnT.style.borderColor=usChartCumulative?'var(--accent-us)':'';
+  usCumBtnT.style.color=usChartCumulative?'var(--accent-us)':'';
+}
+var ds=ah.map(function(n,si){var ci=H.indexOf(n);var rawData=cr.map(function(r){if(String(r[ci])==='휴장')return null;var v=parseFloat(r[ci]);return isNaN(v)?null:v;});if(addT){var tv=um[n];rawData.push(tv!==undefined&&!isNaN(tv)?tv:null);}
+var data=usChartCumulative?toCumulative(rawData):rawData;
+var m=US_META[n]||{};var isM=['SP500','Nasdaq','DowJones','Russell2K'].includes(n);var col=m.bg||CHART_COLORS[si%CHART_COLORS.length];if(n==='SP500')col='#FFD700';else if(n==='Nasdaq')col='#4fc3f7';else if(n==='DowJones')col='#ff9800';else if(n==='Russell2K')col='#ab47bc';return{label:n,data:data,borderColor:col,backgroundColor:col+'22',borderWidth:isM?2.5:1.5,pointRadius:isM?3:2,pointHoverRadius:6,tension:0.3,fill:false,spanGaps:true,order:isM?0:1,hidden:!top5.has(n)};});
 var opts=_applyChartGrid(JSON.parse(JSON.stringify(CHART_OPTS_BASE))); opts.plugins.legend.labels.font={size:9,family:"'JetBrains Mono',monospace"};
+if(usChartCumulative){
+  document.getElementById('us-chart-title').textContent='📈 섹터별 누적 수익률 추이 (최근 '+usPeriodLabel+')';
+  if(!opts.plugins.tooltip) opts.plugins.tooltip={};
+  if(!opts.plugins.tooltip.callbacks) opts.plugins.tooltip.callbacks={};
+  opts.plugins.tooltip.callbacks.label=function(ctx){return ' '+ctx.dataset.label+': '+(ctx.parsed.y>=0?'+':'')+ctx.parsed.y.toFixed(2)+'% (누적)';};
+  opts.plugins.tooltip.itemSort=function(a,b){return(b.parsed.y??-Infinity)-(a.parsed.y??-Infinity);};
+} else {
+  document.getElementById('us-chart-title').textContent='📈 섹터별 등락률 추이 (최근 '+usPeriodLabel+')';
+}
 usChart=new Chart(canvas2,{type:'line',data:{labels:labels,datasets:ds},options:opts}); usChartAllOn=true;
 }
 function _renderUsHeatmap(cr,H,ah,today){
@@ -9292,6 +9424,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=5;
 let krChartType='line';
+let krChartCumulative=false; // false=단순, true=누적
 let krRankLimit=30;
 let usRankLimit=null;
 let krHeatmapReverse=true;
@@ -9943,6 +10076,7 @@ let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=5;
 let usChartType='line';
+let usChartCumulative=false; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
 usChartPeriod=days;
