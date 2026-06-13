@@ -4292,6 +4292,8 @@ function setKrTreemapMode(mode){
   // watch 버튼을 다시 누르면 top20으로 토글
   if(mode==='watch'&&krTreemapMode==='watch') mode='top20';
   krTreemapMode=mode;
+  // top20으로 돌아올 때 activeSet 리셋 → 다음 렌더 시 Top5로 초기화
+  if(mode==='top20') krActiveSet=null;
   var b1=document.getElementById('kr-tm-btn-top20');
   var b2=document.getElementById('kr-tm-btn-watch');
   if(b1){b1.className='tm-mode-btn'+(mode==='top20'?' active-kr':'');}
@@ -4631,10 +4633,12 @@ if(krTreemapMode==='watch'){
   krActiveSet=new Set(Array.from(WATCHED_SECTORS).filter(function(n){return sn.indexOf(n)>=0;}));
   if(pickerWrap) pickerWrap.style.display='none';
 } else {
-  // Top5 기본 초기화 — watch에서 돌아올 때도 리셋
-  var defSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
-  defSet.add('코스피'); defSet.add('코스닥');
-  krActiveSet=defSet;
+  // top20 모드: krActiveSet이 없을 때만 Top5로 초기화 (사용자가 선택한 섹터 유지)
+  if(!krActiveSet){
+    var defSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+    defSet.add('코스피'); defSet.add('코스닥');
+    krActiveSet=defSet;
+  }
   if(pickerWrap) pickerWrap.style.display='';
 }
 var krAvgMap={};
@@ -4705,6 +4709,8 @@ function setUsTreemapMode(mode){
   // watch 버튼을 다시 누르면 top20으로 토글
   if(mode==='watch'&&usTreemapMode==='watch') mode='top20';
   usTreemapMode=mode;
+  // top20으로 돌아올 때 activeSet 리셋 → 다음 렌더 시 Top5로 초기화
+  if(mode==='top20') usActiveSet=null;
   document.getElementById('us-tm-btn-top20').className='tm-mode-btn'+(mode==='top20'?' active-us':'');
   document.getElementById('us-tm-btn-watch').className='tm-mode-btn'+(mode==='watch'?' active-us':'');
   renderUsAnalytics();
@@ -4908,10 +4914,12 @@ if(usTreemapMode==='watch'){
   usActiveSet=new Set(Array.from(US_WATCHED_SECTORS).filter(function(n){return rk.indexOf(n)>=0;}));
   if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='none';
 } else {
-  // ── usActiveSet 초기화 — watch에서 돌아올 때도 리셋 ──
-  var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
-  ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
-  usActiveSet=usDefSet;
+  // top20 모드: usActiveSet이 없을 때만 Top5로 초기화 (사용자가 선택한 섹터 유지)
+  if(!usActiveSet){
+    var usDefSet=new Set(aFT.slice(0,5).map(function(d){return d.name;}));
+    ['S&P500','나스닥'].forEach(function(n){usDefSet.add(n);});
+    usActiveSet=usDefSet;
+  }
   if(usPickerWrapCtrl) usPickerWrapCtrl.style.display='';
 }
 var usAvgMap={};
