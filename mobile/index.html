@@ -175,7 +175,7 @@ window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);
   --font-mono:'Inter','Helvetica Neue',sans-serif;
   --font-display:'Bebas Neue',sans-serif;
   --tbl-font-size:7px;
-  --tbl-cell-pad:2px 3px;
+  --tbl-cell-pad:1px 3px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:var(--bg-darkest);}
@@ -2711,7 +2711,7 @@ function syncMemoFromDOM(sec) {
 function changeFontSize(delta){
 S.fontSize=Math.max(6,Math.min(16,S.fontSize+delta));
 document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+const p=S.fontSize<=7?'1px 3px':S.fontSize<=8?'2px 3px':S.fontSize<=10?'3px 4px':'4px 6px';
 document.documentElement.style.setProperty('--tbl-cell-pad',p);
 ['fontSizeLabel','fontSizeLabelUs'].forEach(id=>{
 const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
@@ -2721,7 +2721,7 @@ const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
 // 페이지 로드 시 초기 폰트 크기 CSS 적용
 (function(){
   document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-  const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+  const p=S.fontSize<=7?'1px 3px':S.fontSize<=8?'2px 3px':S.fontSize<=10?'3px 4px':'4px 6px';
   document.documentElement.style.setProperty('--tbl-cell-pad',p);
 })();
 function lp(a,b,t){return Math.round(a+(b-a)*Math.max(0,Math.min(1,t)))}
@@ -9247,7 +9247,7 @@ function syncMemoFromDOM(sec) {
 function changeFontSize(delta){
 S.fontSize=Math.max(6,Math.min(16,S.fontSize+delta));
 document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+const p=S.fontSize<=7?'1px 3px':S.fontSize<=8?'2px 3px':S.fontSize<=10?'3px 4px':'4px 6px';
 document.documentElement.style.setProperty('--tbl-cell-pad',p);
 ['fontSizeLabel','fontSizeLabelUs'].forEach(id=>{
 const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
@@ -9257,7 +9257,7 @@ const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
 // 페이지 로드 시 초기 폰트 크기 CSS 적용
 (function(){
   document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-  const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+  const p=S.fontSize<=7?'1px 3px':S.fontSize<=8?'2px 3px':S.fontSize<=10?'3px 4px':'4px 6px';
   document.documentElement.style.setProperty('--tbl-cell-pad',p);
 })();
 function lp(a,b,t){return Math.round(a+(b-a)*Math.max(0,Math.min(1,t)))}
