@@ -3485,8 +3485,9 @@ border:{color:'#3a4a65'}}
 
 
 
-function _buildUsStats(lt,H,sp,nq,vx,sp500Chg,nasdaqChg,ltToday){
+function _buildUsStats(lt,H,sp,nq,vx,sp500Chg,nasdaqChg,ltToday,isHoliday){
 var sc='stat-card';
+var _prevLabel=isHoliday?'직전 영업일':'최근 영업일';
 // ── 채권 절대값 (최근 영업일 기준)
 var tnxIdx=H.indexOf('장기채권'),ust2Idx=H.indexOf('단기채권'),hygIdx=H.indexOf('하이일드');
 var tnxV=tnxIdx>=0?parseFloat(lt[tnxIdx]):NaN;
@@ -3550,7 +3551,7 @@ document.getElementById('us-stats').innerHTML=
 +'</div></div>':'')
 // ── 박스3: 최근 영업일
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
++'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">'+_prevLabel+' ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px">'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">S&P500</div><div class="stat-val '+(spUp?'up':'dn')+'">'+(isNaN(sp500Chg)?'-':(sp500Chg>=0?'+':'')+sp500Chg.toFixed(2)+'%')+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">Nasdaq</div><div class="stat-val '+(nqUp?'up':'dn')+'">'+(isNaN(nasdaqChg)?'-':(nasdaqChg>=0?'+':'')+nasdaqChg.toFixed(2)+'%')+'</div></div>'
@@ -3732,7 +3733,7 @@ document.getElementById('kr-stats').innerHTML=
 +_adBox
 // ④ 최근 영업일
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
++'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">'+(_kstIsWeekend?'직전 영업일':'최근 영업일')+' ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
 // ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
@@ -5520,14 +5521,21 @@ const _memoColName='📝 Memo';
 const sh=H.slice(1).filter(h=>h!==_memoColName); // 메모 컬럼 제외한 섹터만
 window._usRegInfo = {sectors: sh.length, days: f.length, usR: S.usR};
 if(f.length){
-const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
-const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
-// ★ 오늘 = rows[0], 최근영업일 = rows[1] — 장중/장마감 구분 없이 고정
-const ltToday=(f.length>0)?f[0]:null;
-const ltPrev=(f.length>1)?f[1]:f[0];
+// ★ ET 기준 휴장일 판단 + 주식 데이터 있는 행으로 ltToday/ltPrev 결정
+const _usStockNames=sh.filter(n=>n!=='BTC'&&n!=='ETH');
+const _nowETb=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+const _etDowb=_nowETb.getDay();
+const _usWeekendNow=(_etDowb===0||_etDowb===6);
+function _usRowHasStock(row){return _usStockNames.some(function(n){var i=H.indexOf(n);return i>=0&&!isNaN(parseFloat(row[i]));});}
+const _ltTodayRaw=(f.length>0&&!_usWeekendNow&&_usRowHasStock(f[0]))?f[0]:null;
+const _ltTodayIdx=_ltTodayRaw?0:-1;
+let ltPrevIdx=0;
+for(let _pi=Math.max(0,_ltTodayIdx+1);_pi<f.length;_pi++){if(_usRowHasStock(f[_pi])){ltPrevIdx=_pi;break;}}
+const ltToday=_ltTodayRaw;
+const ltPrev=_usRowHasStock(f[ltPrevIdx])?f[ltPrevIdx]:f[0];
 const siP=H.indexOf('S&P500'),niP=H.indexOf('나스닥'),viP=H.indexOf('VIX');
 const spP=siP>=0?parseFloat(ltPrev[siP]):NaN,nqP=niP>=0?parseFloat(ltPrev[niP]):NaN,vxP=viP>=0?parseFloat(ltPrev[viP]):NaN;
-_buildUsStats(ltPrev,H,spP,nqP,vxP,parseFloat(ltPrev[H.indexOf("S&P500")]),parseFloat(ltPrev[H.indexOf("나스닥")]),ltToday);
+_buildUsStats(ltPrev,H,spP,nqP,vxP,parseFloat(ltPrev[H.indexOf("S&P500")]),parseFloat(ltPrev[H.indexOf("나스닥")]),ltToday,_usWeekendNow||!ltToday);
 // _buildUsStats가 오늘/최근영업일 박스를 통합 처리
 }
 const gMap=S.usD.groupMap||{};
@@ -10044,8 +10052,9 @@ border:{color:'#3a4a65'}}
 
 
 
-function _buildUsStats(lt,H,sp,nq,vx,sp500Chg,nasdaqChg,ltToday){
+function _buildUsStats(lt,H,sp,nq,vx,sp500Chg,nasdaqChg,ltToday,isHoliday){
 var sc='stat-card';
+var _prevLabel=isHoliday?'직전 영업일':'최근 영업일';
 // ── 채권 절대값 (최근 영업일 기준)
 var tnxIdx=H.indexOf('장기채권'),ust2Idx=H.indexOf('단기채권'),hygIdx=H.indexOf('하이일드');
 var tnxV=tnxIdx>=0?parseFloat(lt[tnxIdx]):NaN;
@@ -10101,7 +10110,7 @@ document.getElementById('us-stats').innerHTML=
 +'</div></div>':'')
 // ── 박스2: 최근 영업일
 +'<div style="border:1px solid rgba(239,83,80,.3);border-radius:10px;padding:10px 14px;background:rgba(239,83,80,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
++'<div style="font-size:9px;color:var(--accent-us);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">'+_prevLabel+' ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px">'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">S&P500</div><div class="stat-val '+(spUp?'up':'dn')+'">'+(isNaN(sp500Chg)?'-':(sp500Chg>=0?'+':'')+sp500Chg.toFixed(2)+'%')+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">Nasdaq</div><div class="stat-val '+(nqUp?'up':'dn')+'">'+(isNaN(nasdaqChg)?'-':(nasdaqChg>=0?'+':'')+nasdaqChg.toFixed(2)+'%')+'</div></div>'
@@ -10291,7 +10300,7 @@ document.getElementById('kr-stats').innerHTML=
 +_adBox
 // ④ 최근 영업일
 +'<div style="border:1px solid rgba(100,181,246,.35);border-radius:10px;padding:10px 14px;background:rgba(100,181,246,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">최근 영업일 ('+lt[0]+')</div>'
++'<div style="font-size:9px;color:#64b5f6;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">'+(_kstIsWeekend?'직전 영업일':'최근 영업일')+' ('+lt[0]+')</div>'
 +'<div style="display:flex;gap:8px"><div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최고 섹터</div><div class="stat-val up">+'+mx+'%</div><div class="sp-stat-click" data-sector="'+mxN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#ef5350;margin-top:3px" title="종목 보기">'+mxN+'</div></div>'
 +'<div class="'+sc+'" style="flex:1;'+b1+'"><div class="stat-label">최저 섹터</div><div class="stat-val dn">'+mn+'%</div><div class="sp-stat-click" data-sector="'+mnN+'" data-date="'+lt[0]+'" data-isprev="1" style="cursor:pointer;font-size:12px;font-weight:700;color:#42a5f5;margin-top:3px" title="종목 보기">'+mnN+'</div></div></div></div>'
 // ── 종목 상승·하락 카운트: 전체 KOSPI/코스닥 기준 ──
@@ -11682,14 +11691,21 @@ const _memoColName='📝 Memo';
 const sh=H.slice(1).filter(h=>h!==_memoColName); // 메모 컬럼 제외한 섹터만
 window._usRegInfo = {sectors: sh.length, days: f.length, usR: S.usR};
 if(f.length){
-const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
-const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
-// ★ 오늘 = rows[0], 최근영업일 = rows[1] — 장중/장마감 구분 없이 고정
-const ltToday=(f.length>0)?f[0]:null;
-const ltPrev=(f.length>1)?f[1]:f[0];
+// ★ ET 기준 휴장일 판단 + 주식 데이터 있는 행으로 ltToday/ltPrev 결정
+const _usStockNames=sh.filter(n=>n!=='BTC'&&n!=='ETH');
+const _nowETb=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+const _etDowb=_nowETb.getDay();
+const _usWeekendNow=(_etDowb===0||_etDowb===6);
+function _usRowHasStock(row){return _usStockNames.some(function(n){var i=H.indexOf(n);return i>=0&&!isNaN(parseFloat(row[i]));});}
+const _ltTodayRaw=(f.length>0&&!_usWeekendNow&&_usRowHasStock(f[0]))?f[0]:null;
+const _ltTodayIdx=_ltTodayRaw?0:-1;
+let ltPrevIdx=0;
+for(let _pi=Math.max(0,_ltTodayIdx+1);_pi<f.length;_pi++){if(_usRowHasStock(f[_pi])){ltPrevIdx=_pi;break;}}
+const ltToday=_ltTodayRaw;
+const ltPrev=_usRowHasStock(f[ltPrevIdx])?f[ltPrevIdx]:f[0];
 const siP=H.indexOf('S&P500'),niP=H.indexOf('나스닥'),viP=H.indexOf('VIX');
 const spP=siP>=0?parseFloat(ltPrev[siP]):NaN,nqP=niP>=0?parseFloat(ltPrev[niP]):NaN,vxP=viP>=0?parseFloat(ltPrev[viP]):NaN;
-_buildUsStats(ltPrev,H,spP,nqP,vxP,parseFloat(ltPrev[H.indexOf("S&P500")]),parseFloat(ltPrev[H.indexOf("나스닥")]),ltToday);
+_buildUsStats(ltPrev,H,spP,nqP,vxP,parseFloat(ltPrev[H.indexOf("S&P500")]),parseFloat(ltPrev[H.indexOf("나스닥")]),ltToday,_usWeekendNow||!ltToday);
 // _buildUsStats가 오늘/최근영업일 박스를 통합 처리
 }
 const gMap=S.usD.groupMap||{};
