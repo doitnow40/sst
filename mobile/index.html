@@ -5548,7 +5548,6 @@ if(todayDate&&!/^\d{4}-\d{2}-\d{2}$/.test(todayDate)){
   if(!isNaN(d)){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');todayDate=`${y}-${m}-${dd}`;}
   else todayDate=todayDate.slice(0,10);
 }
-const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
 // ET 기준 요일/시간 판단
 const nowET=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
 const etDow=nowET.getDay(); // 0=일,6=토
@@ -5565,6 +5564,8 @@ const _usAfterHours=!_usWeekend&&etMinTotal>=960;
 const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
 // ET 기준 오늘 날짜 문자열 (YYYY-MM-DD)
 const etTodayStr=nowET.getFullYear()+'-'+String(nowET.getMonth()+1).padStart(2,'0')+'-'+String(nowET.getDate()).padStart(2,'0');
+// ★ alreadyExists: KST 날짜 or ET 날짜 모두 체크 (KST/ET 날짜 차이로 인한 중복 행 방지)
+const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate||r[0]===etTodayStr);
 // ★ 주식 휴장일(주말/공휴일) 판단: BTC/ETH 값만 있고 주식 섹터 값이 없는 경우
 const _usStockSectors=sh.filter(n=>n!=='BTC'&&n!=='ETH');
 const _usHasStockData=_usStockSectors.some(n=>todayMap[n]!==undefined&&todayMap[n]!==null&&!isNaN(parseFloat(todayMap[n])));
@@ -11688,7 +11689,6 @@ if(todayDate&&!/^\d{4}-\d{2}-\d{2}$/.test(todayDate)){
   if(!isNaN(d)){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');todayDate=`${y}-${m}-${dd}`;}
   else todayDate=todayDate.slice(0,10);
 }
-const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate);
 // ET 기준 요일/시간 판단
 const nowET=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
 const etDow=nowET.getDay(); // 0=일,6=토
@@ -11705,6 +11705,8 @@ const _usAfterHours=!_usWeekend&&etMinTotal>=960;
 const _usHasData=Object.values(todayMap).some(v=>v!==null&&v!==undefined&&!isNaN(v));
 // ET 기준 오늘 날짜 문자열 (YYYY-MM-DD)
 const etTodayStr=nowET.getFullYear()+'-'+String(nowET.getMonth()+1).padStart(2,'0')+'-'+String(nowET.getDate()).padStart(2,'0');
+// ★ alreadyExists: KST 날짜 or ET 날짜 모두 체크 (KST/ET 날짜 차이로 인한 중복 행 방지)
+const _usAlreadyExists=todayDate&&baseRows.some(r=>r[0]===todayDate||r[0]===etTodayStr);
 // ★ 주식 휴장일(주말/공휴일) 판단: BTC/ETH 값만 있고 주식 섹터 값이 없는 경우
 // _usWeekend 외에도 공휴일(평일이지만 주식 섹터 전부 null) 판단
 const _usStockSectors=sh.filter(n=>n!=='BTC'&&n!=='ETH');
