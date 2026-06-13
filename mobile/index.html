@@ -4755,10 +4755,26 @@ var pLabel=periodText(krAnalyticsPeriod);
 var el=document.getElementById('kr-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
 var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
 if(krAnalyticsPeriod===0){
+var _nowKSTa=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+var _kstDowa=_nowKSTa.getDay();
+var _krIsWeekenda=(_kstDowa===0||_kstDowa===6);
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 var tmj=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
-var allAvg=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHeatmap([],H,sn,true); var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display='none'; return;
+var _krRtHasData=Object.keys(tm).length>0||Object.keys(tmj).length>0;
+var _krIsHoliday=_krIsWeekenda||!_krRtHasData;
+var _krLatestRow=null;
+for(var _ri=0;_ri<rows.length;_ri++){var _r=rows[_ri];var _hasV=sn.some(function(n){var ci=H.indexOf(n);return!isNaN(parseFloat(_r[ci]));});if(_hasV){_krLatestRow=_r;break;}}
+var allAvg;
+if(_krIsHoliday&&_krLatestRow){
+  var _prevMap={};
+  sn.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(_krLatestRow[ci]);if(!isNaN(v))_prevMap[n]=v;});
+  allAvg=sn.map(function(n){var v=_prevMap[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+  _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg,true,_krLatestRow[0]); _renderKrHeatmap([],H,sn,true);
+} else {
+  allAvg=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+  _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg,false,''); _renderKrHeatmap([],H,sn,true);
+}
+var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display='none'; return;
 }
 var cr=[...rows.slice(0,krAnalyticsPeriod)].reverse();
 var allAvg=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
@@ -4768,7 +4784,7 @@ function _renderKrRiseFall(allAvg){
 _renderHtmlBars('kr-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
 _renderHtmlBars('kr-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].reverse(),false);
 }
-function _renderKrTrendChart(cr,H,sn,today,allAvgIn){
+function _renderKrTrendChart(cr,H,sn,today,allAvgIn,isHoliday,prevDate){
 var wrap=document.getElementById('kr-chart-wrap'); if(!wrap)return;
 if(krChart){krChart.destroy();krChart=null;}
 var toggleBtn=document.getElementById('kr-toggleall-btn');
@@ -4798,7 +4814,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
     return;
   }
   var el2=document.getElementById('kr-chart-title');
-  if(el2)el2.textContent='■ ⭐ 주목섹터 트리맵 (실시간 · '+data.length+'개)';
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ':'')+' ⭐ 주목섹터 트리맵 ('+(isHoliday&&prevDate?prevDate:'실시간')+' · '+data.length+'개)';
 }else{
   if(krTreemapMode==='watch'&&WATCHED_SECTORS.size===0){
     wrap.style.height='120px';
@@ -4807,7 +4823,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   }
   data=allData;
   var el2=document.getElementById('kr-chart-title');
-  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ('+prevDate+') Top20 섹터 트리맵':'오늘 Top20 섹터 트리맵 (실시간)')+((!isHoliday&&S.krSectors&&S.krSectors.length)?' · 면적=시가총액':'');
 }
 
 // ★ 시가총액 데이터 미로드 시 API 선호출 후 트리맵 재렌더
@@ -5215,7 +5231,7 @@ if(usAnalyticsPeriod===0){
     }
   }
   var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-  _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg); _renderUsHeatmap([],H,H.slice(1),true);
+  _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg,_usIsHoliday,latestRow?latestRow[0]:''); _renderUsHeatmap([],H,H.slice(1),true);
   var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
 // 기간 모드: 추이 차트 + 히트맵
@@ -5228,7 +5244,7 @@ function _renderUsRiseFall(allAvg){
 _renderHtmlBars('us-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
 _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].reverse(),false);
 }
-function _renderUsTrendChart(cr,H,rk,today,allAvgIn){
+function _renderUsTrendChart(cr,H,rk,today,allAvgIn,isHoliday,prevDate){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
 var usTreModeBtns=document.getElementById('us-treemap-mode-btns');
@@ -5252,7 +5268,7 @@ var el2=document.getElementById('us-chart-title');
 if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size>0){
   data=allData.filter(function(d){return US_WATCHED_SECTORS.has(d.name);});
   if(!data.length){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';return;}
-  if(el2)el2.textContent='■ ⭐ 주목섹터 트리맵 (실시간 · '+data.length+'개)';
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ':'')+' ⭐ 주목섹터 트리맵 ('+(isHoliday&&prevDate?prevDate:'실시간')+' · '+data.length+'개)';
 }else{
   if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size===0){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span></div>';return;}
   data=allData;
@@ -10980,10 +10996,26 @@ var pLabel=periodText(krAnalyticsPeriod);
 var el=document.getElementById('kr-heatmap-title'); if(el)el.textContent='■ 섹터 히트맵 ('+pLabel+')';
 var el2=document.getElementById('kr-chart-title'); if(el2)el2.textContent='■ 섹터별 등락률 추이 (Top 5, '+pLabel+')';
 if(krAnalyticsPeriod===0){
+var _nowKSTa=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+var _kstDowa=_nowKSTa.getDay();
+var _krIsWeekenda=(_kstDowa===0||_kstDowa===6);
 var tm=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 var tmj=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
-var allAvg=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-_renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg); _renderKrHeatmap([],H,sn,true); var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display='none'; return;
+var _krRtHasData=Object.keys(tm).length>0||Object.keys(tmj).length>0;
+var _krIsHoliday=_krIsWeekenda||!_krRtHasData;
+var _krLatestRow=null;
+for(var _ri=0;_ri<rows.length;_ri++){var _r=rows[_ri];var _hasV=sn.some(function(n){var ci=H.indexOf(n);return!isNaN(parseFloat(_r[ci]));});if(_hasV){_krLatestRow=_r;break;}}
+var allAvg;
+if(_krIsHoliday&&_krLatestRow){
+  var _prevMap={};
+  sn.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(_krLatestRow[ci]);if(!isNaN(v))_prevMap[n]=v;});
+  allAvg=sn.map(function(n){var v=_prevMap[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+  _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg,true,_krLatestRow[0]); _renderKrHeatmap([],H,sn,true);
+} else {
+  allAvg=sn.map(function(n){var v=tm[n]!==undefined?tm[n]:tmj[n];return{name:n,avg:v!==undefined&&!isNaN(parseFloat(v))?parseFloat(v):null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
+  _renderKrRiseFall(allAvg); _renderKrTrendChart([],H,sn,true,allAvg,false,''); _renderKrHeatmap([],H,sn,true);
+}
+var khp=document.getElementById('kr-heatmap-panel'); if(khp)khp.style.display='none'; return;
 }
 var cr=[...rows.slice(0,krAnalyticsPeriod)].reverse();
 var allAvg=sn.map(function(n){var ci=H.indexOf(n);var vs=cr.map(function(r){return parseFloat(r[ci]);}).filter(function(v){return!isNaN(v);});return{name:n,avg:vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:0};}).sort(function(a,b){return b.avg-a.avg;});
@@ -10993,7 +11025,7 @@ function _renderKrRiseFall(allAvg){
 _renderHtmlBars('kr-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
 _renderHtmlBars('kr-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].reverse(),false);
 }
-function _renderKrTrendChart(cr,H,sn,today,allAvgIn){
+function _renderKrTrendChart(cr,H,sn,today,allAvgIn,isHoliday,prevDate){
 var wrap=document.getElementById('kr-chart-wrap'); if(!wrap)return;
 if(krChart){krChart.destroy();krChart=null;}
 var toggleBtn=document.getElementById('kr-toggleall-btn');
@@ -11017,7 +11049,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
     return;
   }
   var el2=document.getElementById('kr-chart-title');
-  if(el2)el2.textContent='■ ⭐ 주목섹터 트리맵 (실시간 · '+data.length+'개)';
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ':'')+' ⭐ 주목섹터 트리맵 ('+(isHoliday&&prevDate?prevDate:'실시간')+' · '+data.length+'개)';
 }else{
   if(krTreemapMode==='watch'&&WATCHED_SECTORS.size===0){
     wrap.style.height='120px';
@@ -11026,7 +11058,7 @@ if(krTreemapMode==='watch'&&WATCHED_SECTORS.size>0){
   }
   data=allData;
   var el2=document.getElementById('kr-chart-title');
-  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)'+((S.krSectors&&S.krSectors.length)?' · 면적=시가총액':' · 면적=등락률');
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ('+prevDate+') Top20 섹터 트리맵':'오늘 Top20 섹터 트리맵 (실시간)')+((!isHoliday&&S.krSectors&&S.krSectors.length)?' · 면적=시가총액':'');
 }
 
 // ★ 시가총액 데이터 미로드 시 API 선호출 후 트리맵 재렌더
@@ -11364,7 +11396,7 @@ if(usAnalyticsPeriod===0){
     }
   }
   var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
-  _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg); _renderUsHeatmap([],H,H.slice(1),true);
+  _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg,_usIsHoliday,latestRow?latestRow[0]:''); _renderUsHeatmap([],H,H.slice(1),true);
   var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
 }
 // 기간 모드: 추이 차트 + 히트맵
@@ -11380,7 +11412,7 @@ function _renderUsRiseFall(allAvg){
 _renderHtmlBars('us-rise-bars',allAvg.filter(function(d){return d.avg>=0;}),true);
 _renderHtmlBars('us-fall-bars',[...allAvg.filter(function(d){return d.avg<0;})].reverse(),false);
 }
-function _renderUsTrendChart(cr,H,rk,today,allAvgIn){
+function _renderUsTrendChart(cr,H,rk,today,allAvgIn,isHoliday,prevDate){
 var wrap=document.getElementById('us-chart-wrap'); if(!wrap)return;
 if(usChart){usChart.destroy();usChart=null;}
 var usTreModeBtns=document.getElementById('us-treemap-mode-btns');
@@ -11404,7 +11436,7 @@ var el2=document.getElementById('us-chart-title');
 if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size>0){
   data=allData.filter(function(d){return US_WATCHED_SECTORS.has(d.name);});
   if(!data.length){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span><span style="font-size:10px;color:var(--text-muted)">관리자 페이지 → 주목 섹터에서 설정하세요</span></div>';return;}
-  if(el2)el2.textContent='■ ⭐ 주목섹터 트리맵 (실시간 · '+data.length+'개)';
+  if(el2)el2.textContent='■ '+(isHoliday?'직전 영업일 ':'')+' ⭐ 주목섹터 트리맵 ('+(isHoliday&&prevDate?prevDate:'실시간')+' · '+data.length+'개)';
 }else{
   if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size===0){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span></div>';return;}
   data=allData;
