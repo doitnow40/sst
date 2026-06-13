@@ -385,7 +385,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 <button class="tm-mode-btn active-kr" id="kr-tm-btn-top20" onclick="setKrTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="kr-tm-btn-watch" onclick="setKrTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
-<button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 6px">📈 누적보기</button>
+<button class="chart-toggle-all" id="kr-cum-toggle-btn" onclick="toggleKrCumulative()" style="font-size:8px;padding:2px 6px;background:rgba(79,195,247,0.2);border-color:var(--accent-kr);color:var(--accent-kr)">📉 단순보기</button>
 <button class="chart-toggle-all" id="kr-toggleall-btn" onclick="krChartToggleAll()" style="font-size:8px;padding:2px 6px">전체 ON/OFF</button>
 <div class="sector-picker-wrap" id="kr-sector-picker-wrap" style="display:none">
   <button class="sector-picker-btn" id="kr-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('kr-sector-picker-panel'),this,false)">📋 섹터선택</button>
@@ -528,7 +528,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 <button class="tm-mode-btn active-us" id="us-tm-btn-top20" onclick="setUsTreemapMode('top20')">📊 Top20</button>
 <button class="tm-mode-btn" id="us-tm-btn-watch" onclick="setUsTreemapMode('watch')">⭐ 주목섹터</button>
 </div>
-<button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 6px">📈 누적보기</button>
+<button class="chart-toggle-all" id="us-cum-toggle-btn" onclick="toggleUsCumulative()" style="font-size:8px;padding:2px 6px;background:rgba(239,83,80,0.2);border-color:var(--accent-us);color:var(--accent-us)">📉 단순보기</button>
 <button class="chart-toggle-all" onclick="usChartToggleAll()" style="font-size:8px;padding:2px 6px" id="us-chart-toggleall-btn">전체 ON/OFF</button>
 <div class="sector-picker-wrap" id="us-sector-picker-wrap" style="display:none">
   <button class="sector-picker-btn" id="us-sector-picker-btn" onclick="_toggleSectorPanel(document.getElementById('us-sector-picker-panel'),this,true)">📋 섹터선택</button>
@@ -2952,7 +2952,7 @@ let krChart=null;
 let krChartAllOn=true;
 let krChartPeriod=22;
 let krChartType='line';
-let krChartCumulative=false; // false=단순, true=누적
+let krChartCumulative=true; // false=단순, true=누적
 let krActiveSet=null; // 활성 섹터 Set (null=초기화 전)
 let usActiveSet=null; // 활성 섹터 Set (null=초기화 전)
 let krRankLimit=30;
@@ -3830,7 +3830,7 @@ let usChart=null;
 let usChartAllOn=true;
 let usChartPeriod=22;
 let usChartType='line';
-let usChartCumulative=false; // false=단순, true=누적
+let usChartCumulative=true; // false=단순, true=누적
 let usHeatmapReverse=true;
 function setUsChartPeriod(days,btn){
 if(days!=='custom'){
