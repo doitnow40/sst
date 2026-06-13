@@ -5595,29 +5595,6 @@ t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:le
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`<td></td></tr>`;
-} else if(_usHoliday&&_usHasBtcEth){
-// ── 휴장일(주말/공휴일): BTC/ETH 값만 표시하는 임시 행 ────────────
-// 다음 영업일이 되어 주식 데이터가 들어오면 이 행은 자동으로 사라짐
-const dayNames=['일','월','화','수','목','금','토'];
-const _holLabel=_usWeekend?`주말(${dayNames[etDow]})`:'주식휴장';
-t+=`<tr data-holiday-row="true" style="background:rgba(255,183,77,.05);border-bottom:1px solid rgba(255,183,77,.2)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(etTodayStr,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-sh.forEach((name,_usTdi)=>{
-const _usTdBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_usTdi))?'border-left:3px solid #000;':'';
-if(name==='BTC'||name==='ETH'){
-  const val=todayMap[name];
-  if(val!==undefined&&val!==null&&!isNaN(parseFloat(val))){
-    const c=usCell(name,val);
-    t+=`<td style="${_usTdBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
-  } else {
-    t+=`<td style="${_usTdBdr}color:var(--text-muted)">-</td>`;
-  }
-} else {
-  t+=`<td style="${_usTdBdr}color:rgba(100,120,150,.35);font-size:8px;text-align:center">${_holLabel}</td>`;
-}
-});
-t+=`<td style="color:var(--text-muted);font-size:var(--tbl-font-size);text-align:left;padding:var(--tbl-cell-pad)">-</td>`;
-t+=`</tr>`;
 }
 }
 // ★ KR과 동일한 방식: sh는 메모 제외 섹터만 포함, row[ci+1] 순서 기반 접근
@@ -5625,6 +5602,10 @@ t+=`</tr>`;
 const usMemoIdx=sh.length+1;
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td><td></td></tr>`;return;}
+// 주식 섹터 값이 전혀 없고 BTC/ETH만 있는 행(휴장일) → 건너뜀
+const _rowStockSectors=sh.filter(n=>n!=='BTC'&&n!=='ETH');
+const _rowHasStock=_rowStockSectors.some(n=>{const v=row[sh.indexOf(n)+1];return v!==undefined&&v!==null&&v!==''&&!isNaN(parseFloat(v));});
+if(!_rowHasStock) return;
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
 const v=row[ci+1],c=usCell(name,v);
@@ -11737,29 +11718,6 @@ t+=`<td colspan="${sh.length}" style="color:#ffb74d;font-size:10px;text-align:le
 t+=`⏰ 현재 ${etTimeStr} — 미국 정규장 개장 전입니다 (개장: 09:30 ET). `;
 t+=`최신 확정 데이터: <strong style="color:var(--text-primary)">${latestDate}</strong></td>`;
 t+=`<td></td></tr>`;
-} else if(_usHoliday&&_usHasBtcEth){
-// ── 휴장일(주말/공휴일): BTC/ETH 값만 표시하는 임시 행 ────────────
-// 다음 영업일이 되어 주식 데이터가 들어오면 이 행은 자동으로 사라짐
-const dayNames=['일','월','화','수','목','금','토'];
-const _holLabel=_usWeekend?`주말(${dayNames[etDow]})`:'주식휴장';
-t+=`<tr data-holiday-row="true" style="background:rgba(255,183,77,.05);border-bottom:1px solid rgba(255,183,77,.2)">`;
-t+=`<td style="color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)">${dateCell(etTodayStr,false,"color:#ffb74d;font-weight:700;font-size:var(--tbl-font-size)")}</td>`;
-sh.forEach((name,_usTdi)=>{
-const _usTdBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(_usTdi))?'border-left:3px solid #000;':'';
-if(name==='BTC'||name==='ETH'){
-  const val=todayMap[name];
-  if(val!==undefined&&val!==null&&!isNaN(parseFloat(val))){
-    const c=usCell(name,val);
-    t+=`<td style="${_usTdBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}">${c.t||val||''}</td>`;
-  } else {
-    t+=`<td style="${_usTdBdr}color:var(--text-muted)">-</td>`;
-  }
-} else {
-  t+=`<td style="${_usTdBdr}color:rgba(100,120,150,.35);font-size:8px;text-align:center">${_holLabel}</td>`;
-}
-});
-t+=`<td style="color:var(--text-muted);font-size:var(--tbl-font-size);text-align:left;padding:var(--tbl-cell-pad)">-</td>`;
-t+=`</tr>`;
 }
 }
 // ★ KR과 동일한 방식: sh는 메모 제외 섹터만 포함, row[ci+1] 순서 기반 접근
@@ -11767,6 +11725,10 @@ t+=`</tr>`;
 const usMemoIdx=sh.length+1;
 f.forEach(row=>{
 if(String(row[1])==='휴장'){t+=`<tr><td>${dateCell(row[0]||'',false)}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td><td></td></tr>`;return;}
+// 주식 섹터 값이 전혀 없고 BTC/ETH만 있는 행(휴장일) → 건너뜀
+const _rowStockSectors=sh.filter(n=>n!=='BTC'&&n!=='ETH');
+const _rowHasStock=_rowStockSectors.some(n=>{const v=row[sh.indexOf(n)+1];return v!==undefined&&v!==null&&v!==''&&!isNaN(parseFloat(v));});
+if(!_rowHasStock) return;
 t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
 sh.forEach((name,ci)=>{
 const v=row[ci+1],c=usCell(name,v);
