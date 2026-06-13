@@ -2758,20 +2758,23 @@ const todayMajor=S.krToday&&S.krToday.majorIndex?S.krToday.majorIndex:{};
 const todayDate=f.length?f[0][0]:null; // 히스토리 최신행(7행) 날짜
 const _todayDow=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
 const _isWeekend=(_todayDow===0||_todayDow===6);
+// ★ 주말이면 f[1](직전 영업일)을 오늘 섹터로 표시
+const _todayRow=_isWeekend&&f.length>1?f[1]:f[0];
+const _todayRowDate=_todayRow?_todayRow[0]:todayDate;
 // ★ 항상 히스토리 최신행(f[0])에서 오늘 섹터 값을 읽음
 // 장중: 7행=오늘 실시간(자동갱신), 장마감: 7행=오늘 확정
 // KV 실시간값(krToday.sectors)은 절대 사용하지 않음 — 마지막 Actions 수집값이라 부정확
 var todayMap={};
-if(f.length>0){
-  const _tRow=f[0]; // 히스토리 최신행
+if(_todayRow){
   pureSectors.forEach(function(sec){
     const ci=H.indexOf(sec);
-    if(ci>0&&_tRow[ci]!==null&&_tRow[ci]!==undefined&&_tRow[ci]!==''){
-      todayMap[sec]=parseFloat(_tRow[ci]);
+    if(ci>0&&_todayRow[ci]!==null&&_todayRow[ci]!==undefined&&_todayRow[ci]!==''){
+      todayMap[sec]=parseFloat(_todayRow[ci]);
     }
   });
 }
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekend&&!(_todayDow===0||_todayDow===6);
+// 주말엔 직전 영업일(f[1]) 데이터로 hasTodayStats=true 강제
+const hasTodayStats=_todayRowDate&&Object.keys(todayMap).length>0;
 const hasMajorIndex=!!(S.krToday&&Object.keys(S.krToday.majorIndex||{}).length>0);
 let tAvg='-', tMx='-', tMn='-', tMxName='', tMnName='';
 if(hasTodayStats){
@@ -2787,7 +2790,7 @@ tMn=tMnPair?tMnPair.v.toFixed(2):'-';
 tMxName=tMxPair?tMxPair.name:'';
 tMnName=tMnPair?tMnPair.name:'';
 }
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
+_buildKrStats(pureSectors,H,f,hasTodayStats,_todayRowDate,todayMap,false);
 }
 const groupMap=S.krD.groupMap||{};
 const t_header = buildKrGroupHeaderRow(sectorHdrs, groupMap);
