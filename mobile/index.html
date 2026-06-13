@@ -174,8 +174,8 @@ window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);
   --font-body:'Noto Sans KR',sans-serif;
   --font-mono:'Inter','Helvetica Neue',sans-serif;
   --font-display:'Bebas Neue',sans-serif;
-  --tbl-font-size:8px;
-  --tbl-cell-pad:3px 4px;
+  --tbl-font-size:7px;
+  --tbl-cell-pad:2px 3px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:var(--bg-darkest);}
@@ -412,10 +412,10 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 .heatmap-wrap::-webkit-scrollbar{height:3px;width:3px;}
 .heatmap-wrap::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px;}
 .heatmap-table{border-collapse:collapse;width:max-content;min-width:100%}
-.heatmap-table th{background:var(--bg-card2);padding:3px 5px;font-size:8px;color:var(--text-muted);white-space:nowrap;font-weight:600;border-bottom:1px solid var(--border);text-align:center;position:sticky;top:0;z-index:5;}
+.heatmap-table th{background:var(--bg-card2);padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);color:var(--text-muted);white-space:nowrap;font-weight:600;border-bottom:1px solid var(--border);text-align:center;position:sticky;top:0;z-index:5;}
 .heatmap-table th:first-child{text-align:left;position:sticky;left:0;z-index:10;background:var(--bg-card2);min-width:55px;}
-.heatmap-table td{padding:2px 4px;font-size:8px;font-family:var(--font-mono);text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.3);}
-.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--bg-card);color:var(--text-secondary);font-size:8px;min-width:55px;z-index:3;}
+.heatmap-table td{padding:var(--tbl-cell-pad);font-size:var(--tbl-font-size);font-family:var(--font-mono);text-align:center;white-space:nowrap;border-bottom:1px solid rgba(46,58,80,.3);}
+.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--bg-card);color:var(--text-secondary);font-size:var(--tbl-font-size);min-width:55px;z-index:3;}
 
 /* ── 랭킹 바 ── */
 .rank-bar-row{display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid rgba(46,58,80,.25);border-radius:3px;transition:background .12s;cursor:pointer;}
@@ -1727,7 +1727,7 @@ const US_STATS_EXCLUDE = new Set([
 ]);
 const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
 var _sparkMode='daily';
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
 // ── Yahoo Finance URL 생성 ───────────────────────────────────────────
@@ -2709,18 +2709,19 @@ function syncMemoFromDOM(sec) {
 }
 
 function changeFontSize(delta){
-S.fontSize=Math.max(7,Math.min(16,S.fontSize+delta));
+S.fontSize=Math.max(6,Math.min(16,S.fontSize+delta));
 document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-const p=S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
 document.documentElement.style.setProperty('--tbl-cell-pad',p);
 ['fontSizeLabel','fontSizeLabelUs'].forEach(id=>{
 const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
 });
+// 히트맵은 CSS 변수를 참조하므로 재렌더 불필요 (CSS 변수 변경만으로 즉시 반영)
 }
 // 페이지 로드 시 초기 폰트 크기 CSS 적용
 (function(){
   document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-  const p=S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+  const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
   document.documentElement.style.setProperty('--tbl-cell-pad',p);
 })();
 function lp(a,b,t){return Math.round(a+(b-a)*Math.max(0,Math.min(1,t)))}
@@ -8270,7 +8271,7 @@ const US_STATS_EXCLUDE = new Set([
   '장기채권', '단기채권', '하이일드',           // 채권 (YIELD 타입, 절대값)
 ]);
 const KR_RANK_EXCLUDE = KR_STATS_EXCLUDE; // ★ 공통 상수 참조
-const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:8,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
+const S={krR:22,usR:22,krD:null,usD:null,krL:null,krOk:false,usOk:false,krLOk:false,fontSize:7,krToday:null,usToday:null,krSectors:null,krListAt:0,usWatchL:null,usWatchD:null,usWatchAt:0,usWatchStocks:null,
   krNotes:{},usNotes:{}}; // ★ 섹터 메모/링크
 
 // ── Yahoo Finance URL 생성 ───────────────────────────────────────────
@@ -9244,18 +9245,19 @@ function syncMemoFromDOM(sec) {
 }
 
 function changeFontSize(delta){
-S.fontSize=Math.max(7,Math.min(16,S.fontSize+delta));
+S.fontSize=Math.max(6,Math.min(16,S.fontSize+delta));
 document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-const p=S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
 document.documentElement.style.setProperty('--tbl-cell-pad',p);
 ['fontSizeLabel','fontSizeLabelUs'].forEach(id=>{
 const el=document.getElementById(id);if(el)el.textContent=S.fontSize;
 });
+// 히트맵은 CSS 변수를 참조하므로 재렌더 불필요 (CSS 변수 변경만으로 즉시 반영)
 }
 // 페이지 로드 시 초기 폰트 크기 CSS 적용
 (function(){
   document.documentElement.style.setProperty('--tbl-font-size', S.fontSize+'px');
-  const p=S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
+  const p=S.fontSize<=7?'2px 3px':S.fontSize<=8?'3px 4px':S.fontSize<=10?'4px 6px':'5px 7px';
   document.documentElement.style.setProperty('--tbl-cell-pad',p);
 })();
 function lp(a,b,t){return Math.round(a+(b-a)*Math.max(0,Math.min(1,t)))}
