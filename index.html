@@ -4755,12 +4755,38 @@ if(usAnalyticsPeriod===0){
   // 오늘 모드: 트리맵 + 모드 버튼 표시
   if(modeBtns)modeBtns.style.display='flex';
   if(toggleBtn)toggleBtn.style.display='none';
-  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
-  // S.usD에서 가장 최근 유효 행으로 오늘 값 구성 (커스텀 섹터 포함)
+  // ── ET 기준 휴장일 판단 ──
+  var _nowETa=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  var _etDowa=_nowETa.getDay();
+  var _etMina=_nowETa.getHours()*60+_nowETa.getMinutes();
+  var _usWeekenda=(_etDowa===0||_etDowa===6);
+  var _usStockRk=rk.filter(function(n){return n!=='BTC'&&n!=='ETH';});
+  // 실시간 today 데이터에 주식 섹터 값이 있으면 오늘, 없으면 휴장
+  var _usRtMap=S.usToday&&S.usToday.sectors?S.usToday.sectors:{};
+  var _usRtHasStock=_usStockRk.some(function(n){var v=_usRtMap[n];return v!==undefined&&v!==null&&!isNaN(parseFloat(v));});
+  var _usIsHoliday=_usWeekenda||!_usRtHasStock;
+  // latestRow: 주식 섹터에 값이 있는 첫 번째 행 (휴장일 행 건너뜀)
   var latestRow=null;
-  for(var ri=0;ri<rows.length;ri++){var r=rows[ri];var hasVal=rk.some(function(n){var ci=H.indexOf(n);return!isNaN(parseFloat(r[ci]));});if(hasVal){latestRow=r;break;}}
+  for(var ri=0;ri<rows.length;ri++){
+    var r=rows[ri];
+    var hasStock=_usStockRk.some(function(n){var ci=H.indexOf(n);return!isNaN(parseFloat(r[ci]));});
+    if(hasStock){latestRow=r;break;}
+  }
   var um={};
-  if(latestRow){rk.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(latestRow[ci]);if(!isNaN(v))um[n]=v;});}
+  if(_usIsHoliday){
+    // 휴장일: 직전 영업일(latestRow) 데이터 사용
+    if(el2)el2.textContent='■ 직전 영업일 Top20 섹터 트리맵'+(latestRow?' ('+latestRow[0]+')':'');
+    if(latestRow){rk.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(latestRow[ci]);if(!isNaN(v))um[n]=v;});}
+  } else {
+    // 영업일: 실시간 데이터 우선, 없으면 latestRow
+    if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
+    var _hasRt=Object.keys(_usRtMap).length>0;
+    if(_hasRt){
+      rk.forEach(function(n){var v=_usRtMap[n];if(v!==undefined&&v!==null&&!isNaN(parseFloat(v)))um[n]=parseFloat(v);});
+    } else if(latestRow){
+      rk.forEach(function(n){var ci=H.indexOf(n);var v=parseFloat(latestRow[ci]);if(!isNaN(v))um[n]=v;});
+    }
+  }
   var allAvg=rk.map(function(n){var v=um[n];return{name:n,avg:v!==undefined?v:null};}).filter(function(d){return d.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
   _renderUsRiseFall(allAvg); _renderUsTrendChart([],H,rk,true,allAvg); _renderUsHeatmap([],H,H.slice(1),true);
   var uhp=document.getElementById('us-heatmap-panel'); if(uhp)uhp.style.display='none'; return;
@@ -4803,7 +4829,10 @@ if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size>0){
 }else{
   if(usTreemapMode==='watch'&&US_WATCHED_SECTORS.size===0){wrap.style.height='120px';wrap.innerHTML='<div class="tm-no-watch"><span>⭐ 주목 섹터가 없습니다</span></div>';return;}
   data=allData;
-  if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
+  // 타이틀은 renderUsAnalytics에서 이미 설정 (직전영업일/실시간 구분) — 덮어쓰지 않음
+  if(el2&&el2.textContent.indexOf('Top20')<0&&el2.textContent.indexOf('직전')<0){
+    if(el2)el2.textContent='■ 오늘 Top20 섹터 트리맵 (실시간)';
+  }
 }
 
 var um={}; data.forEach(function(d){um[d.name]=d.avg;});
