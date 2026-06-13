@@ -3155,6 +3155,12 @@ var kospiV=majorMap['코스피']!==undefined?majorMap['코스피']:null;
 var kosdaqV=majorMap['코스닥']!==undefined?majorMap['코스닥']:null;
 var adrpiV=majorMap['ADR피']!==undefined?majorMap['ADR피']:null;
 var adrdakV=majorMap['ADR닥']!==undefined?majorMap['ADR닥']:null;
+// 주말엔 S.krToday 데이터 없으므로 lt(직전 영업일 행)에서 코스피/코스닥 읽기
+if(_kstIsWeekend&&(kospiV===null||kosdaqV===null)){
+  var _kospiIdx=H.indexOf('코스피'), _kosdaqIdx=H.indexOf('코스닥');
+  if(_kospiIdx>=0&&lt[_kospiIdx]!==undefined&&lt[_kospiIdx]!=='') kospiV=parseFloat(lt[_kospiIdx]);
+  if(_kosdaqIdx>=0&&lt[_kosdaqIdx]!==undefined&&lt[_kosdaqIdx]!=='') kosdaqV=parseFloat(lt[_kosdaqIdx]);
+}
 // F&G from history
 var fngTodayScore=null;
 if(S.krD&&S.krD.headers&&S.krD.rows){
@@ -3174,10 +3180,11 @@ function _fmtMajor(v,isADR){
 var kospiF=_fmtMajor(kospiV,false), kosdaqF=_fmtMajor(kosdaqV,false);
 var adrpiF=_fmtMajor(adrpiV,true), adrdakF=_fmtMajor(adrdakV,true);
 var fngInfo=fngTodayScore!==null?{score:Math.round(fngTodayScore),label:(fngTodayScore<=24?'극단적 공포':fngTodayScore<=44?'공포':fngTodayScore<=54?'중립':fngTodayScore<=74?'탐욕':'극단적 탐욕'),color:(fngTodayScore<=24?'#42a5f5':fngTodayScore<=44?'#64b5f6':fngTodayScore<=54?'#8a9ab5':fngTodayScore<=74?'#ef5350':'#b71c1c')}:null;
-var todayLabelDate=S.krToday&&S.krToday.date?S.krToday.date:todayDate;
-// 오늘 주요 지표 박스 내용: 시간대에 따라 실제값 or '오늘 데이터 없음'
+var todayLabelDate=_kstIsWeekend?todayDate:(S.krToday&&S.krToday.date?S.krToday.date:todayDate);
+var _todayBoxTitle=_kstIsWeekend?'직전 영업일 주요 지표 ('+todayDate+')':'오늘 주요 지표 ('+todayLabelDate+')';
+// 오늘 주요 지표 박스 내용: 주말엔 직전 영업일 코스피/코스닥 표시
 var _todayBoxContent='';
-if(_showTodayData){
+if(_showTodayData||(_kstIsWeekend&&(kospiV!==null||kosdaqV!==null))){
   // 장중 or 장마감후(00:00까지): 실제값 or 마지막값 표시
   var _kpiRows='';
   if(kospiV!==null||kosdaqV!==null||adrpiV!==null||adrdakV!==null){
@@ -3260,7 +3267,7 @@ document.getElementById('kr-stats').innerHTML=
 '<div style="display:flex;gap:10px;flex-wrap:nowrap;align-items:stretch;margin-bottom:4px;overflow-x:auto;padding-bottom:4px">'
 // ① 오늘 주요 지표
 +'<div style="border:1px solid rgba(79,195,247,.35);border-radius:10px;padding:10px 14px;background:rgba(79,195,247,.04);display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-+'<div style="font-size:9px;color:var(--accent-kr);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 주요 지표 ('+todayLabelDate+')</div>'
++'<div style="font-size:9px;color:var(--accent-kr);font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">'+_todayBoxTitle+'</div>'
 +_todayBoxContent
 +'</div>'
 // ② 오늘 섹터
