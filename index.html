@@ -3749,18 +3749,14 @@ function _buildSectorPanel(panelEl, allSectors, activeSet, avgMap, isUs, onToggl
   if(!panelEl) return;
   const searchId='sp-search-'+panelEl.id;
   const listId='sp-list-'+panelEl.id;
-  // 내림차순 정렬
   const sorted=[...allSectors].sort((a,b)=>{
     const av=avgMap[a]??-9999, bv=avgMap[b]??-9999;
     return bv-av;
   });
-  panelEl.innerHTML=
-    `<input class="sector-picker-search" id="${searchId}" placeholder="🔍 섹터 검색..." autocomplete="off">`+
-    `<div class="sector-picker-list" id="${listId}"></div>`;
-  const listEl=document.getElementById(listId);
-  const searchEl=document.getElementById(searchId);
 
   function renderList(filter){
+    const listEl=document.getElementById(listId);
+    if(!listEl) return;
     listEl.innerHTML='';
     sorted.filter(n=>!filter||n.toLowerCase().includes(filter.toLowerCase())).forEach(name=>{
       const avg=avgMap[name];
@@ -3768,7 +3764,8 @@ function _buildSectorPanel(panelEl, allSectors, activeSet, avgMap, isUs, onToggl
       const pct=avg!=null?(avg>=0?'<span style="color:#ef5350">+'+(+avg).toFixed(2)+'%</span>':'<span style="color:#4fc3f7">'+(+avg).toFixed(2)+'%</span>'):'';
       const row=document.createElement('div');
       row.className='sector-picker-item'+(isUs?' us-item':'');
-      row.innerHTML=`<input type="checkbox" ${checked?'checked':''}><span>${name}</span><span class="sector-picker-pct">${pct}</span>`;
+      row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'>'+
+        '<span>'+name+'</span><span class="sector-picker-pct">'+pct+'</span>';
       const cb=row.querySelector('input');
       cb.addEventListener('change',()=>{
         if(cb.checked) activeSet.add(name);
@@ -3778,9 +3775,23 @@ function _buildSectorPanel(panelEl, allSectors, activeSet, avgMap, isUs, onToggl
       listEl.appendChild(row);
     });
   }
+
+  // 패널이 이미 열려있으면 DOM 재생성 없이 list만 갱신 (체크박스 클릭 후 패널 날아가는 버그 방지)
+  const isAlreadyOpen=panelEl.classList.contains('open');
+  const existingSearch=document.getElementById(searchId);
+  if(isAlreadyOpen && existingSearch){
+    renderList(existingSearch.value||'');
+    return;
+  }
+
+  // 처음 빌드 또는 닫힌 상태: 전체 재생성
+  panelEl.innerHTML='<input class="sector-picker-search" id="'+searchId+'" placeholder="🔍 섹터 검색..." autocomplete="off">'+
+    '<div class="sector-picker-list" id="'+listId+'"></div>';
+  const searchEl=document.getElementById(searchId);
   renderList('');
   searchEl.addEventListener('input',()=>renderList(searchEl.value));
 }
+
 
 // 드롭다운 열기/닫기 토글
 function _toggleSectorPanel(panelEl, btnEl, isUs){
