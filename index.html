@@ -4616,7 +4616,8 @@ if(modeBtns) modeBtns.style.display='flex';
 if(top20Btn) top20Btn.style.display='none';
 if(watchBtn) watchBtn.style.display='';
 if(cumBtn) cumBtn.style.display='';
-// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
+// 트리맵 HTML 잔존 방지: 항상 canvas로 재설정 + height 복원
+wrap.style.height='280px'; wrap.style.overflowY='';
 wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
