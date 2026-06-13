@@ -396,7 +396,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
 .chart-title{font-size:11px;font-weight:700;color:var(--text-primary);letter-spacing:.4px;}
 .chart-subtitle{font-size:9px;color:var(--text-muted);}
 .chart-body{padding:6px 10px 10px;position:relative;}
-.chart-canvas-wrap{position:relative;height:200px;}
+.chart-canvas-wrap{position:relative;height:280px;}
 .chart-toggle-all{font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer;transition:all .15s;}
 .chart-toggle-all:hover{border-color:var(--border-light);color:var(--text-primary);}
 .chart-ctrl-group{display:flex;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
@@ -3920,7 +3920,7 @@ return;
 document.getElementById('kr-chart-title').textContent=`📡 오늘 실시간 등락률 (${todayDate})`;
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-wrap.style.height='280px';wrap.style.overflowY='';
+wrap.style.height='340px';wrap.style.overflowY='';
 if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';}
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas)return;
@@ -3983,7 +3983,7 @@ return;
 wrap.style.overflowY='';
 if(!wrap.querySelector('#kr-chart-canvas')){
 wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
-wrap.style.height='280px';
+wrap.style.height='340px';
 }
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas) return;
@@ -4096,7 +4096,7 @@ if(dnCanvas && dnData.length) makeRankChart(dnCanvas, dnData, false);
 return;
 }
 document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
-wrap.style.height='280px';
+wrap.style.height='340px';
 const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayDate=S.krToday?S.krToday.date:'';
 const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
@@ -5047,7 +5047,7 @@ if(top20Btn) top20Btn.style.display='none';
 if(watchBtn) watchBtn.style.display='';
 if(cumBtn) cumBtn.style.display='';
 // 트리맵 HTML 잔존 방지: 항상 canvas로 재설정 + height 복원
-wrap.style.height='280px'; wrap.style.overflowY='';
+wrap.style.height='340px'; wrap.style.overflowY='';
 wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
@@ -5326,7 +5326,7 @@ if(usWatchBtn) usWatchBtn.style.display='';
 if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
 var usTogBtn=document.getElementById('us-chart-toggleall-btn');
 if(usTogBtn) usTogBtn.style.display='';
-wrap.style.height='280px'; wrap.style.overflowY='';
+wrap.style.height='340px'; wrap.style.overflowY='';
 // 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
 wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas2=document.getElementById('us-chart-canvas');
@@ -10372,7 +10372,7 @@ return;
 document.getElementById('kr-chart-title').textContent=`📡 오늘 실시간 등락률 (${todayDate})`;
 if(krChart){krChart.destroy();krChart=null;}
 if(!hasToday){wrap.style.height='80px';wrap.innerHTML='<div class="loading-state" style="padding:20px"><div style="color:var(--text-muted);font-size:12px">📡 오늘 실시간 데이터가 없습니다</div></div>';return;}
-wrap.style.height='280px';wrap.style.overflowY='';
+wrap.style.height='340px';wrap.style.overflowY='';
 if(!wrap.querySelector('#kr-chart-canvas')){wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';}
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas)return;
@@ -10435,7 +10435,7 @@ return;
 wrap.style.overflowY='';
 if(!wrap.querySelector('#kr-chart-canvas')){
 wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
-wrap.style.height='280px';
+wrap.style.height='340px';
 }
 const canvas=document.getElementById('kr-chart-canvas');
 if(!canvas) return;
@@ -10548,7 +10548,7 @@ if(dnCanvas && dnData.length) makeRankChart(dnCanvas, dnData, false);
 return;
 }
 document.getElementById('kr-chart-title').textContent=`📈 섹터별 등락률 추이 (최근 ${periodLabel})`;
-wrap.style.height='280px';
+wrap.style.height='340px';
 const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
 const todayDate=S.krToday?S.krToday.date:'';
 const hasTodayData=todayDate&&Object.keys(todayMap).length>0;
@@ -11253,7 +11253,7 @@ return;
 }
 
 if(toggleBtn)toggleBtn.style.display='';
-wrap.style.height='280px'; wrap.style.overflowY='';
+wrap.style.height='340px'; wrap.style.overflowY='';
 wrap.innerHTML='<canvas id="kr-chart-canvas"></canvas>';
 var canvas=document.getElementById('kr-chart-canvas'); if(!canvas)return;
 var fn=H.slice(1).filter(function(h){return h!=='날짜';});
@@ -11471,7 +11471,7 @@ if(usWatchBtn) usWatchBtn.style.display='';
 if(usCumBtnCtrl) usCumBtnCtrl.style.display='';
 var usTogBtn=document.getElementById('us-chart-toggleall-btn');
 if(usTogBtn) usTogBtn.style.display='';
-wrap.style.height='280px'; wrap.style.overflowY='';
+wrap.style.height='340px'; wrap.style.overflowY='';
 // 트리맵 HTML 잔존 방지: 항상 canvas로 재설정
 wrap.innerHTML='<canvas id="us-chart-canvas"></canvas>';
 var canvas2=document.getElementById('us-chart-canvas');
