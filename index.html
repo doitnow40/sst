@@ -2509,6 +2509,9 @@ h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFi
 h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
+// ★ 절대값 기록 섹터 — 누적 변환 불가 (등락률이 아닌 절대값 저장)
+var ABSOLUTE_VALUE_SECTORS=new Set(['ADR피','ADR닥','F&G','VIX','하이일드','장기채권','단기채권']);
+
 function sparkline5row(sectorHdrs, filtered, isUsMode){
 if(filtered.length<2) return '';
 const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse();
@@ -2518,7 +2521,7 @@ const toggleLabel=isCum?'단순보기':'누적보기';
 let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2)" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button data-action="spark-toggle" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid #2e3a50;background:#1e2535;color:#9db3cc;cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
 sectorHdrs.forEach((name,ci)=>{
 let vals;
-if(isCum){
+if(isCum&&!ABSOLUTE_VALUE_SECTORS.has(name)){
   // 누적: 복리 누적 수익률
   const raw=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
   if(raw.length<2){vals=[];}
@@ -7937,8 +7940,9 @@ function openSparkChartPopup(sectorName,isKr){
     b.classList.remove('active','us-active');
     if(b.dataset.days==='30') b.classList.add(isKr?'active':'us-active');
   });
+  var _isAbs=ABSOLUTE_VALUE_SECTORS.has(sectorName);
   document.getElementById('spark-chart-title').textContent=
-    (isKr?'🇰🇷':'🇺🇸')+' '+sectorName+' — 누적 수익률';
+    (isKr?'🇰🇷':'🇺🇸')+' '+sectorName+' — '+(_isAbs?'추이':'누적 수익률');
   document.addEventListener('keydown',_scEscHandler);
   scRenderTags(); scDrawChart();
 }
@@ -8028,7 +8032,7 @@ function scCloseDD(){
 
 function scCalcCumulative(rows,headers,sectorName,periodDays){
   var idx=headers.indexOf(sectorName);
-  if(idx<0) return {labels:[],data:[]};
+  if(idx<0) return {labels:[],data:[],isAbsolute:false};
   var now=new Date();
   var ytdStart=new Date(now.getFullYear(),0,1);
   var pts=rows.map(function(r){return {date:r[0],val:parseFloat(r[idx])};})
@@ -8039,14 +8043,22 @@ function scCalcCumulative(rows,headers,sectorName,periodDays){
     var cutoff=new Date(now.getTime()-periodDays*24*3600*1000);
     pts=pts.filter(function(p){return new Date(String(p.date).slice(0,10))>=cutoff;});
   }
-  if(!pts.length) return {labels:[],data:[]};
+  if(!pts.length) return {labels:[],data:[],isAbsolute:false};
+  // 절대값 섹터: 누적 변환 없이 원값 그대로 반환
+  if(ABSOLUTE_VALUE_SECTORS.has(sectorName)){
+    return {
+      labels:pts.map(function(p){return String(p.date).slice(0,10);}),
+      data:pts.map(function(p){return Math.round(p.val*100)/100;}),
+      isAbsolute:true
+    };
+  }
   var cum=0, labels=[], data=[];
   pts.forEach(function(p,i){
     if(i===0){cum=0;}else{cum=(1+cum/100)*(1+p.val/100)*100-100;}
     labels.push(String(p.date).slice(0,10));
     data.push(Math.round(cum*100)/100);
   });
-  return {labels:labels,data:data};
+  return {labels:labels,data:data,isAbsolute:false};
 }
 
 function scDrawChart(){
@@ -8055,8 +8067,18 @@ function scDrawChart(){
   var datasets=_scSectors.map(function(name,i){
     var col=_scColors[i%_scColors.length];
     var result=scCalcCumulative(D.rows,D.headers,name,_scPeriod);
-    return {name:name,col:col,labels:result.labels,data:result.data};
+    return {name:name,col:col,labels:result.labels,data:result.data,isAbsolute:result.isAbsolute};
   });
+  // 전체 섹터 중 절대값 섹터가 하나라도 있으면 절대값 모드
+  var hasAbsolute=datasets.some(function(ds){return ds.isAbsolute;});
+  // 절대값 섹터 팝업: 누적보기 버튼 숨김
+  var toggleBtn=document.querySelector('#spark-chart-popup .spark-toggle-btn');
+  if(toggleBtn) toggleBtn.style.display=hasAbsolute?'none':'';
+  // 타이틀 업데이트
+  var titleEl=document.getElementById('spark-chart-title');
+  if(titleEl&&hasAbsolute&&_scSectors.length===1){
+    titleEl.textContent=(_scIsKr?'🇰🇷':'🇺🇸')+' '+_scSectors[0]+' — 추이';
+  }
   var labelSet={}, allLabels=[];
   datasets.forEach(function(ds){
     ds.labels.forEach(function(l){if(!labelSet[l]){labelSet[l]=true;allLabels.push(l);}});
@@ -8092,6 +8114,10 @@ function scDrawChart(){
           callbacks:{label:function(ctx){
             var v=ctx.parsed.y;
             if(v===null) return null;
+            if(hasAbsolute){
+              // 절대값: 부호 없이 원값 표시
+              return ' '+ctx.dataset.label+': '+v.toFixed(2);
+            }
             return ' '+ctx.dataset.label+': '+(v>=0?'+':'')+v.toFixed(2)+'%';
           }}
         },
@@ -8100,7 +8126,9 @@ function scDrawChart(){
       scales:{
         x:{ticks:{color:'#8fa8c8',font:{size:8},maxTicksLimit:allLabels.length>90?10:8,maxRotation:0},
            grid:{color:'rgba(46,58,80,0.3)'},border:{color:'#2e3a50'}},
-        y:{ticks:{color:'#8fa8c8',font:{size:9},callback:function(v){return (v>=0?'+':'')+v.toFixed(1)+'%';}},
+        y:{ticks:{color:'#8fa8c8',font:{size:9},callback:function(v){
+              return hasAbsolute?v.toFixed(2):(v>=0?'+':'')+v.toFixed(1)+'%';
+           }},
            grid:{color:'rgba(46,58,80,0.3)'},border:{color:'#2e3a50'}}
       }
     }
@@ -8112,8 +8140,9 @@ function scDrawChart(){
       var vals=ds.data.filter(function(v){return v!==null;});
       var lastVal=vals.length?vals[vals.length-1]:undefined;
       var col=_scColors[i%_scColors.length];
-      var dispVal=lastVal!==undefined?(lastVal>=0?'+':'')+lastVal.toFixed(2)+'%':'--';
-      var valCol=lastVal>=0?'#ef5350':'#42a5f5';
+      var isAbs=datasets[i]&&datasets[i].isAbsolute;
+      var dispVal=lastVal!==undefined?(isAbs?lastVal.toFixed(2):(lastVal>=0?'+':'')+lastVal.toFixed(2)+'%'):'--';
+      var valCol=isAbs?col:(lastVal>=0?'#ef5350':'#42a5f5');
       var div=document.createElement('div');
       div.className='sc-legend-item';
       div.innerHTML='<div class="sc-legend-dot" style="background:'+col+'"></div>'
