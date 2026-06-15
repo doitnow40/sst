@@ -1766,7 +1766,7 @@ function _naverStockUrl(ticker, type) {
   }
   // US 종목: 트레이딩뷰 (NYSEARCA/NYSEMKT/BATS → AMEX로 매핑)
   const tvExchange = ['NYSEARCA','NYSEMKT','BATS','AMEX'].includes(exchange) ? 'AMEX' : exchange;
-  return 'https://kr.tradingview.com/symbols/' + tvExchange + '-' + code;
+  return 'https://kr.tradingview.com/symbols/' + tvExchange + '-' + code + '?timeframe=6M';
 }
 function _openNaverStock(ticker, type, e) {
   // type은 선택적: 문자열 'ETF'/'STOCK' 또는 생략 가능
@@ -8351,7 +8351,7 @@ function _naverStockUrl(ticker, type) {
   }
   // US 종목: 트레이딩뷰 (NYSEARCA/NYSEMKT/BATS → AMEX로 매핑)
   const tvExchange = ['NYSEARCA','NYSEMKT','BATS','AMEX'].includes(exchange) ? 'AMEX' : exchange;
-  return 'https://kr.tradingview.com/symbols/' + tvExchange + '-' + code;
+  return 'https://kr.tradingview.com/symbols/' + tvExchange + '-' + code + '?timeframe=6M';
 }
 function _openNaverStock(ticker, type, e) {
   // type은 선택적: 문자열 'ETF'/'STOCK' 또는 생략 가능
