@@ -14343,7 +14343,7 @@ function scSearchSector(q){
   });
   if(!all.length){dd.style.display='none';return;}
   dd.innerHTML='';
-  all.slice(0,20).forEach(function(name){
+  all.forEach(function(name){
     var div=document.createElement('div');
     div.className='sc-dd-item';
     div.textContent=name;
