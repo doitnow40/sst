@@ -2964,6 +2964,9 @@ h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:bold">${a.toFi
 h+=`<td style="background:var(--bg-card2)"></td>`;
 return h+'</tr>';
 }
+// ★ 절대값 기록 섹터 — 누적 변환 불가
+var ABSOLUTE_VALUE_SECTORS=new Set(['ADR피','ADR닥','F&G','VIX','하이일드','장기채권','단기채권']);
+
 function sparkline5row(sectorHdrs, filtered, isUsMode){
 if(filtered.length<2) return '';
 const pts=filtered.slice(0,Math.min(5,filtered.length)).reverse();
@@ -2973,7 +2976,7 @@ const toggleLabel=isCum?'단순보기':'누적보기';
 let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2)" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button data-action="spark-toggle" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid #2e3a50;background:#1e2535;color:#9db3cc;cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
 sectorHdrs.forEach((name,ci)=>{
 let vals;
-if(isCum){
+if(isCum&&!ABSOLUTE_VALUE_SECTORS.has(name)){
   // 누적: 복리 누적 수익률
   const raw=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
   if(raw.length<2){vals=[];}
@@ -9568,7 +9571,7 @@ const toggleLabel=isCum?'단순보기':'누적보기';
 let h=`<tr class="avg-row" style="background:var(--bg-card2)"><td class="avg-row-label" style="font-size:8px;line-height:1.5;background:var(--bg-card2);cursor:pointer" title="${toggleLabel}로 전환"><span style="color:var(--text-secondary)">${modeLabel} 추이</span><br><button onclick="toggleSparkMode(this)" style="font-size:7px;padding:1px 4px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);cursor:pointer;margin-top:1px">${toggleLabel}</button></td>`;
 sectorHdrs.forEach((name,ci)=>{
 let vals;
-if(isCum){
+if(isCum&&!ABSOLUTE_VALUE_SECTORS.has(name)){
   // 누적: 복리 누적 수익률
   const raw=pts.map(r=>parseFloat(r[ci+1])).filter(v=>!isNaN(v));
   if(raw.length<2){vals=[];}
@@ -14265,8 +14268,9 @@ function openSparkChartPopup(sectorName,isKr){
     b.classList.remove('active','us-active');
     if(b.dataset.days==='30') b.classList.add(isKr?'active':'us-active');
   });
+  var _isAbs=ABSOLUTE_VALUE_SECTORS.has(sectorName);
   document.getElementById('spark-chart-title').textContent=
-    (isKr?'🇰🇷':'🇺🇸')+' '+sectorName+' — 누적 수익률';
+    (isKr?'🇰🇷':'🇺🇸')+' '+sectorName+' — '+(_isAbs?'추이':'누적 수익률');
   document.addEventListener('keydown',_scEscHandler);
   scRenderTags(); scDrawChart();
 }
@@ -14356,7 +14360,7 @@ function scCloseDD(){
 
 function scCalcCumulative(rows,headers,sectorName,periodDays){
   var idx=headers.indexOf(sectorName);
-  if(idx<0) return {labels:[],data:[]};
+  if(idx<0) return {labels:[],data:[],isAbsolute:false};
   var now=new Date();
   var ytdStart=new Date(now.getFullYear(),0,1);
   var pts=rows.map(function(r){return {date:r[0],val:parseFloat(r[idx])};})
@@ -14367,14 +14371,21 @@ function scCalcCumulative(rows,headers,sectorName,periodDays){
     var cutoff=new Date(now.getTime()-periodDays*24*3600*1000);
     pts=pts.filter(function(p){return new Date(String(p.date).slice(0,10))>=cutoff;});
   }
-  if(!pts.length) return {labels:[],data:[]};
+  if(!pts.length) return {labels:[],data:[],isAbsolute:false};
+  if(ABSOLUTE_VALUE_SECTORS.has(sectorName)){
+    return {
+      labels:pts.map(function(p){return String(p.date).slice(0,10);}),
+      data:pts.map(function(p){return Math.round(p.val*100)/100;}),
+      isAbsolute:true
+    };
+  }
   var cum=0, labels=[], data=[];
   pts.forEach(function(p,i){
     if(i===0){cum=0;}else{cum=(1+cum/100)*(1+p.val/100)*100-100;}
     labels.push(String(p.date).slice(0,10));
     data.push(Math.round(cum*100)/100);
   });
-  return {labels:labels,data:data};
+  return {labels:labels,data:data,isAbsolute:false};
 }
 
 function scDrawChart(){
