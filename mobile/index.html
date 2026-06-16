@@ -790,6 +790,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-notice-bar us">
       <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
+      <button onclick="triggerActionsNow(true)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.6);background:rgba(239,83,80,.2);color:#ef5350;cursor:pointer;white-space:nowrap;margin-right:4px">📡 US 지금수집</button>
       <button onclick="refreshUsToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;white-space:nowrap">🔄 오늘 데이터 갱신</button>
     </div>
     <div class="mob-controls">
@@ -3097,12 +3098,12 @@ renderKr();
 }catch(e){ S.krToday=null; }
 }
 
-async function triggerActionsNow(){
+async function triggerActionsNow(forceUs=false){
   const btn = document.getElementById('trigger-actions-btn');
   const origText = btn ? btn.innerHTML : '';
   if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
   try{
-    const d = await api('trigger_actions', 0);
+    const d = await api('trigger_actions', 0, true, {force_us: forceUs});
     if(d && d.cooldown){
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
       const ss=String(d.remain%60).padStart(2,'0');
@@ -3111,7 +3112,7 @@ async function triggerActionsNow(){
     } else if(d && d.ok){
       // ★ 성공: 30초 카운트다운 후 자동 새로고침
       let remain = 30;
-      alert('✅ 수집 요청 완료!\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
+      alert('✅ 수집 요청 완료!'+(forceUs?' (US 강제 수집 포함)':'')+'\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
       const cd = setInterval(()=>{
         remain--;
         if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
@@ -3702,7 +3703,7 @@ if((_kospiTot>0||_kosdaqTot>0)&&_showTodayData){
   }
   _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'
-    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준 (추정)':'네이버 증권 기준')+'</div>'
+    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
     +(_kospiTot>0
       ?'<div style="margin-bottom:4px">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-primary);margin-bottom:2px">코스피 <span style="font-size:9px;color:var(--text-muted);font-weight:400">('+_kospiTot+'종목)</span></div>'
@@ -9715,12 +9716,12 @@ renderKr();
 }catch(e){ S.krToday=null; }
 }
 
-async function triggerActionsNow(){
+async function triggerActionsNow(forceUs=false){
   const btn = document.getElementById('trigger-actions-btn');
   const origText = btn ? btn.innerHTML : '';
   if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
   try{
-    const d = await api('trigger_actions', 0);
+    const d = await api('trigger_actions', 0, true, {force_us: forceUs});
     if(d && d.cooldown){
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
       const ss=String(d.remain%60).padStart(2,'0');
@@ -9729,7 +9730,7 @@ async function triggerActionsNow(){
     } else if(d && d.ok){
       // ★ 성공: 30초 카운트다운 후 자동 새로고침
       let remain = 30;
-      alert('✅ 수집 요청 완료!\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
+      alert('✅ 수집 요청 완료!'+(forceUs?' (US 강제 수집 포함)':'')+'\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
       const cd = setInterval(()=>{
         remain--;
         if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
@@ -10314,7 +10315,7 @@ if((_kospiTot>0||_kosdaqTot>0)&&_showTodayData){
   }
   _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'
-    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준 (추정)':'네이버 증권 기준')+'</div>'
+    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
     +(_kospiTot>0
       ?'<div style="margin-bottom:4px">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-primary);margin-bottom:2px">코스피 <span style="font-size:9px;color:var(--text-muted);font-weight:400">('+_kospiTot+'종목)</span></div>'
