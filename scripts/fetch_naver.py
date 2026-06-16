@@ -230,14 +230,19 @@ def is_kr_market_open():
     hhmm = now_kst.hour * 100 + now_kst.minute
     return 900 <= hhmm <= 1535
 
-def is_us_market_open():
-    """미국 ET 기준 장중 여부 (09:30~16:00, 평일)"""
+def is_us_market_open(force=False):
+    """미국 ET 기준 장중 또는 장마감 후 1시간 이내 (09:30~17:00, 평일)
+    force=True 이면 시간 무관하게 True 반환 (지금수집 버튼용)
+    """
+    if force:
+        return True
     now_utc = datetime.datetime.now(datetime.timezone.utc)
     now_et  = now_utc + datetime.timedelta(hours=-4)  # EDT
     if now_et.weekday() >= 5:
         return False
     hhmm = now_et.hour * 100 + now_et.minute
-    return 930 <= hhmm <= 1600
+    # 장중(09:30~16:00) + 장마감 후 1시간(16:00~17:00) 모두 수집
+    return 930 <= hhmm <= 1700
 
 def calc_us_kv_ttl():
     """US KV TTL: 장중 10분 / 장외 다음 영업일 ET 10:30까지"""
@@ -365,9 +370,15 @@ async def main():
     updated_at = now_kst.strftime('%Y-%m-%d %H:%M')
     print(f'=== fetch_naver.py 시작: {updated_at} KST ===')
 
+    # ── CLI 인자 파싱 (workflow_dispatch 수동 실행 시 강제 수집 옵션)
+    import sys
+    force_us = '--force-us' in sys.argv or os.environ.get('FORCE_US', '').lower() in ('1', 'true', 'yes')
+    if force_us:
+        print('  ★ FORCE_US 활성화 — US 장외여도 강제 수집')
+
     kr_open = is_kr_market_open()
-    us_open = is_us_market_open()
-    print(f'  KR장중: {kr_open}, US장중: {us_open}')
+    us_open = is_us_market_open(force=force_us)
+    print(f'  KR장중: {kr_open}, US장중(장마감1h포함): {us_open}')
 
     if not kr_open and not us_open:
         print('=== KR/US 모두 장외 — 스킵 ===')
