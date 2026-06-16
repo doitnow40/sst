@@ -3,9 +3,9 @@
 # KR + US 섹터 데이터 수집 → Cloudflare KV + GAS 시트 동기화
 #
 # ── KR 수집: KST 09:00~15:55 (UTC 00:00~06:55) 평일 5분 ──
-# ── US 수집: ET  09:30~16:00 (UTC 13:30~21:00) 평일 5분 ──
+# ── US 수집: ET  09:30~17:00 (UTC 13:30~22:00) 평일 5분 ──
 #   fetch_naver.py 내부에서 KR/US 장중 여부를 각각 판단하여 처리
-#   → KR 장외 시간에 실행되어도 US 수집만 진행 (반대도 동일)
+#   → 장마감 후 1시간(ET 16:00~17:00)도 US 수집 진행 (종가 확정값 반영)
 
 name: Fetch Realtime KR+US Data
 
@@ -13,10 +13,19 @@ on:
   schedule:
     # KR 장중: UTC 00:00~07:55 평일 5분 (KST 09:00~16:55, 장마감 15:30 + 여유 1시간)
     - cron: '*/5 0-7 * * 1-5'
-    # US 장중: UTC 14:00~20:55 평일 5분 (ET 10:00~16:55 커버)
-    - cron: '*/5 14-20 * * 1-5'
+    # US 장중+장마감 후 1시간: UTC 14:00~21:55 평일 5분 (ET 10:00~17:55 커버)
+    - cron: '*/5 14-21 * * 1-5'
 
   workflow_dispatch:
+    inputs:
+      force_us:
+        description: 'US 강제 수집 (장외여도 수집, 지금수집 버튼용)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   fetch:
@@ -42,4 +51,5 @@ jobs:
           CF_API_TOKEN:       ${{ secrets.CF_API_TOKEN }}
           CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
           UPDATE_TOKEN:       ${{ secrets.UPDATE_TOKEN }}
+          FORCE_US:           ${{ github.event.inputs.force_us || 'false' }}
         run: python scripts/fetch_naver.py
