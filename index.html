@@ -454,7 +454,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshUsToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+<button onclick="triggerActionsNow(true)" title="📡 US 지금수집 (장외 강제)&#10;&#10;US 장마감 후 종가가 잘못 표시될 때 클릭하세요.&#10;장외에도 강제로 US 데이터를 수집합니다.&#10;· 완료까지 약 30~60초 소요&#10;· 완료 후 새로고침 자동 실행" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.6);background:rgba(239,83,80,.2);color:#ef5350;cursor:pointer;flex-shrink:0;white-space:nowrap;margin-right:4px">📡 US 지금수집</button><button onclick="refreshUsToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
 </div>
 <div class="controls-bar">
 <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -2639,12 +2639,12 @@ renderKr();
 }catch(e){ S.krToday=null; }
 }
 
-async function triggerActionsNow(){
+async function triggerActionsNow(forceUs=false){
   const btn = document.getElementById('trigger-actions-btn');
   const origText = btn ? btn.innerHTML : '';
   if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
   try{
-    const d = await api('trigger_actions', 0);
+    const d = await api('trigger_actions', 0, true, {force_us: forceUs});
     if(d && d.cooldown){
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
       const ss=String(d.remain%60).padStart(2,'0');
@@ -2653,7 +2653,7 @@ async function triggerActionsNow(){
     } else if(d && d.ok){
       // ★ 성공: 30초 카운트다운 후 자동 새로고침
       let remain = 30;
-      alert('✅ 수집 요청 완료!\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
+      alert('✅ 수집 요청 완료!'+(forceUs?' (US 강제 수집 포함)':'')+'\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
       const cd = setInterval(()=>{
         remain--;
         if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
@@ -3250,7 +3250,7 @@ if((_kospiTot>0||_kosdaqTot>0)&&_showTodayData){
   }
   _adBox='<div style="border:1px solid rgba(129,199,132,.4);border-radius:10px;padding:10px 14px;background:rgba(129,199,132,.04);display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
     +'<div style="font-size:9px;color:#81c784;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px">오늘 종목 등락 현황 ('+todayDate+')</div>'
-    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준 (추정)':'네이버 증권 기준')+'</div>'
+    +'<div style="font-size:8px;color:var(--text-muted);margin-bottom:2px">'+(_mbEstimated?'관심 섹터 종목 기준':'전체 시장 기준')+'</div>'
     +(_kospiTot>0
       ?'<div style="margin-bottom:4px">'
         +'<div style="font-size:10px;font-weight:700;color:var(--text-primary);margin-bottom:2px">코스피 <span style="font-size:9px;color:var(--text-muted);font-weight:400">('+_kospiTot+'종목)</span></div>'
