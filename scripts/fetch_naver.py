@@ -258,131 +258,32 @@ def calc_us_kv_ttl():
         candidate += datetime.timedelta(days=1)
     return max(int((candidate - now_et).total_seconds()), 600)
 
-# ── US 섹터 수집: Yahoo Finance 직접 호출 ──────────────────
-# GAS 서버 IP에서는 Yahoo Finance가 차단(HTTP 500)됨
-# GitHub Actions IP에서는 정상 호출 가능
-# 1단계: GAS us_watch_list로 티커 목록 수신
-# 2단계: Yahoo Finance 직접 호출로 등락률 수집
-# 3단계: 섹터 평균 계산 후 GAS update_us_today로 전달
-
-def _yahoo_symbol(ticker):
-    """GOOGLEFINANCE 티커 → Yahoo 심볼 변환 (NYSEARCA:XLK → XLK)"""
-    parts = ticker.split(':')
-    return parts[-1] if len(parts) > 1 else ticker
-
-def fetch_us_ticker_list():
-    """GAS us_watch_list 호출 → 섹터별 티커 목록 반환"""
-    print('  [US] GAS us_watch_list 호출 중...')
-    resp = requests.get(GAS_URL, params={'type': 'us_watch_list', '_t': int(time.time())}, timeout=30)
+# ── US 섹터 수집: GAS GOOGLEFINANCE 기반 ──────────────────
+# Yahoo Finance 등 외부 API는 GitHub Actions IP 차단됨
+# GAS의 GOOGLEFINANCE 수식(D열)이 이미 계산한 섹터평균을 읽어 반환
+def fetch_us_sector_avg():
+    """
+    GAS getUsSectorAvg() 호출
+    → GOOGLEFINANCE 기반 섹터평균 + 종목별 등락률 반환
+    반환: (sector_avg, stocks_map, date_str, updated_at)
+    """
+    print('  [US] GAS getUsSectorAvg() 호출 중...')
+    resp = requests.get(
+        GAS_URL,
+        params={'type': 'us_sector_avg', '_t': int(time.time())},
+        timeout=30,
+    )
     resp.raise_for_status()
     body = resp.json()
     if not body.get('ok'):
-        raise RuntimeError(f'GAS us_watch_list 오류: {body.get("error")}')
-    sectors = body['data'].get('sectors', [])
-    # ticker → sectors 역매핑, 전체 ticker 목록
-    ticker_to_sectors = {}
-    ticker_to_meta    = {}  # ticker → {name, prevChg, marketCap, memo}
-    for sec in sectors:
-        sname = sec.get('sector', '')
-        for st in sec.get('stocks', []):
-            ticker = st.get('ticker', '')
-            if not ticker: continue
-            if ticker not in ticker_to_sectors:
-                ticker_to_sectors[ticker] = []
-                ticker_to_meta[ticker] = {
-                    'name':      st.get('name', ''),
-                    'prevChg':   st.get('prevChg'),
-                    'marketCap': st.get('marketCap'),
-                    'memo':      st.get('memo', ''),
-                }
-            if sname not in ticker_to_sectors[ticker]:
-                ticker_to_sectors[ticker].append(sname)
-    print(f'  [US] 티커 {len(ticker_to_sectors)}개 수신')
-    return ticker_to_sectors, ticker_to_meta, sectors
-
-def fetch_yahoo_batch(tickers, batch_size=20):
-    """Yahoo Finance v8 API로 등락률 일괄 조회 (GitHub Actions IP에서 가능)"""
-    result = {}
-    symbols_list = [_yahoo_symbol(t) for t in tickers]
-    sym_to_ticker = {_yahoo_symbol(t): t for t in tickers}
-
-    for i in range(0, len(symbols_list), batch_size):
-        batch_syms = symbols_list[i:i+batch_size]
-        symbols_str = ','.join(batch_syms)
-        url = (f'https://query1.finance.yahoo.com/v8/finance/quote'
-               f'?symbols={requests.utils.quote(symbols_str)}'
-               f'&fields=regularMarketChangePercent,symbol&lang=en&region=US')
-        try:
-            resp = requests.get(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json',
-            }, timeout=15)
-            if resp.status_code == 200:
-                data  = resp.json()
-                quotes = data.get('quoteResponse', {}).get('result', [])
-                for q in quotes:
-                    sym = q.get('symbol', '')
-                    chg = q.get('regularMarketChangePercent')
-                    orig = sym_to_ticker.get(sym)
-                    if orig and chg is not None and not (chg != chg):
-                        result[orig] = round(chg, 2)
-            else:
-                print(f'  [Yahoo] HTTP {resp.status_code} for {symbols_str[:60]}')
-        except Exception as e:
-            print(f'  [Yahoo] 오류: {e}')
-        if i + batch_size < len(symbols_list):
-            time.sleep(0.3)
-    return result
-
-def fetch_us_sector_avg():
-    """
-    1. GAS us_watch_list로 티커 목록 수신
-    2. Yahoo Finance 직접 호출로 등락률 수집
-    3. 섹터 평균 계산
-    반환: (sector_avg, stocks_map, date_str, updated_at)
-    """
-    ticker_to_sectors, ticker_to_meta, raw_sectors = fetch_us_ticker_list()
-    all_tickers = list(ticker_to_sectors.keys())
-
-    print(f'  [US] Yahoo Finance 직접 조회: {len(all_tickers)}개')
-    chg_map  = fetch_yahoo_batch(all_tickers)
-    ok_count = sum(1 for v in chg_map.values() if v is not None)
-    print(f'  [US] Yahoo 응답: {ok_count}/{len(all_tickers)}개')
-
-    # 응답률 50% 미만이면 실패 처리
-    if ok_count < max(3, len(all_tickers) * 0.5):
-        raise RuntimeError(f'Yahoo 응답 부족: {ok_count}/{len(all_tickers)}')
-
-    # 섹터 평균 계산
-    sector_vals = {}
-    for ticker, secs in ticker_to_sectors.items():
-        chg = chg_map.get(ticker)
-        if chg is None or abs(chg) > 35: continue
-        for s in secs:
-            sector_vals.setdefault(s, []).append(chg)
-    sector_avg = {s: round(sum(v)/len(v), 2) for s, v in sector_vals.items() if v}
-
-    # 종목별 데이터 구성 (팝업용)
-    stocks_map = {}
-    for sec in raw_sectors:
-        sname = sec.get('sector', '')
-        stocks_map[sname] = []
-        for st in sec.get('stocks', []):
-            ticker = st.get('ticker', '')
-            stocks_map[sname].append({
-                'name':      st.get('name', ''),
-                'ticker':    ticker,
-                'chg':       chg_map.get(ticker),
-                'prevChg':   st.get('prevChg'),
-                'marketCap': st.get('marketCap'),
-                'memo':      st.get('memo', ''),
-            })
-
-    # ET 기준 날짜
-    now_et     = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
-    date_str   = now_et.strftime('%Y-%m-%d')
-    updated_at = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
-    print(f'  [US] 섹터평균 {len(sector_avg)}개, date={date_str}')
+        raise RuntimeError(f'GAS 오류: {body.get("error")}')
+    d = body['data']
+    sector_avg = d.get('sectors', {})
+    stocks_map = d.get('stocks',  {})
+    date_str   = d.get('date',    '')
+    updated_at = d.get('updatedAt', '')
+    ok_count   = sum(1 for v in sector_avg.values() if v is not None)
+    print(f'  [US] 섹터 {ok_count}/{len(sector_avg)}개 유효 (source: {d.get("source","?")})')
     return sector_avg, stocks_map, date_str, updated_at
 
 # ── 6. GAS 시트 갱신 호출 ──────────────────────────────
@@ -461,65 +362,6 @@ def update_gas_sheet(chg_map, sector_avg, major_index, updated_at):
     except Exception as e:
         print(f'  → GAS 시트 갱신 실패 (비중요, KV는 정상): {e}')
 
-# ── 특정 날짜 US 행 overwrite ────────────────────────────
-def overwrite_us_row(date_str):
-    """
-    특정 날짜(ET 기준)의 US 행을 Yahoo Finance 종가로 overwrite
-    용도: 잘못된 값이 기록된 행 수정 (예: 2026-06-17 전일복사 문제)
-    실행: workflow_dispatch OVERWRITE_DATE=2026-06-17
-    """
-    print(f'[overwrite_us_row] 대상 날짜: {date_str}')
-
-    # 1. 티커 목록 수신
-    ticker_to_sectors, ticker_to_meta, raw_sectors = fetch_us_ticker_list()
-    all_tickers = list(ticker_to_sectors.keys())
-
-    # 2. Yahoo Finance 호출
-    print(f'[overwrite_us_row] Yahoo Finance 조회: {len(all_tickers)}개')
-    chg_map  = fetch_yahoo_batch(all_tickers)
-    ok_count = sum(1 for v in chg_map.values() if v is not None)
-    print(f'[overwrite_us_row] Yahoo 응답: {ok_count}/{len(all_tickers)}개')
-    if ok_count < 3:
-        print('[overwrite_us_row] Yahoo 응답 부족 — 중단')
-        return False
-
-    # 3. 섹터 평균 계산
-    sector_vals = {}
-    for ticker, secs in ticker_to_sectors.items():
-        chg = chg_map.get(ticker)
-        if chg is None or abs(chg) > 35: continue
-        for s in secs:
-            sector_vals.setdefault(s, []).append(chg)
-    sector_avg = {s: round(sum(v)/len(v), 2) for s, v in sector_vals.items() if v}
-    print(f'[overwrite_us_row] 섹터평균 {len(sector_avg)}개')
-
-    # 4. GAS update_us_today POST (force=true → 같은 날짜 행 덮어쓰기)
-    now_et     = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-4)))
-    updated_at = now_et.strftime('%Y-%m-%d %H:%M') + ' ET'
-    payload = {
-        'type':       'update_us_today',
-        'chg_map':    json.dumps({}, ensure_ascii=False),
-        'sector_avg': json.dumps(sector_avg, ensure_ascii=False),
-        'date_str':   date_str,
-        'updated_at': updated_at,
-        'token':      UPDATE_TOKEN,
-        'force':      'true',   # 기존 행 overwrite
-    }
-    url = f'{GAS_URL}?type=update_us_today&_t={int(time.time())}'
-    resp = requests.post(url, data=json.dumps(payload, ensure_ascii=False),
-                         headers={'Content-Type': 'application/json'}, timeout=45, allow_redirects=True)
-    if resp.ok:
-        body = resp.json()
-        if body.get('ok'):
-            print(f'[overwrite_us_row] ✅ GAS overwrite 완료: {body.get("data",{})}')
-            return True
-        else:
-            print(f'[overwrite_us_row] GAS 오류: {body.get("error")}')
-    else:
-        print(f'[overwrite_us_row] HTTP 오류: {resp.status_code}')
-    return False
-
-
 # ── 메인 ─────────────────────────────────────────────────
 async def main():
     start = time.time()
@@ -533,14 +375,6 @@ async def main():
     force_us = '--force-us' in sys.argv or os.environ.get('FORCE_US', '').lower() in ('1', 'true', 'yes')
     if force_us:
         print('  ★ FORCE_US 활성화 — US 장외여도 강제 수집')
-
-    # ── OVERWRITE_DATE: 특정 날짜 US 행 overwrite 모드 ──────────
-    overwrite_date = os.environ.get('OVERWRITE_DATE', '').strip()
-    if overwrite_date:
-        print(f'=== OVERWRITE_DATE 모드: {overwrite_date} ===')
-        success = overwrite_us_row(overwrite_date)
-        print(f'=== overwrite {"완료" if success else "실패"} ===')
-        return
 
     kr_open = is_kr_market_open()
     us_open = is_us_market_open(force=force_us)
