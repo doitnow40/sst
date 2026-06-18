@@ -26,11 +26,6 @@ on:
         options:
           - 'false'
           - 'true'
-      overwrite_date:
-        description: 'US 특정 날짜 행 overwrite (ET 기준, 예: 2026-06-17). 입력 시 해당 날짜만 처리.'
-        required: false
-        default: ''
-        type: string
 
 jobs:
   fetch:
@@ -57,5 +52,4 @@ jobs:
           CF_KV_NAMESPACE_ID: ${{ secrets.CF_KV_NAMESPACE_ID }}
           UPDATE_TOKEN:       ${{ secrets.UPDATE_TOKEN }}
           FORCE_US:           ${{ github.event.inputs.force_us || 'false' }}
-          OVERWRITE_DATE:     ${{ github.event.inputs.overwrite_date || '' }}
         run: python scripts/fetch_naver.py
