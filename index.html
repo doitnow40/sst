@@ -247,7 +247,7 @@ border-radius:6px;transition:background .15s;
         <div style="font-size:12px;font-weight:600;color:var(--text-primary)">전체 다시 불러오기</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px">History 포함 DB에서 전체 재로드</div>
       </div>
-      <span class="rdrop-tip" data-tip="서버(GAS 시트)에서 전체 데이터를 다시 불러옵니다.&#10;&#10;✅ 장중/장마감 후 모두 유효&#10;✅ KV 캐시 문제 있을 때 사용&#10;⏱ 2~3초 소요" style="font-size:13px;opacity:.5;cursor:help">?</span>
+      <span class="rdrop-tip" data-tip="서버(DB)에서 전체 데이터를 다시 불러옵니다.&#10;&#10;✅ 장중/장마감 후 모두 유효&#10;✅ 캐시 문제 있을 때 사용&#10;⏱ 2~3초 소요" style="font-size:13px;opacity:.5;cursor:help">?</span>
     </div>
     <!-- 메뉴 2: 오늘 행만 갱신 -->
     <div class="rdrop-item" onclick="rdropAction('today')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
@@ -256,25 +256,25 @@ border-radius:6px;transition:background .15s;
         <div style="font-size:12px;font-weight:600;color:var(--text-primary)">오늘 행만 갱신</div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:2px">오늘 실시간값만 빠르게 반영</div>
       </div>
-      <span class="rdrop-tip" data-tip="오늘 행의 등락률만 즉시 갱신합니다 (전체보다 빠름).&#10;&#10;✅ 장중 실시간 확인 시 사용&#10;⚠️ 값이 이상하면 '전체 다시 불러오기' 사용&#10;⚠️ KV 캐시 오래됐을 경우 틀릴 수 있음" style="font-size:13px;opacity:.5;cursor:help">?</span>
+      <span class="rdrop-tip" data-tip="오늘 행의 등락률만 즉시 갱신합니다 (전체보다 빠름).&#10;&#10;✅ 장중 실시간 확인 시 사용&#10;⚠️ 값이 이상하면 '전체 다시 불러오기' 사용&#10;⚠️ 캐시 오래됐을 경우 틀릴 수 있음" style="font-size:13px;opacity:.5;cursor:help">?</span>
     </div>
     <!-- 메뉴 3: KR 최신값 재수집 -->
     <div class="rdrop-item" id="rdrop-kr-btn" onclick="rdropAction('kr')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
       <span style="font-size:15px">🇰🇷</span>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary)">KR 최신값 강력 재수집 <span id="rdrop-kr-status" style="font-size:10px;margin-left:4px"></span></div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">네이버 API → 서버 수집 후 갱신</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">주가 정보 원천 소스 → 서버 수집 후 갱신</div>
       </div>
-      <span class="rdrop-tip" data-tip="네이버 API에서 KR 최신 데이터를 직접 수집합니다.&#10;&#10;✅ KR 장중(09:00~15:30 KST)에만 유효&#10;❌ 장마감 후에는 효과 없음 (KST 21:00 자동 확정)&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
+      <span class="rdrop-tip" data-tip="주가 정보 원천 소스에서 KR 최신 데이터를 직접 수집합니다.&#10;&#10;✅ KR 장중(09:00~15:30 KST)에만 유효&#10;❌ 장마감 후에는 효과 없음 (KST 21:00 자동 확정)&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
     </div>
     <!-- 메뉴 4: US 최신값 재수집 -->
     <div class="rdrop-item" onclick="rdropAction('us')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
       <span style="font-size:15px">🇺🇸</span>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600;color:var(--text-primary)">US 최신값 강력 재수집 <span id="rdrop-us-status" style="font-size:10px;margin-left:4px"></span></div>
-        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">GOOGLEFINANCE → 서버 수집 후 갱신</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">주가 정보 원천 소스 → 서버 수집 후 갱신</div>
       </div>
-      <span class="rdrop-tip" data-tip="GOOGLEFINANCE로 US 최신 데이터를 강제 수집합니다.&#10;&#10;✅ US 장중(ET 09:30~16:00) 유효&#10;✅ 장마감 후~17:30 KST 07:00 전까지도 유효 (종가 수집)&#10;❌ KST 07:00 이후엔 자동 확정되어 불필요&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
+      <span class="rdrop-tip" data-tip="주가 정보 원천 소스로 US 최신 데이터를 강제 수집합니다.&#10;&#10;✅ US 장중(ET 09:30~16:00) 유효&#10;✅ 장마감 후~17:30 KST 07:00 전까지도 유효 (종가 수집)&#10;❌ KST 07:00 이후엔 자동 확정되어 불필요&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
     </div>
   </div>
 </div>
