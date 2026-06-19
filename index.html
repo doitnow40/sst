@@ -232,14 +232,54 @@ border-radius:6px;transition:background .15s;
 <div class="logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span style="font-family:var(--font-mono);font-size:8px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 5px;vertical-align:middle">v1.0</span></div>
 </div>
 <div class="header-right">
-<button id="refresh-all-btn" onclick="refreshAllData()" title="🔄 새로고침&#10;&#10;이미 서버에 저장된 최신 데이터를&#10;화면에 즉시 반영합니다.&#10;&#10;· 서버의 데이터 자체를 바꾸지는 않습니다&#10;· 화면이 오래됐거나 값이 안 바뀐 것 같을 때 사용&#10;&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:var(--border-light);transition:all .15s;" onmouseover="this.style.borderColor='var(--accent-kr)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-light)';this.style.color=''">
-<span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
-<span>새로고침</span>
-</button>
-<button id="trigger-actions-btn" onclick="triggerActionsNow()" title="📡 지금 수집&#10;&#10;서버에서 최신 데이터를 즉시 수집합니다.&#10;&#10;· 수집 완료까지 약 30~60초 소요&#10;· 완료 후 [새로고침] 버튼을 눌러 확인하세요&#10;· 장중에만 의미 있습니다&#10;&#10;※ [새로고침]: 이미 저장된 데이터를 화면에 반영&#10;※ [오늘 데이터 갱신]: 오늘 행만 빠르게 화면 갱신" class="hdr-badge" style="cursor:pointer;border-color:rgba(100,181,246,.4);color:#64b5f6;transition:all .15s;" onmouseover="this.style.borderColor='#64b5f6';this.style.color='#90caf9'" onmouseout="this.style.borderColor='rgba(100,181,246,.4)';this.style.color='#64b5f6'">
-<span style="font-size:11px">📡</span>
-<span>지금 수집</span>
-</button>
+<!-- ★ 통합 새로고침 드롭다운 -->
+<div id="refresh-dropdown-wrap" style="position:relative;display:inline-block">
+  <button id="refresh-all-btn" onclick="toggleRefreshMenu(event)" class="hdr-badge" style="cursor:pointer;border-color:var(--border-light);transition:all .15s;gap:4px" onmouseover="this.style.borderColor='var(--accent-kr)';this.style.color='var(--text-primary)'" onmouseout="this.style.borderColor='var(--border-light)';this.style.color=''">
+    <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
+    <span>새로고침</span>
+    <span style="font-size:9px;opacity:.6">▼</span>
+  </button>
+  <div id="refresh-dropdown-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg-card);border:1px solid var(--border-light);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:260px;z-index:9999;overflow:hidden">
+    <!-- 메뉴 1: 전체 다시 불러오기 -->
+    <div class="rdrop-item" onclick="rdropAction('full')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
+      <span style="font-size:15px">📋</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">전체 다시 불러오기</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">History 포함 DB에서 전체 재로드</div>
+      </div>
+      <span class="rdrop-tip" data-tip="서버(GAS 시트)에서 전체 데이터를 다시 불러옵니다.&#10;&#10;✅ 장중/장마감 후 모두 유효&#10;✅ KV 캐시 문제 있을 때 사용&#10;⏱ 2~3초 소요" style="font-size:13px;opacity:.5;cursor:help">?</span>
+    </div>
+    <!-- 메뉴 2: 오늘 행만 갱신 -->
+    <div class="rdrop-item" onclick="rdropAction('today')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
+      <span style="font-size:15px">🔄</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">오늘 행만 갱신</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">오늘 실시간값만 빠르게 반영</div>
+      </div>
+      <span class="rdrop-tip" data-tip="오늘 행의 등락률만 즉시 갱신합니다 (전체보다 빠름).&#10;&#10;✅ 장중 실시간 확인 시 사용&#10;⚠️ 값이 이상하면 '전체 다시 불러오기' 사용&#10;⚠️ KV 캐시 오래됐을 경우 틀릴 수 있음" style="font-size:13px;opacity:.5;cursor:help">?</span>
+    </div>
+    <!-- 메뉴 3: KR 최신값 재수집 -->
+    <div class="rdrop-item" id="rdrop-kr-btn" onclick="rdropAction('kr')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
+      <span style="font-size:15px">🇰🇷</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">KR 최신값 강력 재수집 <span id="rdrop-kr-status" style="font-size:10px;margin-left:4px"></span></div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">네이버 API → 서버 수집 후 갱신</div>
+      </div>
+      <span class="rdrop-tip" data-tip="네이버 API에서 KR 최신 데이터를 직접 수집합니다.&#10;&#10;✅ KR 장중(09:00~15:30 KST)에만 유효&#10;❌ 장마감 후에는 효과 없음 (KST 21:00 자동 확정)&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
+    </div>
+    <!-- 메뉴 4: US 최신값 재수집 -->
+    <div class="rdrop-item" onclick="rdropAction('us')" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''">
+      <span style="font-size:15px">🇺🇸</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">US 최신값 강력 재수집 <span id="rdrop-us-status" style="font-size:10px;margin-left:4px"></span></div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">GOOGLEFINANCE → 서버 수집 후 갱신</div>
+      </div>
+      <span class="rdrop-tip" data-tip="GOOGLEFINANCE로 US 최신 데이터를 강제 수집합니다.&#10;&#10;✅ US 장중(ET 09:30~16:00) 유효&#10;✅ 장마감 후~17:30 KST 07:00 전까지도 유효 (종가 수집)&#10;❌ KST 07:00 이후엔 자동 확정되어 불필요&#10;⏱ 30~60초 소요 후 자동 새로고침" style="font-size:13px;opacity:.5;cursor:help">?</span>
+    </div>
+  </div>
+</div>
+<!-- 툴팁 팝업 (rdrop-tip용) -->
+<div id="rdrop-tooltip" style="display:none;position:fixed;background:rgba(20,20,30,.97);border:1px solid var(--border-light);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--text-primary);max-width:260px;z-index:10000;pointer-events:none;white-space:pre-line;line-height:1.6"></div>
 <div class="hdr-badge" id="sheetReadBadge" style="cursor:help"
 data-tooltip="마지막으로 스프레드시트 확정 데이터를 읽은 시각&#10;&#10;🇰🇷 섹터 확정값: 매일 20:00 KST 자동 업데이트&#10;🇺🇸 섹터 확정값: 매일 06:00 KST 자동 업데이트">
 <div class="sheet-read-dot"></div>
@@ -311,7 +351,7 @@ transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:4px;
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(255,183,77,.08);border:1px solid rgba(255,183,77,.2);border-radius:6px;font-size:9px;color:#ffb74d;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="refreshKrToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+
 </div>
 <div class="controls-bar">
 <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
@@ -454,7 +494,7 @@ style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(255
 </div>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:5px 10px;background:rgba(239,83,80,.08);border:1px solid rgba(239,83,80,.2);border-radius:6px;font-size:9px;color:#ef9a9a;font-family:var(--font-mono)">
 <span>📡 오늘 행: 약 20분 지연된 실시간값 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong> · 수동 갱신은 우측 버튼 클릭</span>
-<button onclick="triggerActionsNow(true)" title="📡 US 지금수집 (장외 강제)&#10;&#10;US 장마감 후 종가가 잘못 표시될 때 클릭하세요.&#10;장외에도 강제로 US 데이터를 수집합니다.&#10;· 완료까지 약 30~60초 소요&#10;· 완료 후 새로고침 자동 실행" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.6);background:rgba(239,83,80,.2);color:#ef5350;cursor:pointer;flex-shrink:0;white-space:nowrap;margin-right:4px">📡 US 지금수집</button><button onclick="refreshUsToday(this)" title="🔄 오늘 데이터 갱신&#10;&#10;표 맨 위 '오늘' 행의 등락률만 즉시 화면에 반영합니다.&#10;(약 20분 지연된 실시간값)&#10;&#10;· 오늘 행만 빠르게 갱신 — 전체 새로고침보다 빠름&#10;· 과거 날짜 데이터는 변경되지 않습니다&#10;&#10;※ [새로고침]: 모든 데이터를 전체 갱신 (더 느림)&#10;※ [지금 수집]: 서버에서 새 데이터를 직접 수집" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+
 </div>
 <div class="controls-bar">
 <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -2638,6 +2678,89 @@ S.krToday=null;
 renderKr();
 }catch(e){ S.krToday=null; }
 }
+
+// ── 통합 새로고침 드롭다운 ───────────────────────────────────
+function toggleRefreshMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('refresh-dropdown-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    updateRdropStatus();
+    // 외부 클릭 시 닫기
+    setTimeout(function() {
+      document.addEventListener('click', closeRefreshMenu, { once: true });
+    }, 10);
+  }
+}
+function closeRefreshMenu() {
+  const menu = document.getElementById('refresh-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+}
+function updateRdropStatus() {
+  // KR 장중 여부 (KST 09:00~15:30 평일)
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 3600000);
+  const kstDow = kst.getUTCDay(); // 0=일, 6=토
+  const kstHHMM = kst.getUTCHours() * 100 + kst.getUTCMinutes();
+  const krOpen = kstDow >= 1 && kstDow <= 5 && kstHHMM >= 900 && kstHHMM <= 1530;
+
+  // US 유효 여부 (ET = UTC-4, 09:30~17:30 평일)
+  const et = new Date(now.getTime() - 4 * 3600000);
+  const etDow = et.getUTCDay();
+  const etHHMM = et.getUTCHours() * 100 + et.getUTCMinutes();
+  const usValid = etDow >= 1 && etDow <= 5 && etHHMM >= 930 && etHHMM <= 1730;
+
+  const krEl = document.getElementById('rdrop-kr-status');
+  const usEl = document.getElementById('rdrop-us-status');
+  if (krEl) krEl.innerHTML = krOpen
+    ? '<span style="color:#66bb6a">● 장중</span>'
+    : '<span style="color:#ef9a9a">● 장마감</span>';
+  if (usEl) usEl.innerHTML = usValid
+    ? '<span style="color:#66bb6a">● 장중</span>'
+    : '<span style="color:#ef9a9a">● 장마감</span>';
+}
+async function rdropAction(type) {
+  closeRefreshMenu();
+  if (type === 'full') {
+    // 전체 다시 불러오기
+    S.krOk=false; S.krD=null; S.usOk=false; S.usD=null;
+    S.usWatchAt=0; S.krListAt=0;
+    await refreshAllData();
+  } else if (type === 'today') {
+    // 오늘 행만 갱신 (현재 페이지 감지)
+    const pg = document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
+    if (pg === 'kr-history' || pg === 'kr-list') {
+      await refreshKrToday(null);
+    } else if (pg === 'us-history' || pg === 'us-list') {
+      await refreshUsToday(null);
+    } else {
+      await refreshAllData();
+    }
+  } else if (type === 'kr') {
+    await triggerActionsNow(false);
+  } else if (type === 'us') {
+    await triggerActionsNow(true);
+  }
+}
+// rdrop-tip 툴팁
+document.addEventListener('mouseover', function(e) {
+  const tip = e.target.closest('.rdrop-tip');
+  if (!tip) return;
+  const tt = document.getElementById('rdrop-tooltip');
+  if (!tt) return;
+  tt.textContent = tip.dataset.tip || '';
+  tt.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  tt.style.left = Math.min(r.left, window.innerWidth - 280) + 'px';
+  tt.style.top  = (r.bottom + 6) + 'px';
+});
+document.addEventListener('mouseout', function(e) {
+  if (!e.target.closest('.rdrop-tip')) return;
+  const tt = document.getElementById('rdrop-tooltip');
+  if (tt) tt.style.display = 'none';
+});
 
 async function triggerActionsNow(forceUs=false){
   const btn = document.getElementById('trigger-actions-btn');
