@@ -604,14 +604,31 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     <div id="mob-logo-sub" class="mob-logo-sub">한국 · 미국 섹터 등락률 트래커 맵 &nbsp;<span id="mob-logo-ver" style="font-family:var(--font-mono);font-size:7px;color:var(--accent-kr);background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);border-radius:3px;padding:1px 4px">v1.0</span></div>
   </div>
   <div class="mob-header-right">
-    <button id="refresh-all-btn" onclick="refreshAllData()" class="mob-hdr-btn" title="이미 서버에 저장된 최신 데이터를 화면에 즉시 반영">
-      <span style="font-size:11px">🔄</span>
-      <span>새로고침</span>
-    </button>
-    <button id="trigger-actions-btn" onclick="triggerActionsNow()" class="mob-hdr-btn" style="border-color:rgba(100,181,246,.4);color:#64b5f6" title="서버에서 최신 데이터 즉시 수집 (30~60초 소요)">
-      <span style="font-size:11px">📡</span>
-      <span>지금수집</span>
-    </button>
+    <!-- 모바일 통합 새로고침 드롭다운 -->
+    <div id="refresh-dropdown-wrap" style="position:relative;display:inline-block">
+      <button id="refresh-all-btn" onclick="toggleRefreshMenu(event)" class="mob-hdr-btn" title="새로고침 메뉴">
+        <span id="refresh-icon" style="font-size:11px;display:inline-block;transition:transform .3s">🔄</span>
+        <span>새로고침▼</span>
+      </button>
+      <div id="refresh-dropdown-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg-card);border:1px solid var(--border-light);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.6);min-width:230px;z-index:9999;overflow:hidden">
+        <div class="rdrop-item" onclick="rdropAction('full')" style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)">
+          <span style="font-size:16px">📋</span>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary)">전체 다시 불러오기</div><div style="font-size:10px;color:var(--text-muted)">History 포함 DB에서 전체 재로드</div></div>
+        </div>
+        <div class="rdrop-item" onclick="rdropAction('today')" style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)">
+          <span style="font-size:16px">🔄</span>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary)">오늘 행만 갱신</div><div style="font-size:10px;color:var(--text-muted)">오늘 실시간값만 빠르게 반영</div></div>
+        </div>
+        <div class="rdrop-item" onclick="rdropAction('kr')" style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)">
+          <span style="font-size:16px">🇰🇷</span>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary)">KR 강력 재수집 <span id="rdrop-kr-status" style="font-size:10px"></span></div><div style="font-size:10px;color:var(--text-muted)">장중(09~15:30 KST)에만 유효</div></div>
+        </div>
+        <div class="rdrop-item" onclick="rdropAction('us')" style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px">🇺🇸</span>
+          <div><div style="font-size:12px;font-weight:600;color:var(--text-primary)">US 강력 재수집 <span id="rdrop-us-status" style="font-size:10px"></span></div><div style="font-size:10px;color:var(--text-muted)">장중+장마감후(~KST 07:00) 유효</div></div>
+        </div>
+      </div>
+    </div>
     <button onclick="openHelpModal()" class="mob-hdr-btn" style="border-color:rgba(255,193,7,.4);color:#ffc107;padding:2px 7px" title="도움말">❓</button>
   </div>
 </header>
@@ -643,7 +660,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-notice-bar kr">
       <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
-      <button onclick="refreshKrToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(255,183,77,.4);background:rgba(255,183,77,.15);color:#ffb74d;cursor:pointer;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+
     </div>
     <div class="mob-controls">
       <button class="range-btn active-kr" onclick="setKrRange(22,this)">1개월</button>
@@ -790,8 +807,7 @@ td.watched-col{outline:1px solid rgba(255,111,0,.4);outline-offset:-1px;}
     </div>
     <div class="mob-notice-bar us">
       <span>📡 오늘 행: 약 20분 지연 · <strong style="color:#80cbc4">5분마다 자동 갱신</strong></span>
-      <button onclick="triggerActionsNow(true)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.6);background:rgba(239,83,80,.2);color:#ef5350;cursor:pointer;white-space:nowrap;margin-right:4px">📡 US 지금수집</button>
-      <button onclick="refreshUsToday(this)" style="font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(239,83,80,.4);background:rgba(239,83,80,.15);color:#ef9a9a;cursor:pointer;white-space:nowrap">🔄 오늘 데이터 갱신</button>
+
     </div>
     <div class="mob-controls">
       <button class="range-btn active-us" onclick="setUsRange(22,this)">1개월</button>
@@ -3096,6 +3112,54 @@ S.krToday=null;
 }
 renderKr();
 }catch(e){ S.krToday=null; }
+}
+
+// ── 통합 새로고침 드롭다운 ───────────────────────────────────
+function toggleRefreshMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('refresh-dropdown-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    updateRdropStatus();
+    setTimeout(function() { document.addEventListener('click', closeRefreshMenu, { once: true }); }, 10);
+  }
+}
+function closeRefreshMenu() {
+  const menu = document.getElementById('refresh-dropdown-menu');
+  if (menu) menu.style.display = 'none';
+}
+function updateRdropStatus() {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 3600000);
+  const kstDow = kst.getUTCDay();
+  const kstHHMM = kst.getUTCHours() * 100 + kst.getUTCMinutes();
+  const krOpen = kstDow >= 1 && kstDow <= 5 && kstHHMM >= 900 && kstHHMM <= 1530;
+  const et = new Date(now.getTime() - 4 * 3600000);
+  const etDow = et.getUTCDay();
+  const etHHMM = et.getUTCHours() * 100 + et.getUTCMinutes();
+  const usValid = etDow >= 1 && etDow <= 5 && etHHMM >= 930 && etHHMM <= 1730;
+  const krEl = document.getElementById('rdrop-kr-status');
+  const usEl = document.getElementById('rdrop-us-status');
+  if (krEl) krEl.innerHTML = krOpen ? '<span style="color:#66bb6a">● 장중</span>' : '<span style="color:#ef9a9a">● 장마감</span>';
+  if (usEl) usEl.innerHTML = usValid ? '<span style="color:#66bb6a">● 장중</span>' : '<span style="color:#ef9a9a">● 장마감</span>';
+}
+async function rdropAction(type) {
+  closeRefreshMenu();
+  if (type === 'full') {
+    S.krOk=false; S.krD=null; S.usOk=false; S.usD=null; S.usWatchAt=0; S.krListAt=0;
+    await refreshAllData();
+  } else if (type === 'today') {
+    const pg = document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
+    if (pg === 'kr-history' || pg === 'kr-list') { await refreshKrToday(null); }
+    else if (pg === 'us-history' || pg === 'us-list') { await refreshUsToday(null); }
+    else { await refreshAllData(); }
+  } else if (type === 'kr') {
+    await triggerActionsNow(false);
+  } else if (type === 'us') {
+    await triggerActionsNow(true);
+  }
 }
 
 async function triggerActionsNow(forceUs=false){
