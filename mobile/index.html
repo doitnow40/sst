@@ -3115,6 +3115,16 @@ renderKr();
 }
 
 // ── 통합 새로고침 드롭다운 ───────────────────────────────────
+function _rdropBtnSet(html, disabled) {
+  const btn = document.getElementById('refresh-all-btn');
+  if (!btn) return;
+  btn.disabled = !!disabled;
+  btn.innerHTML = html;
+}
+function _rdropBtnReset() {
+  _rdropBtnSet('<span id="refresh-icon" style="font-size:11px;display:inline-block">🔄</span><span>새로고침▼</span>', false);
+}
+
 function toggleRefreshMenu(e) {
   e.stopPropagation();
   const menu = document.getElementById('refresh-dropdown-menu');
@@ -3145,16 +3155,27 @@ function updateRdropStatus() {
   if (krEl) krEl.innerHTML = krOpen ? '<span style="color:#66bb6a">● 장중</span>' : '<span style="color:#ef9a9a">● 장마감</span>';
   if (usEl) usEl.innerHTML = usValid ? '<span style="color:#66bb6a">● 장중</span>' : '<span style="color:#ef9a9a">● 장마감</span>';
 }
+
 async function rdropAction(type) {
   closeRefreshMenu();
   if (type === 'full') {
-    S.krOk=false; S.krD=null; S.usOk=false; S.usD=null; S.usWatchAt=0; S.krListAt=0;
-    await refreshAllData();
+    _rdropBtnSet('🔄 <span>로딩중...</span>', true);
+    try {
+      S.krOk=false; S.krD=null; S.usOk=false; S.usD=null; S.usWatchAt=0; S.krListAt=0;
+      await refreshAllData();
+      _rdropBtnSet('✅ <span>완료</span>', true);
+    } catch(e) { _rdropBtnSet('❌ <span>오류</span>', true); }
+    setTimeout(_rdropBtnReset, 1500);
   } else if (type === 'today') {
-    const pg = document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
-    if (pg === 'kr-history' || pg === 'kr-list') { await refreshKrToday(null); }
-    else if (pg === 'us-history' || pg === 'us-list') { await refreshUsToday(null); }
-    else { await refreshAllData(); }
+    _rdropBtnSet('🔄 <span>갱신중...</span>', true);
+    try {
+      const pg = document.querySelector('[id^="page-"][style*="block"]')?.id?.replace('page-','');
+      if (pg === 'kr-history' || pg === 'kr-list') { await refreshKrToday(null); }
+      else if (pg === 'us-history' || pg === 'us-list') { await refreshUsToday(null); }
+      else { await refreshAllData(); }
+      _rdropBtnSet('✅ <span>완료</span>', true);
+    } catch(e) { _rdropBtnSet('❌ <span>오류</span>', true); }
+    setTimeout(_rdropBtnReset, 1500);
   } else if (type === 'kr') {
     await triggerActionsNow(false);
   } else if (type === 'us') {
@@ -3163,36 +3184,33 @@ async function rdropAction(type) {
 }
 
 async function triggerActionsNow(forceUs=false){
-  const btn = document.getElementById('trigger-actions-btn');
-  const origText = btn ? btn.innerHTML : '';
-  if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
+  const label = forceUs ? '🇺🇸' : '🇰🇷';
+  _rdropBtnSet(label + ' <span>수집 요청중...</span>', true);
   try{
     const d = await api('trigger_actions', 0, true, {force_us: forceUs});
     if(d && d.cooldown){
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
       const ss=String(d.remain%60).padStart(2,'0');
-      alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 화면이 자동 갱신됩니다.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+      _rdropBtnSet('⏳ <span>'+mm+':'+ss+' 후 가능</span>', true);
+      setTimeout(_rdropBtnReset, 3000);
     } else if(d && d.ok){
-      // ★ 성공: 30초 카운트다운 후 자동 새로고침
       let remain = 30;
-      alert('✅ 수집 요청 완료!'+(forceUs?' (US 강제 수집 포함)':'')+'\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
-      const cd = setInterval(()=>{
+      const cd = setInterval(function(){
         remain--;
-        if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
-        if(remain <= 0){
-          clearInterval(cd);
-          if(btn){ btn.innerHTML=origText; btn.disabled=false; btn.style.opacity='1'; }
-          refreshAllData();
-        }
+        _rdropBtnSet(label + ' <span>'+remain+'초 후 갱신</span>', true);
+        if(remain <= 0){ clearInterval(cd); refreshAllData(); setTimeout(_rdropBtnReset, 1500); }
       }, 1000);
     } else {
-      alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 새로고침해보세요.');
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+      let remain = 30;
+      const cd = setInterval(function(){
+        remain--;
+        _rdropBtnSet('⏳ <span>'+remain+'초 후 갱신</span>', true);
+        if(remain <= 0){ clearInterval(cd); refreshAllData(); setTimeout(_rdropBtnReset, 1500); }
+      }, 1000);
     }
   }catch(e){
-    alert('❌ 실패: ' + e.message + '\n\nGAS에 GITHUB_TOKEN이 설정됐는지 확인하세요.');
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+    _rdropBtnSet('❌ <span>실패</span>', true);
+    setTimeout(_rdropBtnReset, 2000);
   }
 }
 
@@ -9781,36 +9799,33 @@ renderKr();
 }
 
 async function triggerActionsNow(forceUs=false){
-  const btn = document.getElementById('trigger-actions-btn');
-  const origText = btn ? btn.innerHTML : '';
-  if(btn){ btn.disabled=true; btn.style.opacity='0.7'; }
+  const label = forceUs ? '🇺🇸' : '🇰🇷';
+  _rdropBtnSet(label + ' <span>수집 요청중...</span>', true);
   try{
     const d = await api('trigger_actions', 0, true, {force_us: forceUs});
     if(d && d.cooldown){
       const mm=String(Math.floor(d.remain/60)).padStart(2,'0');
       const ss=String(d.remain%60).padStart(2,'0');
-      alert('✅ 잠시 후 최신 데이터가 반영될 예정입니다.\n\n다른 사용자가 방금 수집을 요청했습니다.\n약 30~60초 후 화면이 자동 갱신됩니다.\n\n그래도 값이 안 바뀌면 '+mm+':'+ss+' 후에 다시 눌러주세요.');
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+      _rdropBtnSet('⏳ <span>'+mm+':'+ss+' 후 가능</span>', true);
+      setTimeout(_rdropBtnReset, 3000);
     } else if(d && d.ok){
-      // ★ 성공: 30초 카운트다운 후 자동 새로고침
       let remain = 30;
-      alert('✅ 수집 요청 완료!'+(forceUs?' (US 강제 수집 포함)':'')+'\n\n30초 후 화면이 자동으로 새로고침됩니다.\n버튼 안의 숫자가 0이 되면 자동 갱신됩니다.');
-      const cd = setInterval(()=>{
+      const cd = setInterval(function(){
         remain--;
-        if(btn) btn.innerHTML = '<span>'+remain+'초 후 갱신</span>';
-        if(remain <= 0){
-          clearInterval(cd);
-          if(btn){ btn.innerHTML=origText; btn.disabled=false; btn.style.opacity='1'; }
-          refreshAllData();
-        }
+        _rdropBtnSet(label + ' <span>'+remain+'초 후 갱신</span>', true);
+        if(remain <= 0){ clearInterval(cd); refreshAllData(); setTimeout(_rdropBtnReset, 1500); }
       }, 1000);
     } else {
-      alert('⚠️ 요청했지만 응답을 확인할 수 없습니다.\n30초 후 새로고침해보세요.');
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+      let remain = 30;
+      const cd = setInterval(function(){
+        remain--;
+        _rdropBtnSet('⏳ <span>'+remain+'초 후 갱신</span>', true);
+        if(remain <= 0){ clearInterval(cd); refreshAllData(); setTimeout(_rdropBtnReset, 1500); }
+      }, 1000);
     }
   }catch(e){
-    alert('❌ 실패: ' + e.message + '\n\nGAS에 GITHUB_TOKEN이 설정됐는지 확인하세요.');
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.innerHTML=origText; }
+    _rdropBtnSet('❌ <span>실패</span>', true);
+    setTimeout(_rdropBtnReset, 2000);
   }
 }
 
