@@ -472,6 +472,19 @@ async def main():
     # ── 7. US 섹터 수집 및 KV/GAS 갱신 (US 장중일 때만) ───────────
     # 진실 공급원: GAS GOOGLEFINANCE (D열 수식 → 섹터평균)
     # Yahoo Finance 등 외부 API는 GitHub Actions IP 차단됨
+
+    # ── US 휴장일 체크 (KR과 동일 패턴) ──────────────────────────
+    if us_open:
+        try:
+            resp = requests.get(GAS_URL, params={'type': 'is_us_trading_day', '_t': int(time.time())}, timeout=15)
+            td = resp.json().get('data', {})
+            if not td.get('is_open', True):
+                reason = td.get('reason', '휴장')
+                print(f'  [US] 휴장 감지: {reason} → US 수집 스킵')
+                us_open = False
+        except Exception as e:
+            print(f'  [US] 휴장 체크 실패 (스킵, 장중으로 간주): {e}')
+
     if us_open:
         print('[7] US 섹터 수집 중...')
         try:
