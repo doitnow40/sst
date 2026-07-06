@@ -2894,7 +2894,7 @@ await loadKrList(true);
 S.krOk=false;
 S.krD=null;
 await loadKr();
-  setTimeout(loadSisterLinks, 300);
+  loadSisterLinks();
 }else if(currentPage==='us-history'){
 S.usOk=false;
 S.usD=null;
@@ -8026,17 +8026,17 @@ function renderSidebarSisterLinks() {
   const wrap = document.getElementById('sidebar-sister-links');
   const label = document.getElementById('sidebar-sister-label');
   if (!wrap) return;
-  if (!_sisterLinks.length) {
+  if (!_sisterLinks || !_sisterLinks.length) {
     wrap.innerHTML = '';
     if (label) label.style.display = 'none';
     return;
   }
   if (label) label.style.display = '';
-  wrap.innerHTML = _sisterLinks.map(l =>
-    `<div class="nav-item" onclick="window.open('${l.url}','_blank')" title="${l.url}">` +
-    `<span class="nav-icon">🔗</span><span>${l.name}</span>` +
-    `<span style="font-size:9px;color:var(--text-muted);margin-left:auto">↗</span></div>`
-  ).join('');
+  wrap.innerHTML = _sisterLinks.map(function(l) {
+    return '<div class="nav-item" onclick="window.open('' + l.url + '','_blank')" title="' + l.url + '">' +
+      '<span class="nav-icon">🔗</span><span>' + l.name + '</span>' +
+      '<span style="font-size:9px;color:var(--text-muted);margin-left:auto">↗</span></div>';
+  }).join('');
 }
 
 async function loadSisterLinksAdmin() {
