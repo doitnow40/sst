@@ -1107,23 +1107,17 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
 
 </div><!-- /.stats-embed-wrap -->
 </div><!-- /#admin-tab-techref -->
-
-<!-- 자매링크 탭 -->
 <div id="admin-tab-sister" style="display:none">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
     <div style="font-size:13px;font-weight:700;color:var(--text-primary)">🔗 자매링크 관리</div>
     <div style="font-size:10px;color:var(--text-muted)">Config 시트 SISTER_LINKS 행과 동기화됩니다</div>
   </div>
-
-  <!-- 등록된 링크 목록 -->
   <div id="admin-sister-list" style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
     <div style="padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)">등록된 자매링크</div>
     <div id="admin-sister-items" style="padding:6px 0;min-height:40px">
       <div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">로딩 중...</div>
     </div>
   </div>
-
-  <!-- 새 링크 추가 -->
   <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden">
     <div style="padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-primary)">새 링크 추가</div>
     <div style="padding:14px">
@@ -2894,7 +2888,6 @@ await loadKrList(true);
 S.krOk=false;
 S.krD=null;
 await loadKr();
-  loadSisterLinks();
 }else if(currentPage==='us-history'){
 S.usOk=false;
 S.usD=null;
@@ -8009,17 +8002,10 @@ var _sisterLinks = [];
 
 async function loadSisterLinks() {
   try {
-    const d = await api('get_sister_links', 0);
-    // d가 배열이면 그대로, 아니면 d.data 또는 빈배열
-    if (Array.isArray(d)) {
-      _sisterLinks = d;
-    } else if (d && Array.isArray(d.data)) {
-      _sisterLinks = d.data;
-    } else {
-      _sisterLinks = [];
-    }
+    var d = await api('get_sister_links', 0);
+    _sisterLinks = Array.isArray(d) ? d : (d && Array.isArray(d.data) ? d.data : []);
     renderSidebarSisterLinks();
-  } catch(e) { console.warn("[sisterLinks] 로드 실패:", e); _sisterLinks = []; }
+  } catch(e) { _sisterLinks = []; }
 }
 
 function renderSidebarSisterLinks() {
@@ -8035,113 +8021,115 @@ function renderSidebarSisterLinks() {
   var html = '';
   for (var i = 0; i < _sisterLinks.length; i++) {
     var l = _sisterLinks[i];
-    html += '<div class="nav-item" onclick="window.open(this.dataset.url,'_blank')" data-url="' + l.url.replace(/"/g,'&quot;') + '" title="' + l.url.replace(/"/g,'&quot;') + '">';
-    html += '<span class="nav-icon">&#128279;</span><span>' + l.name + '</span>';
-    html += '<span style="font-size:9px;color:var(--text-muted);margin-left:auto">&#8599;</span></div>';
+    var safeUrl = (l.url || '').replace(/"/g, '&quot;');
+    var safeName = (l.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    html += '<div class="nav-item" data-href="' + safeUrl + '" onclick="window.open(this.getAttribute(\'data-href\'),\'_blank\')">';
+    html += '<span class="nav-icon">&#128279;</span>';
+    html += '<span>' + safeName + '</span>';
+    html += '<span style="font-size:9px;color:var(--text-muted);margin-left:auto">&#8599;</span>';
+    html += '</div>';
   }
   wrap.innerHTML = html;
 }
 
 async function loadSisterLinksAdmin() {
-  const container = document.getElementById('admin-sister-items');
+  var container = document.getElementById('admin-sister-items');
   if (!container) return;
-  container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">로딩 중...</div>';
+  container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">&#47196;&#46972; &#51473;...</div>';
   try {
-    const d = await api('get_sister_links', 0);
-    if (Array.isArray(d)) {
-      _sisterLinks = d;
-    } else if (d && Array.isArray(d.data)) {
-      _sisterLinks = d.data;
-    } else {
-      _sisterLinks = [];
-    }
+    var d = await api('get_sister_links', 0);
+    _sisterLinks = Array.isArray(d) ? d : (d && Array.isArray(d.data) ? d.data : []);
     renderSisterLinksAdmin();
   } catch(e) {
-    container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:#ef9a9a">로드 실패</div>';
+    container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:#ef9a9a">&#47196;&#46300; &#49892;&#54021;</div>';
   }
 }
 
 function renderSisterLinksAdmin() {
-  const container = document.getElementById('admin-sister-items');
+  var container = document.getElementById('admin-sister-items');
   if (!container) return;
   if (!_sisterLinks.length) {
-    container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">등록된 링크가 없습니다</div>';
+    container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">&#46321;&#47197;&#46108; &#47553;&#53356;&#44032; &#50630;&#49845;&#45768;&#45796;</div>';
     return;
   }
   var html = '';
   for (var i = 0; i < _sisterLinks.length; i++) {
     var l = _sisterLinks[i];
-    var safeName = l.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    var safeUrl  = l.url.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var n = (l.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    var u = (l.url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(46,58,80,.3)">';
     html += '<div style="display:flex;flex-direction:column;gap:2px;margin-right:2px">';
-    html += '<button onclick="moveSisterLink(' + i + ',-1)" style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-muted);cursor:pointer;font-size:9px;padding:1px 5px;line-height:1.2"' + (i===0?' disabled':'') + '>▲</button>';
-    html += '<button onclick="moveSisterLink(' + i + ',1)"  style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-muted);cursor:pointer;font-size:9px;padding:1px 5px;line-height:1.2"' + (i===_sisterLinks.length-1?' disabled':'') + '>▼</button>';
+    html += '<button onclick="moveSisterLink(' + i + ',-1)" style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-muted);cursor:pointer;font-size:9px;padding:1px 5px" ' + (i===0?'disabled':'') + '>&#9650;</button>';
+    html += '<button onclick="moveSisterLink(' + i + ',1)" style="background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-muted);cursor:pointer;font-size:9px;padding:1px 5px" ' + (i===_sisterLinks.length-1?'disabled':'') + '>&#9660;</button>';
+    html += '</div><div style="flex:1;min-width:0">';
+    html += '<div style="font-size:12px;color:var(--text-primary);font-weight:600">' + (l.name||'') + '</div>';
+    html += '<div style="font-size:10px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (l.url||'') + '</div>';
     html += '</div>';
-    html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-size:12px;color:var(--text-primary);font-weight:600">' + l.name + '</div>';
-    html += '<div style="font-size:10px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + l.url + '</div>';
-    html += '</div>';
-    html += '<button onclick="deleteSisterLink(\'' + safeName + '\',\'' + safeUrl + '\',this)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer;flex-shrink:0">삭제</button>';
+    html += '<button onclick="deleteSisterLink(\'' + n + '\',\'' + u + '\',this)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid rgba(239,83,80,.3);background:transparent;color:#ef9a9a;cursor:pointer">&#49325;&#51228;</button>';
     html += '</div>';
   }
   container.innerHTML = html;
 }
 
-
 async function moveSisterLink(idx, dir) {
-  const arr = [..._sisterLinks];
-  const swap = idx + dir;
+  var arr = _sisterLinks.slice();
+  var swap = idx + dir;
   if (swap < 0 || swap >= arr.length) return;
-  [arr[idx], arr[swap]] = [arr[swap], arr[idx]];
-  const newOrder = arr.map((l, i) => ({ name: l.name, url: l.url, order: i + 1 }));
+  var tmp = arr[idx]; arr[idx] = arr[swap]; arr[swap] = tmp;
+  var newOrder = arr.map(function(l, i) { return { name: l.name, url: l.url, order: i+1 }; });
   try {
     await api('reorder_sister_links', 0, true, { order: JSON.stringify(newOrder) });
     _sisterLinks = arr;
     renderSisterLinksAdmin();
     renderSidebarSisterLinks();
-    _showSisterMsg('순서가 변경됐습니다.', 'ok');
-  } catch(e) { _showSisterMsg('순서 변경 실패', 'err'); }
+    _showSisterMsg('&#49692;&#49436;&#44032; &#48320;&#44221;&#46104;&#50632;&#49845;&#45768;&#45796;.', 'ok');
+  } catch(e) { _showSisterMsg('&#49692;&#49436; &#48320;&#44221; &#49892;&#54021;', 'err'); }
 }
 
 async function addSisterLink() {
-  const name = document.getElementById('sister-name-input').value.trim();
-  const url  = document.getElementById('sister-url-input').value.trim();
-  if (!name || !url) { _showSisterMsg('이름과 주소를 모두 입력하세요', 'err'); return; }
-  if (!/^https?:\/\//i.test(url)) { _showSisterMsg('주소는 http:// 또는 https://로 시작해야 합니다', 'err'); return; }
-  const btn = document.getElementById('sister-add-btn');
-  btn.disabled = true; btn.textContent = '저장 중...';
+  var name = document.getElementById('sister-name-input').value.trim();
+  var url  = document.getElementById('sister-url-input').value.trim();
+  if (!name || !url) { _showSisterMsg('&#51060;&#47492;&#44284; &#51452;&#49548;&#47484; &#47784;&#46160; &#51077;&#47141;&#54616;&#49464;&#50836;', 'err'); return; }
+  if (!/^https?:\/\//i.test(url)) { _showSisterMsg('&#51452;&#49548;&#45716; https://&#47196; &#49884;&#51089;&#54644;&#50556; &#54633;&#45768;&#45796;', 'err'); return; }
+  var btn = document.getElementById('sister-add-btn');
+  btn.disabled = true; btn.textContent = '&#51200;&#51109; &#51473;...';
   try {
-    await api('save_sister_link', 0, true, { name, url });
+    await api('save_sister_link', 0, true, { name: name, url: url });
     document.getElementById('sister-name-input').value = '';
     document.getElementById('sister-url-input').value = '';
-    _showSisterMsg('추가됐습니다.', 'ok');
+    _showSisterMsg('&#52628;&#44032;&#46104;&#50632;&#49845;&#45768;&#45796;.', 'ok');
     await loadSisterLinksAdmin();
     renderSidebarSisterLinks();
-  } catch(e) { _showSisterMsg('저장 실패: ' + e.message, 'err'); }
-  btn.disabled = false; btn.textContent = '추가';
+  } catch(e) { _showSisterMsg('&#51200;&#51109; &#49892;&#54021;: ' + e.message, 'err'); }
+  btn.disabled = false; btn.textContent = '&#52628;&#44032;';
 }
 
 async function deleteSisterLink(name, url, btn) {
-  if (!confirm(name + ' 링크를 삭제하시겠습니까?')) return;
+  if (!confirm(name + ' &#47553;&#53356;&#47484; &#49325;&#51228;&#54616;&#49884;&#44192;&#49845;&#45768;&#44620;?')) return;
   btn.disabled = true;
   try {
-    await api('delete_sister_link', 0, true, { name, url });
-    _showSisterMsg('삭제됐습니다.', 'ok');
+    await api('delete_sister_link', 0, true, { name: name, url: url });
+    _showSisterMsg('&#49325;&#51228;&#46104;&#50632;&#49845;&#45768;&#45796;.', 'ok');
     await loadSisterLinksAdmin();
     renderSidebarSisterLinks();
-  } catch(e) { _showSisterMsg('삭제 실패: ' + e.message, 'err'); btn.disabled = false; }
+  } catch(e) { _showSisterMsg('&#49325;&#51228; &#49892;&#54021;: ' + e.message, 'err'); btn.disabled = false; }
 }
 
 function _showSisterMsg(msg, type) {
-  const el = document.getElementById('sister-msg');
+  var el = document.getElementById('sister-msg');
   if (!el) return;
   el.textContent = msg;
   el.className = 'admin-msg ' + type;
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 3000);
+  setTimeout(function() { el.style.display = 'none'; }, 3000);
 }
 
+// 자매링크 자동 초기화 (DOM 준비 후)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadSisterLinks);
+} else {
+  setTimeout(loadSisterLinks, 0);
+}
 
 // ===== HELP MODAL =====
 function _helpContentUser(){
@@ -8149,64 +8137,45 @@ function _helpContentUser(){
 <div class="help-section">
   <div class="help-section-title">📖 이 사이트는?</div>
   <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
-    한국·미국 주식 <strong>섹터별 일일 등락률 흐름</strong>을 한눈에 파악하는 트래커입니다.<br>
-    <strong>오늘 실시간</strong>(약 20분 지연) + <strong>최대 1년치 히스토리</strong> 제공.<br>
-    평일 장중 <strong>5분마다 자동 갱신</strong>되며 장 마감 후 종가로 확정 기록됩니다.
+    한국·미국 주식 섹터 등락률을 한눈에 확인하는 트래커입니다.<br>
+    각 섹터별 종목 정의는 관리자가 직접합니다. (사용자는 수정 불가)<br>
+    <strong>오늘 실시간</strong>(약 20분 지연)과 <strong>최대 1년치 히스토리</strong>를 제공합니다.<br>
+    실시간 데이터는 평일 장중에 5분마다 자동으로 갱신됩니다.
   </div>
 </div>
 
 <div class="help-section">
-  <div class="help-section-title">🔄 우상단 새로고침 메뉴</div>
-  <div class="help-row"><div class="help-key">📋 전체 다시 불러오기</div><div class="help-val">DB(GAS 시트)에서 히스토리 전체를 다시 로드합니다. <strong>값이 이상할 때</strong> 사용하세요.</div></div>
-  <div class="help-row"><div class="help-key">🔄 오늘 행만 갱신</div><div class="help-val">오늘 실시간 값만 빠르게 화면에 반영합니다. 전체 로드보다 빠릅니다.</div></div>
-  <div class="help-row"><div class="help-key">🇰🇷 KR 강력 재수집</div><div class="help-val">서버에서 KR 최신 데이터를 즉시 수집합니다. <strong>KR 장중(09:00~15:30 KST)</strong>에만 유효. 약 30~60초 소요.</div></div>
-  <div class="help-row"><div class="help-key">🇺🇸 US 강력 재수집</div><div class="help-val">서버에서 US 최신 데이터를 즉시 수집합니다. <strong>US 장중 및 장마감 후(~KST 07:00)</strong>까지 유효. 약 30~60초 소요.</div></div>
+  <div class="help-section-title">🖱️ 헤더 버튼 안내</div>
+  <div class="help-row"><div class="help-key">🔄 새로고침</div><div class="help-val">서버에 이미 저장된 최신 데이터를 화면에 즉시 반영합니다.<br><strong>화면이 오래됐거나 값이 바뀌지 않는 것 같을 때</strong> 사용하세요. 서버 데이터 자체를 바꾸지는 않습니다.</div></div>
+  <div class="help-row"><div class="help-key">📡 지금 수집</div><div class="help-val">서버에서 최신 데이터를 직접 수집합니다. 완료까지 <strong>약 30~60초</strong> 소요됩니다. <strong>장중에만 의미</strong>가 있으며, 완료 후 [새로고침]을 눌러 확인하세요.</div></div>
+  <div class="help-row"><div class="help-key">🔄 오늘 데이터 갱신</div><div class="help-val">표 맨 위 <strong>오늘 행만</strong> 빠르게 화면에 반영합니다. 전체 새로고침보다 빠릅니다.</div></div>
 </div>
 
 <div class="help-section">
-  <div class="help-section-title">🔘 화면 내 주요 버튼</div>
-  <div class="help-row"><div class="help-key">1개월 / 6개월…</div><div class="help-val">히스토리 표 <strong>표시 기간 조정</strong>. 상단 차트에는 영향 없음.</div></div>
+  <div class="help-section-title">🔘 화면 내 버튼/필터 안내</div>
+  <div class="help-row"><div class="help-key">1개월 / 3개월…</div><div class="help-val">히스토리 테이블에 표시할 <strong>기간을 조정</strong>합니다.</div></div>
   <div class="help-row"><div class="help-key">글자크기 ± </div><div class="help-val">테이블 폰트 크기를 조절합니다.</div></div>
   <div class="help-row"><div class="help-key">접기 / 펼치기</div><div class="help-val">섹터 <strong>그룹 단위</strong>로 테이블 열을 접거나 펼칩니다.</div></div>
-  <div class="help-row"><div class="help-key">누적보기 / 단순보기</div><div class="help-val">스파크라인을 <strong>누적 수익률</strong> 또는 <strong>일별 등락률</strong>로 전환합니다.</div></div>
-  <div class="help-row"><div class="help-key">⭐ 주목섹터</div><div class="help-val">즐겨찾기한 섹터만 강조 표시. 섹터 카드의 ☆를 눌러 등록합니다.</div></div>
-  <div class="help-row"><div class="help-key">📌 고정 (PC)</div><div class="help-val">왼쪽 사이드바를 <strong>항상 표시</strong>하도록 고정합니다.</div></div>
+  <div class="help-row"><div class="help-key">📡 오늘 / 1주…</div><div class="help-val">하단 통계 차트의 <strong>분석 기간</strong>을 변경합니다.</div></div>
+  <div class="help-row"><div class="help-key">📉 차트 전체 ON/OFF</div><div class="help-val">섹터 추이 차트를 <strong>한 번에 모두 표시하거나 숨깁니다.</strong></div></div>
+  <div class="help-row"><div class="help-key">⭐ 주목섹터</div><div class="help-val">즐겨찾기한 섹터만 <strong>모아서 강조 표시</strong>합니다. 섹터 카드의 ☆를 눌러 등록합니다.</div></div>
+  <div class="help-row"><div class="help-key">📌 고정 (PC)</div><div class="help-val">왼쪽 <strong>사이드바를 항상 표시</strong>하도록 고정합니다.</div></div>
 </div>
 
 <div class="help-section">
-  <div class="help-section-title">📊 데이터 갱신 주기 요약</div>
-  <div class="help-row"><div class="help-key">KR 실시간</div><div class="help-val">KR 장중 <strong>5분마다 자동 갱신</strong>. 약 20분 지연 (네이버 기준).</div></div>
-  <div class="help-row"><div class="help-key">US 실시간</div><div class="help-val">US 정규장 시간에 <strong>5분마다 자동 갱신</strong>. KST 07:00에 종가 확정 기록.</div></div>
-  <div class="help-row"><div class="help-key">과거 히스토리</div><div class="help-val">장 마감 후 확정값으로 기록. 이후 변경되지 않습니다.</div></div>
-  <div class="help-row"><div class="help-key">BTC / ETH</div><div class="help-val">매일 오전 <strong>KST 07:00</strong> 자동 수집됩니다.</div></div>
+  <div class="help-section-title">📊 데이터 갱신 주기</div>
+  <div class="help-row"><div class="help-key">오늘 실시간 행</div><div class="help-val">평일 장중 <strong>5분마다 자동 갱신</strong>. 약 20분 지연 데이터입니다.</div></div>
+  <div class="help-row"><div class="help-key">히스토리 과거 행</div><div class="help-val">장 마감 후 <strong>1회 확정 기록</strong>됩니다. 이후 변경되지 않습니다.</div></div>
+  <div class="help-row"><div class="help-key">BTC / ETH</div><div class="help-val">매일 오전 <strong>6:05 KST</strong> 자동 수집됩니다.</div></div>
 </div>
 
 <div class="help-section">
-  <div class="help-section-title">📈 KR 한국 섹터 특이사항</div>
-  <div class="help-row"><div class="help-key">ADR (등락비율)</div><div class="help-val">상승 종목 수 ÷ 하락 종목 수. <strong>100% 초과 = 상승 종목 더 많음</strong>. 시장 내부 건강도 지표.</div></div>
-  <div class="help-row"><div class="help-key">F&G (공포탐욕)</div><div class="help-val">0~100 지수. <strong>25 이하 = 공포, 55 이상 = 탐욕</strong>. 클릭 시 상세 팝업.</div></div>
-  <div class="help-row"><div class="help-key">색상 기준</div><div class="help-val">🔴 상승 강할수록 붉음 · 🔵 하락 강할수록 파람 · ⬜ 보합. <strong>±15%</strong> 기준 포화.</div></div>
-</div>
-
-<div class="help-section">
-  <div class="help-section-title">🇺🇸 US 미국 섹터 특이사항</div>
-  <div class="help-row"><div class="help-key">VIX (공포지수)</div><div class="help-val">절대값 표시. <strong>20 이하 안정 / 20~30 경계 / 30+ 고변동</strong>. 클릭 시 상세 팝업.</div></div>
-  <div class="help-row"><div class="help-key">하이일드 스프레드</div><div class="help-val">절대값(%). 클릭 시 스프레드 추이 팝업. 높을수록 신용 위험↑.</div></div>
-  <div class="help-row"><div class="help-key">장기채권 / 단기채권</div><div class="help-val">10년물·2년물 국채 <strong>수익률 절대값</strong> (예: 4.420%). ETF 등락률 아님.</div></div>
-  <div class="help-row"><div class="help-key">종목명 클릭</div><div class="help-val"><strong>TradingView</strong> 한국어 페이지로 이동합니다.</div></div>
-  <div class="help-row"><div class="help-key">색상 기준</div><div class="help-val">ETF 등락률 기준 <strong>±6%</strong> 포화. VIX는 별도 색상 기준 적용.</div></div>
-</div>
-
-<div class="help-section">
-  <div class="help-section-title">💡 팝업 & 차트 이용 안내</div>
-  <div class="help-row"><div class="help-key">섹터명 클릭</div><div class="help-val">히스토리 표에서 섹터명 셀 클릭 → <strong>구성 종목 + 오늘 등락률 팝업</strong>.</div></div>
-  <div class="help-row"><div class="help-key">추이 차트</div><div class="help-val">선택 기간 섹터별 등락률 변화. 범례 클릭으로 섹터 ON/OFF 가능.</div></div>
-  <div class="help-row"><div class="help-key">랭킹 차트</div><div class="help-val">선택 기간 평균 등락률 순위. 강세·약세 섹터를 빠르게 파악.</div></div>
-  <div class="help-row"><div class="help-key">히트맵 차트</div><div class="help-val">날짜×섹터 색상 격자. 자금 흐름 패턴 시각화. <strong>⇄ 날짜반전</strong> 버튼 지원.</div></div>
-</div>
-
-<div class="help-note">💌 건의·오류 신고: estartooza [at] gmail.com &nbsp;·&nbsp; 모든 데이터는 <strong>참고용</strong>이며 투자 권유가 아닙니다.</div>
-`;
+  <div class="help-section-title">💡 종목 팝업 보는 법</div>
+  <div style="font-size:11px;color:var(--text-secondary);line-height:1.9">
+    히스토리 테이블에서 <strong>섹터명(첫 번째 열 셀)을 클릭</strong>하면 해당 섹터의 구성 종목과 오늘 등락률 팝업이 표시됩니다.<br>
+    종목 LIST 페이지에서는 섹터 카드별로 종목을 상시 확인할 수 있습니다.
+  </div>
+</div>`;
 }
 
 function _helpContentAdmin(){
