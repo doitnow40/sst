@@ -2894,7 +2894,7 @@ await loadKrList(true);
 S.krOk=false;
 S.krD=null;
 await loadKr();
-  loadSisterLinks();
+  setTimeout(loadSisterLinks, 300);
 }else if(currentPage==='us-history'){
 S.usOk=false;
 S.usD=null;
@@ -8010,9 +8010,16 @@ var _sisterLinks = [];
 async function loadSisterLinks() {
   try {
     const d = await api('get_sister_links', 0);
-    _sisterLinks = Array.isArray(d) ? d : [];
+    // d가 배열이면 그대로, 아니면 d.data 또는 빈배열
+    if (Array.isArray(d)) {
+      _sisterLinks = d;
+    } else if (d && Array.isArray(d.data)) {
+      _sisterLinks = d.data;
+    } else {
+      _sisterLinks = [];
+    }
     renderSidebarSisterLinks();
-  } catch(e) { _sisterLinks = []; }
+  } catch(e) { console.warn("[sisterLinks] 로드 실패:", e); _sisterLinks = []; }
 }
 
 function renderSidebarSisterLinks() {
@@ -8038,7 +8045,13 @@ async function loadSisterLinksAdmin() {
   container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:var(--text-muted);text-align:center">로딩 중...</div>';
   try {
     const d = await api('get_sister_links', 0);
-    _sisterLinks = Array.isArray(d) ? d : [];
+    if (Array.isArray(d)) {
+      _sisterLinks = d;
+    } else if (d && Array.isArray(d.data)) {
+      _sisterLinks = d.data;
+    } else {
+      _sisterLinks = [];
+    }
     renderSisterLinksAdmin();
   } catch(e) {
     container.innerHTML = '<div style="padding:12px 14px;font-size:11px;color:#ef9a9a">로드 실패</div>';
