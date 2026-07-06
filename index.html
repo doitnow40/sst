@@ -8023,8 +8023,8 @@ async function loadSisterLinks() {
 }
 
 function renderSidebarSisterLinks() {
-  const wrap = document.getElementById('sidebar-sister-links');
-  const label = document.getElementById('sidebar-sister-label');
+  var wrap = document.getElementById('sidebar-sister-links');
+  var label = document.getElementById('sidebar-sister-label');
   if (!wrap) return;
   if (!_sisterLinks || !_sisterLinks.length) {
     wrap.innerHTML = '';
@@ -8032,11 +8032,14 @@ function renderSidebarSisterLinks() {
     return;
   }
   if (label) label.style.display = '';
-  wrap.innerHTML = _sisterLinks.map(function(l) {
-    return '<div class="nav-item" onclick="window.open('' + l.url + '','_blank')" title="' + l.url + '">' +
-      '<span class="nav-icon">🔗</span><span>' + l.name + '</span>' +
-      '<span style="font-size:9px;color:var(--text-muted);margin-left:auto">↗</span></div>';
-  }).join('');
+  var html = '';
+  for (var i = 0; i < _sisterLinks.length; i++) {
+    var l = _sisterLinks[i];
+    html += '<div class="nav-item" onclick="window.open(this.dataset.url,'_blank')" data-url="' + l.url.replace(/"/g,'&quot;') + '" title="' + l.url.replace(/"/g,'&quot;') + '">';
+    html += '<span class="nav-icon">&#128279;</span><span>' + l.name + '</span>';
+    html += '<span style="font-size:9px;color:var(--text-muted);margin-left:auto">&#8599;</span></div>';
+  }
+  wrap.innerHTML = html;
 }
 
 async function loadSisterLinksAdmin() {
