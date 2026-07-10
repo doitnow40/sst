@@ -8188,7 +8188,7 @@ if (document.readyState === 'loading') {
 var _helpOverride = { user: null, admin_extra: null };
 async function loadHelpContentOverride(){
   try{
-    const url=`${GAS_WEBAPP_URL}?type=public&action=get_help_content&_t=${Date.now()}`;
+    const url=`${GAS_WEBAPP_URL}?type=get_help_content&_t=${Date.now()}`;
     const r=await fetch(url,{cache:'no-store'});
     if(!r.ok) return;
     const j=await r.json();
