@@ -1147,7 +1147,8 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
       <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
         <button class="admin-add-btn" id="help-user-save-btn" onclick="saveHelpContent('user')" style="background:var(--accent-kr);color:#000">💾 저장</button>
         <button class="admin-add-btn" onclick="previewHelpEdit('user')" style="background:var(--bg-card2);color:var(--text-primary);border:1px solid var(--border)">👁 미리보기</button>
-        <button class="admin-add-btn" onclick="resetHelpEdit('user')" style="background:transparent;color:#ef9a9a;border:1px solid rgba(239,83,80,.3)">↺ 기본값으로</button>
+        <button class="admin-add-btn" onclick="loadHelpEditDefault('user')" style="background:transparent;color:#a5d6a7;border:1px solid rgba(102,187,106,.3)">📥 기본값 불러오기</button>
+        <button class="admin-add-btn" onclick="resetHelpEdit('user')" style="background:transparent;color:#ef9a9a;border:1px solid rgba(239,83,80,.3);font-size:10px">비우기</button>
       </div>
       <div id="help-user-msg" class="admin-msg"></div>
     </div>
@@ -1161,7 +1162,8 @@ placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" s
       <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
         <button class="admin-add-btn" id="help-admin-save-btn" onclick="saveHelpContent('admin_extra')" style="background:#ff9800;color:#000">💾 저장</button>
         <button class="admin-add-btn" onclick="previewHelpEdit('admin_extra')" style="background:var(--bg-card2);color:var(--text-primary);border:1px solid var(--border)">👁 미리보기</button>
-        <button class="admin-add-btn" onclick="resetHelpEdit('admin_extra')" style="background:transparent;color:#ef9a9a;border:1px solid rgba(239,83,80,.3)">↺ 기본값으로</button>
+        <button class="admin-add-btn" onclick="loadHelpEditDefault('admin_extra')" style="background:transparent;color:#a5d6a7;border:1px solid rgba(102,187,106,.3)">📥 기본값 불러오기</button>
+        <button class="admin-add-btn" onclick="resetHelpEdit('admin_extra')" style="background:transparent;color:#ef9a9a;border:1px solid rgba(239,83,80,.3);font-size:10px">비우기</button>
       </div>
       <div id="help-admin-msg" class="admin-msg"></div>
     </div>
@@ -8315,6 +8317,14 @@ function loadHelpContentAdmin(){
   const pv = document.getElementById('help-preview-wrap');
   if(pv) pv.style.display = 'none';
 }
+function loadHelpEditDefault(target){
+  const textId = target==='user' ? 'help-edit-user' : 'help-edit-admin-extra';
+  const textEl = document.getElementById(textId);
+  if(!textEl) return;
+  const alreadyHasText = textEl.value.trim().length > 0;
+  if(alreadyHasText && !confirm('편집 중인 내용이 있습니다. 지금 기본 문구를 불러오면 편집 중이던 내용은 사라집니다 (저장 전이면 되돌릴 수 있음). 계속할까요?')) return;
+  textEl.value = target==='user' ? _helpContentUserDefault() : _helpContentAdminExtraDefault();
+}
 async function saveHelpContent(target){
   const textId = target==='user' ? 'help-edit-user' : 'help-edit-admin-extra';
   const msgId  = target==='user' ? 'help-user-msg'   : 'help-admin-msg';
@@ -8368,7 +8378,7 @@ function resetHelpEdit(target){
   const textId = target==='user' ? 'help-edit-user' : 'help-edit-admin-extra';
   const textEl = document.getElementById(textId);
   if(!textEl) return;
-  if(!confirm('편집 중인 내용을 지우고 기본 도움말 문구로 되돌릴까요? (저장 버튼을 눌러야 실제로 반영됩니다)')) return;
+  if(!confirm('편집 중인 내용을 완전히 비울까요? (저장 버튼을 눌러야 실제로 반영되며, 저장 후 빈 값으로 두면 기본 도움말이 자동으로 표시됩니다)')) return;
   textEl.value = '';
 }
 
