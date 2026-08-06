@@ -23,7 +23,7 @@
 #   Cloudflare Cron 전환 후 더 이상 필요 없음
 #   (GAS_WEBAPP_URL도 Worker Secret으로 이전됨)
 
-name = "realtime-proxy"
+name = "stock-sector-tracker"
 main = "workers/realtime-proxy.js"
 compatibility_date = "2024-01-01"
 
