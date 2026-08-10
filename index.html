@@ -917,6 +917,9 @@ margin-bottom:6px;padding:3px 8px;background:var(--bg-card2);border-radius:4px;f
 <div class="admin-input-row" style="margin-top:2px">
 <input class="admin-input" id="new-stock-memo"
 placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
+<label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);cursor:pointer;white-space:nowrap;padding:0 4px">
+<input type="checkbox" id="new-stock-is-etf" style="cursor:pointer">ETF
+</label>
 <button class="admin-add-btn" onclick="addStock()">추가</button>
 </div>
 <div class="admin-msg" id="stock-msg"></div>
@@ -1443,7 +1446,9 @@ function _renderStockItem(st, useChg, isKr) {
     const nUrl=_naverStockUrl(st.ticker||'','');
     if(nUrl) nameAttr=` onclick="_openNaverStock('${(st.ticker||'').replace(/'/g,"\'")}')" style="cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="TradingView에서 보기"`;
   }
-  return `<div class="stock-item" style="gap:0">${yIcon?'<span style="margin-right:4px;flex-shrink:0">'+yIcon+'</span>':''}<span class="stock-name"${nameAttr} style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.name}</span><span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;padding-left:6px">${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};min-width:50px;text-align:right">${chgStr}</span></span></div>`;
+  const isEtf = (st.type||'')==='ETF';
+  const etfBadge = isEtf ? '<span style="font-size:8px;color:#ffb74d;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);border-radius:3px;padding:0 3px;margin-right:4px;flex-shrink:0">ETF</span>' : '';
+  return `<div class="stock-item" style="gap:0">${yIcon?'<span style="margin-right:4px;flex-shrink:0">'+yIcon+'</span>':''}${etfBadge}<span class="stock-name"${nameAttr} style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.name}</span><span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;padding-left:6px">${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};min-width:50px;text-align:right">${chgStr}</span></span></div>`;
 }
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
@@ -2026,6 +2031,43 @@ function _popupEscHandler(e) {
   if (e.key === 'Escape') closeSectorPopup();
 }
 
+// ── 종목 팝업 정렬 (ETF 최상단 + 등록순/등락률순/이름순) ──────────
+// 팝업을 열 때마다 기본값(등락률순)으로 리셋, 별도 상태유지 없음
+let _popupSortMode = 'chg'; // 'order' | 'chg' | 'name'
+let _popupCtx = null;        // {stocks, getMainVal, headerHtml, renderRow}
+
+function _popupSortBarHtml(mode) {
+  const opts = [['order','등록순'], ['chg','등락률순'], ['name','이름순']];
+  return '<div style="display:flex;gap:5px;margin-bottom:8px">' + opts.map(function(o) {
+    const active = mode === o[0];
+    return '<button onclick="_setPopupSort(\'' + o[0] + '\')" style="font-size:9px;padding:3px 9px;border-radius:10px;border:1px solid ' + (active ? 'var(--accent-kr)' : 'var(--border)') + ';background:' + (active ? 'rgba(79,195,247,.15)' : 'transparent') + ';color:' + (active ? 'var(--accent-kr)' : 'var(--text-muted)') + ';cursor:pointer;font-weight:' + (active ? '700' : '400') + '">' + o[1] + '</button>';
+  }).join('') + '</div>';
+}
+function _sortPopupStocks(stocks, mode, getMainVal) {
+  return stocks.map(function(st, i) { return { st: st, i: i }; }).sort(function(a, b) {
+    // 1차: ETF 종목 최상단
+    const aEtf = (a.st.type || '') === 'ETF', bEtf = (b.st.type || '') === 'ETF';
+    if (aEtf !== bEtf) return aEtf ? -1 : 1;
+    // 2차: 선택된 정렬 기준
+    if (mode === 'order') return a.i - b.i;
+    if (mode === 'name')  return String(a.st.name).localeCompare(String(b.st.name), 'ko');
+    return getMainVal(b.st) - getMainVal(a.st); // 'chg' (기본값)
+  }).map(function(x) { return x.st; });
+}
+function _setPopupSort(mode) {
+  _popupSortMode = mode;
+  _rerenderPopupStockList();
+}
+function _rerenderPopupStockList() {
+  if (!_popupCtx) return;
+  const wrap = document.getElementById('sp-stock-wrap');
+  if (!wrap) return;
+  const sortedList = _sortPopupStocks(_popupCtx.stocks, _popupSortMode, _popupCtx.getMainVal);
+  let html = _popupSortBarHtml(_popupSortMode) + _popupCtx.headerHtml;
+  sortedList.forEach(function(st) { html += _popupCtx.renderRow(st); });
+  wrap.innerHTML = html;
+}
+
 async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
   // ★ 섹터 메모/링크 헤더 - 팝업 body 상단에 항상 표시
   function _renderSectorNoteHeader(sectorName, isKr) {
@@ -2151,7 +2193,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
         return;
       } // 최근 영업일 박스 클릭 여부
       // 관심종목 리스트 (S.usWatchL 기반)
-      let stocksHtml = '';
+      let _usHasStocks = false;
+      let _usCtx = null;
       // usWatchStocks(KV) 우선, 없으면 usWatchL(GAS) fallback
       // usWatchStocks는 {sectorName:[stocks,...]} 객체 형태
       let _usStockSrc = S.usWatchL;
@@ -2167,21 +2210,20 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
           // ★ 최근 영업일 박스 클릭(_usIsPrevMode): prevChg(E열 전일 등락률) 메인
           //   그 외(테이블헤더/오늘섹터): chg(D열 오늘 실시간) 메인
           const _usUseChg = !_usIsPrevMode;
-          // 정렬: 메인 값 기준 내림차순
-          const _usSorted = [...sec.stocks].sort((a,b)=>{
-            const gv=st=>{
-              const v=_usUseChg?(st.chg??st.prevChg):(st.prevChg??st.chg);
-              return (v!==null&&v!==undefined&&!isNaN(v))?parseFloat(v):-9999;
-            }; return gv(b)-gv(a);
-          });
-          stocksHtml = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">';
-          const _usModeLabel=_usIsPrevMode?'전일('+prevDate+') 등락률':'오늘 등락률';
-          stocksHtml+='<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">'+_usModeLabel+' 기준</div>';
-          _usSorted.forEach((st) => {
-            if (!st.name) return;
-            stocksHtml += _renderStockItem(st, _usUseChg, false);
-          });
-          stocksHtml += '</div>';
+          const _usGetMainVal = st => {
+            const v = _usUseChg ? (st.chg ?? st.prevChg) : (st.prevChg ?? st.chg);
+            return (v !== null && v !== undefined && !isNaN(v)) ? parseFloat(v) : -9999;
+          };
+          const _usModeLabel = _usIsPrevMode ? '전일('+prevDate+') 등락률' : '오늘 등락률';
+          const _usHeader = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">'+_usModeLabel+' 기준</div>';
+          const _usValidStocks = sec.stocks.filter(st => !!st.name);
+          _usHasStocks = true;
+          _usCtx = {
+            stocks: _usValidStocks,
+            getMainVal: _usGetMainVal,
+            headerHtml: _usHeader,
+            renderRow: st => _renderStockItem(st, _usUseChg, false)
+          };
         }
       }
 
@@ -2194,9 +2236,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             ${meta.etf?`<span>📌 대표ETF: <span style="font-family:var(--font-mono);color:var(--accent-us)">${meta.etf}</span></span>`:''}
             ${grpLabel?`<span>그룹: <span style="color:var(--accent-gold)">${grpLabel}</span></span>`:''}
           </div>
-          ${''/* 오늘 실시간 제거 - 타이틀에 이미 표시됨 */}
-          ${stocksHtml}
+          ${_usHasStocks ? '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px" id="sp-stock-wrap"></div>' : ''}
         </div>`;
+      if (_usHasStocks) {
+        _popupSortMode = 'chg'; // 팝업 열 때마다 등락률순 기본값으로 리셋
+        _popupCtx = _usCtx;
+        _rerenderPopupStockList();
+      }
       return;
     }
 
@@ -2252,38 +2298,36 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     const _usePrev = !!(prevDate); // prevDate 전달 시 전일 확정값 모드
     const _useToday = !_usePrev && _isKrTradingDay;
 
-    // 정렬 기준
-    const sorted = [...stocks].sort((a, b) => {
-      const getV = st => _useToday
-        ? ((st.chg     !== null && !isNaN(st.chg))     ? st.chg     : (st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : -9999)
-        : ((st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : (st.chg     !== null && !isNaN(st.chg))     ? st.chg     : -9999);
-      return getV(b) - getV(a);
-    });
+    // ── 종목별 등락률 표시 기준 값 (정렬용) ──
+    const _krGetMainVal = st => {
+      const v = _useToday
+        ? ((st.chg     !== null && !isNaN(st.chg))     ? st.chg     : (st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : null)
+        : ((st.prevChg !== null && !isNaN(st.prevChg)) ? st.prevChg : (st.chg     !== null && !isNaN(st.chg))     ? st.chg     : null);
+      return (v !== null && !isNaN(v)) ? v : -9999;
+    };
 
-    let html = '';
-    sorted.forEach(st => {
+    // ── 종목 한 줄 렌더링 함수 ──
+    const _krRenderRow = st => {
       const chg     = (st.chg     !== null && st.chg     !== undefined && !isNaN(st.chg))     ? parseFloat(st.chg)     : null;
       const prevChg = (st.prevChg !== null && st.prevChg !== undefined && !isNaN(st.prevChg)) ? parseFloat(st.prevChg) : null;
       const ticker  = st.ticker || '';
       const memo    = st.memo || '';
+      const isEtf   = (st.type || '') === 'ETF';
 
       let mainVal, subHtml = '';
       if (_usePrev) {
-        // ★ 최근 영업일 박스 클릭: prevChg(전일 확정) 메인, chg 보조
         mainVal = prevChg !== null ? prevChg : chg;
         if (chg !== null && prevChg !== null) {
           const tc = chg >= 0 ? '+' : '';
           subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
         }
       } else if (_useToday) {
-        // 장중/마감후: chg(네이버) 메인 + prevChg 보조
         mainVal = chg !== null ? chg : prevChg;
         if (chg !== null && prevChg !== null) {
           const pc = prevChg >= 0 ? '+' : '';
           subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
         }
       } else {
-        // 장전·주말·공휴일: prevChg(최근 확정) 메인
         mainVal = prevChg !== null ? prevChg : chg;
       }
 
@@ -2292,27 +2336,31 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
       const _nUrl = _naverStockUrl(ticker, st.type||'');
       const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="TradingView에서 보기"` : '';
-      const _yUrlP = !isKr ? _yahooStockUrl(ticker) : null;
-      const _yIconP = _yUrlP ? `<span onclick="_openYahooStock('${ticker.replace(/'/g,"\\'")}'  ,event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:3px;background:rgba(100,181,246,.25);color:#64b5f6;font-size:9px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.4);margin-right:3px;user-select:none;vertical-align:middle">Y</span>` : '';
-      html += '<div class="sp-stock-row">'
-        + _yIconP
+      const _etfBadge = isEtf ? '<span style="font-size:8px;color:#ffb74d;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);border-radius:3px;padding:0 3px;margin-right:4px;flex-shrink:0">ETF</span>' : '';
+      return '<div class="sp-stock-row">'
+        + _etfBadge
         + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
         + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
         + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
         + '</div>';
-    });
+    };
 
-    // 헤더 안내 (갱신 시각 포함)
-    const validCount = sorted.filter(s => (_useToday ? s.chg : s.prevChg) !== null).length;
+    // 헤더 안내 (갱신 시각 포함) — 정렬과 무관하게 고정
+    const validCount = stocks.filter(s => (_useToday ? s.chg : s.prevChg) !== null).length;
     const modeLabel  = _usePrev
-      ? ('총 '+sorted.length+'개 종목 · '+prevDate+' 기준 · 종목 등락률은 E열 최근 확정값')
+      ? ('총 '+stocks.length+'개 종목 · '+prevDate+' 기준 · 종목 등락률은 E열 최근 확정값')
       : _useToday
-        ? ('총 '+sorted.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
-        : ('총 '+sorted.length+'개 종목 · 최근 영업일 확정 등락률 기준');
+        ? ('총 '+stocks.length+'개 종목 · 오늘 등락률 '+validCount+'개 · 등락률 높은 순')
+        : ('총 '+stocks.length+'개 종목 · 최근 영업일 확정 등락률 기준');
     const header = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px;padding:0 2px">'+modeLabel+'</div>';
 
+    // ★ 정렬 상태 리셋(팝업 열 때마다 등락률순 기본값) 후 컨텍스트 등록
+    _popupSortMode = 'chg';
+    _popupCtx = { stocks: stocks, getMainVal: _krGetMainVal, headerHtml: header, renderRow: _krRenderRow };
+
     // ★ 섹터 메모/링크 헤더 prepend
-    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + header + html;
+    body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + '<div id="sp-stock-wrap"></div>';
+    _rerenderPopupStockList();
   } catch(e) {
     body.innerHTML = `<div style="padding:20px;text-align:center;color:#ef9a9a;font-size:12px">❌ 로드 실패: ${e.message}</div>`;
   }
@@ -6570,6 +6618,7 @@ const sc=sv>0?'#ef5350':'#42a5f5';
 chgSpan='<span style="font-size:10px;color:'+sc+';font-family:var(--font-mono)">'+(sv>0?'+':'')+sv.toFixed(2)+'%</span>';
 }
 const isEtf=idx===0;
+const stEtfType=(st.type||'STOCK')==='ETF';
 const btnStyle='font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer';
 h+='<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px" id="us-stock-item-'+idx+'">'
 +'<div style="display:flex;align-items:center;gap:6px">'
@@ -6577,7 +6626,9 @@ h+='<div class="admin-stock-item" style="flex-direction:column;align-items:stret
 +'<span class="admin-stock-name">'+st.name+'</span>'
 +(st.ticker?'<span class="admin-stock-ticker">'+st.ticker.split(':').pop()+'</span>':'')
 +chgSpan
-+(isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':'')
++(isEtf?'<span style="font-size:9px;color:var(--text-muted);margin-left:auto">대표ETF</span>':
+  '<label style="display:flex;align-items:center;gap:3px;font-size:9px;color:'+(stEtfType?'#ffb74d':'var(--text-muted)')+';cursor:pointer;flex-shrink:0;user-select:none;margin-left:auto" title="ETF 여부">'
+  +'<input type="checkbox" '+(stEtfType?'checked':'')+' style="cursor:pointer" onchange="usToggleStockEtf(\''+escSec+'\',\''+esc+'\',this.checked)">ETF</label>')
 +'<div style="display:flex;gap:2px;margin-left:auto;flex-shrink:0">'
 +'<button onclick="usAdminMoveStock('+idx+',\'top\')" title="최상위로" style="'+btnStyle+'">⇈</button>'
 +'<button onclick="usAdminMoveStock('+idx+',\'up\')" title="한칸 위로" style="'+btnStyle+'">↑</button>'
@@ -6692,6 +6743,15 @@ const _sec=S.usWatchL&&S.usWatchL.sectors.find(function(s){return s.sector===sec
 if(_sec){const _st=_sec.stocks.find(function(s){return s.name===stockName;});if(_st)_st.memo=memo;}
 }catch(e){showUsAdminMsg('err','❌ 메모 저장 실패: '+e.message);}
 if(btn){btn.disabled=false;btn.textContent='저장';}
+}
+async function usToggleStockEtf(sectorName,stockName,isEtf){
+try{
+const r=await _usAdminApi('us_update_stock_type',{sector:sectorName,stock_name:stockName,type:isEtf?'ETF':'STOCK'});
+if(!r.ok)throw new Error(r.error||'실패');
+const _sec=S.usWatchL&&S.usWatchL.sectors.find(function(s){return s.sector===sectorName;});
+if(_sec){const _st=_sec.stocks.find(function(s){return s.name===stockName;});if(_st)_st.type=isEtf?'ETF':'STOCK';}
+showUsAdminMsg('ok','✅ "'+stockName+'" '+(isEtf?'ETF로 표시':'ETF 해제')+' 완료');
+}catch(e){showUsAdminMsg('err','❌ ETF 구분 저장 실패: '+e.message);}
 }
 
 function showUsAdminMsg(type,txt){
@@ -7187,11 +7247,15 @@ sec.stocks.forEach((st,idx)=>{
 const esc=st.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
 const escSec=sectorName.replace(/'/g,"\\'");
 const memo=st.memo||'';
+const isEtf=(st.type||'')==='ETF';
 h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stretch;gap:4px" id="stock-item-${idx}">
 <div style="display:flex;align-items:center;gap:6px">
 <input type="checkbox" id="chk-${idx}" style="flex-shrink:0;cursor:pointer" title="이 종목 선택">
 <span class="admin-stock-name">${st.name}</span>
 <span class="admin-stock-ticker">${st.ticker||'KR'}</span>
+<label style="display:flex;align-items:center;gap:3px;font-size:9px;color:${isEtf?'#ffb74d':'var(--text-muted)'};cursor:pointer;flex-shrink:0;user-select:none" title="ETF 여부">
+<input type="checkbox" ${isEtf?'checked':''} style="cursor:pointer" onchange="toggleStockEtf('${escSec}','${esc}',this.checked)">ETF
+</label>
 <div style="display:flex;gap:2px;margin-left:auto;flex-shrink:0">
 <button onclick="moveStock(${idx},'top')" title="최상위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">⇈</button>
 <button onclick="moveStock(${idx},'up')" title="한칸 위로" style="font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);background:var(--bg-card2);color:var(--text-secondary);cursor:pointer">↑</button>
@@ -7490,11 +7554,14 @@ if (!ticker) showMsg('stock-msg', 'ℹ️ 티커 없이 추가합니다. 등락�
 const btn = document.querySelector('#add-stock-section .admin-add-btn');
 btnLoading(btn, '추가 중...');
 try {
-await adminPost('add_stock', { sector, stock_name: name, ticker, memo });
+const isEtfEl = document.getElementById('new-stock-is-etf');
+const isEtf = !!(isEtfEl && isEtfEl.checked);
+await adminPost('add_stock', { sector, stock_name: name, ticker, memo, is_etf: isEtf });
 document.getElementById('new-stock-name').value = '';
 if (document.getElementById('new-stock-market')) document.getElementById('new-stock-market').value = '';
 if (document.getElementById('new-stock-code'))   document.getElementById('new-stock-code').value = '';
 if (memoEl) memoEl.value = '';
+if (isEtfEl) isEtfEl.checked = false;
 _selectedStockTicker = '';
 showStockAutoInfo(null);
 if (document.getElementById('stock-ticker-preview')) document.getElementById('stock-ticker-preview').style.display = 'none';
@@ -7547,6 +7614,15 @@ renderUsList(listSorted);
 }
 }catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
+}
+async function toggleStockEtf(sectorName, stockName, isEtf){
+try{
+await adminPost('update_stock_type',{sector:sectorName,stock_name:stockName,is_etf:isEtf});
+const _sec=ADM.sectors.find(s=>s.sector===sectorName);
+if(_sec){const _st=_sec.stocks.find(s=>s.name===stockName);if(_st)_st.type=isEtf?'ETF':'STOCK';}
+S.krListLoaded=false; S.krLoaded=false; S.krListAt=0;
+showMsg('stock-msg','✅ "'+stockName+'" '+(isEtf?'ETF로 표시':'ETF 해제')+' 완료',false);
+}catch(e){showMsg('stock-msg','❌ ETF 구분 저장 실패: '+e.message,true);}
 }
 let WATCHED_SECTORS = new Set();
 let watchedLoaded = false;
