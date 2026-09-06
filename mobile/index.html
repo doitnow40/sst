@@ -1278,6 +1278,9 @@ margin-bottom:6px;padding:3px 8px;background:var(--bg-card2);border-radius:4px;f
 <div class="admin-input-row" style="margin-top:2px">
 <input class="admin-input" id="new-stock-memo"
 placeholder="📝 주석 메모 (선택사항, 예: SK하이닉스 협력사)" style="flex:1">
+<input class="admin-input" id="new-stock-subcat" list="new-stock-subcat-list"
+placeholder="🏷 소분류(선택)" style="flex:0 0 110px">
+<datalist id="new-stock-subcat-list"></datalist>
 <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);cursor:pointer;white-space:nowrap;padding:0 4px">
 <input type="checkbox" id="new-stock-is-etf" style="cursor:pointer">ETF
 </label>
@@ -1560,6 +1563,8 @@ oninput="filterUsAdminSectors(this.value)">
 </div>
 <div class="admin-input-row" style="margin-top:2px">
 <input class="admin-input" id="us-add-stock-memo" placeholder="📝 메모 (선택사항)" style="flex:1">
+<input class="admin-input" id="us-add-stock-subcat" list="us-new-stock-subcat-list" placeholder="🏷 소분류(선택)" style="flex:0 0 110px">
+<datalist id="us-new-stock-subcat-list"></datalist>
 <button class="admin-add-btn" onclick="usAdminDoAddStock()">추가</button>
 </div>
 <div style="font-size:10px;color:var(--text-muted);margin-top:5px">💡 티커 형식: NASDAQ:NVDA / NYSE:JPM / NYSEARCA:XLK / BATS:ITA</div>
@@ -2551,11 +2556,23 @@ function _popupEscHandler(e) {
   if (e.key === 'Escape') closeSectorPopup();
 }
 
-// ── 종목 팝업 정렬 (ETF 최상단 + 등록순/등락률순/이름순) ──────────
+// ── 종목 팝업 정렬 (ETF 최상단 + 소분류 그룹 + 등록순/등락률순/이름순) ──
 // 팝업을 열 때마다 기본값(등락률순)으로 리셋, 별도 상태유지 없음
 let _popupSortMode = 'chg'; // 'order' | 'chg' | 'name'
-let _popupCtx = null;        // {stocks, getMainVal, headerHtml, renderRow}
+let _popupCtx = null;        // {stocks, getMainVal, headerHtml, renderRow, subcatOrder}
+let _subcatOrdersCache = null; // {"KR:섹터명":["양극제","음극제",...], ...} — 세션 중 1회만 로드
 
+async function _loadSubcatOrders() {
+  if (_subcatOrdersCache) return _subcatOrdersCache;
+  try {
+    const d = await api('subcat_orders', 0);
+    _subcatOrdersCache = d || {};
+  } catch (e) { _subcatOrdersCache = {}; }
+  return _subcatOrdersCache;
+}
+function _escSubcatHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 function _popupSortBarHtml(mode) {
   const opts = [['order','등록순'], ['chg','등락률순'], ['name','이름순']];
   return '<div style="display:flex;gap:5px;margin-bottom:8px">' + opts.map(function(o) {
@@ -2563,14 +2580,25 @@ function _popupSortBarHtml(mode) {
     return '<button onclick="_setPopupSort(\'' + o[0] + '\')" style="font-size:9px;padding:3px 9px;border-radius:10px;border:1px solid ' + (active ? 'var(--accent-kr)' : 'var(--border)') + ';background:' + (active ? 'rgba(79,195,247,.15)' : 'transparent') + ';color:' + (active ? 'var(--accent-kr)' : 'var(--text-muted)') + ';cursor:pointer;font-weight:' + (active ? '700' : '400') + '">' + o[1] + '</button>';
   }).join('') + '</div>';
 }
-function _sortPopupStocks(stocks, mode, getMainVal) {
+function _sortWithinGroup(stocks, mode, getMainVal) {
   return stocks.map(function(st, i) { return { st: st, i: i }; }).sort(function(a, b) {
-    const aEtf = (a.st.type || '') === 'ETF', bEtf = (b.st.type || '') === 'ETF';
-    if (aEtf !== bEtf) return aEtf ? -1 : 1;
     if (mode === 'order') return a.i - b.i;
     if (mode === 'name')  return String(a.st.name).localeCompare(String(b.st.name), 'ko');
     return getMainVal(b.st) - getMainVal(a.st);
   }).map(function(x) { return x.st; });
+}
+function _groupStocksBySubcat(stocks, subcatOrder) {
+  const bySubcat = {}; const seenOrder = [];
+  stocks.forEach(function(st) {
+    const sc = (st.subcat || '').trim();
+    if (!bySubcat[sc]) { bySubcat[sc] = []; seenOrder.push(sc); }
+    bySubcat[sc].push(st);
+  });
+  const orderedKeys = [];
+  (subcatOrder || []).forEach(function(sc) { if (bySubcat[sc] && orderedKeys.indexOf(sc) === -1) orderedKeys.push(sc); });
+  seenOrder.forEach(function(sc) { if (sc && orderedKeys.indexOf(sc) === -1) orderedKeys.push(sc); });
+  if (bySubcat['']) orderedKeys.push('');
+  return orderedKeys.map(function(sc) { return { subcat: sc, stocks: bySubcat[sc] }; });
 }
 function _setPopupSort(mode) {
   _popupSortMode = mode;
@@ -2580,9 +2608,26 @@ function _rerenderPopupStockList() {
   if (!_popupCtx) return;
   const wrap = document.getElementById('sp-stock-wrap');
   if (!wrap) return;
-  const sortedList = _sortPopupStocks(_popupCtx.stocks, _popupSortMode, _popupCtx.getMainVal);
   let html = _popupSortBarHtml(_popupSortMode) + _popupCtx.headerHtml;
-  sortedList.forEach(function(st) { html += _popupCtx.renderRow(st); });
+
+  const allStocks   = _popupCtx.stocks;
+  const etfStocks    = allStocks.filter(function(st) { return (st.type || '') === 'ETF'; });
+  const normalStocks = allStocks.filter(function(st) { return (st.type || '') !== 'ETF'; });
+
+  if (etfStocks.length) {
+    _sortWithinGroup(etfStocks, _popupSortMode, _popupCtx.getMainVal)
+      .forEach(function(st) { html += _popupCtx.renderRow(st); });
+  }
+
+  const groups = _groupStocksBySubcat(normalStocks, _popupCtx.subcatOrder);
+  groups.forEach(function(g) {
+    if (g.subcat) {
+      html += '<div class="sp-subcat-title" style="font-size:10px;font-weight:700;color:var(--text-primary);background:var(--bg-card2);border-radius:5px;padding:4px 9px;margin:8px 0 5px">' + _escSubcatHtml(g.subcat) + '</div>';
+    }
+    _sortWithinGroup(g.stocks, _popupSortMode, _popupCtx.getMainVal)
+      .forEach(function(st) { html += _popupCtx.renderRow(st); });
+  });
+
   wrap.innerHTML = html;
 }
 
@@ -2736,11 +2781,13 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
           const _usHeader = '<div style="font-size:9px;color:var(--text-muted);margin-bottom:6px">'+_usModeLabel+' 기준</div>';
           const _usValidStocks = sec.stocks.filter(st => !!st.name);
           _usHasStocks = true;
+          const _usSubcatOrders = await _loadSubcatOrders();
           _usCtx = {
             stocks: _usValidStocks,
             getMainVal: _usGetMainVal,
             headerHtml: _usHeader,
-            renderRow: st => _renderStockItem(st, _usUseChg, false)
+            renderRow: st => _renderStockItem(st, _usUseChg, false),
+            subcatOrder: _usSubcatOrders['US:' + sectorName] || []
           };
         }
       }
@@ -2877,7 +2924,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
 
     // ★ 정렬 상태 리셋(팝업 열 때마다 등락률순 기본값) 후 컨텍스트 등록
     _popupSortMode = 'chg';
-    _popupCtx = { stocks: stocks, getMainVal: _krGetMainVal, headerHtml: header, renderRow: _krRenderRow };
+    const _krSubcatOrders = await _loadSubcatOrders();
+    _popupCtx = { stocks: stocks, getMainVal: _krGetMainVal, headerHtml: header, renderRow: _krRenderRow, subcatOrder: _krSubcatOrders['KR:' + sectorName] || [] };
 
     // ★ 섹터 메모/링크 헤더 prepend + 주목 + 바
     body.innerHTML = watchedBadge + barHtml2 + _renderSectorNoteHeader(sectorName, isKr) + '<div id="sp-stock-wrap"></div>';
@@ -6963,13 +7011,14 @@ if(!sectors.length) h='<div style="padding:14px;font-size:11px;color:var(--text-
 el.innerHTML=h;
 }
 function filterUsAdminSectors(v){ usAdminRenderSectorList(v); }
-function usAdminSelectSector(sector){
+async function usAdminSelectSector(sector){
 _usAdminSelSector=sector;
 usAdminRenderSectorList();
 usAdminRefreshGroupSelect();
 const _secGroup=S.usWatchL&&S.usWatchL.groupMap&&S.usWatchL.groupMap[sector]?S.usWatchL.groupMap[sector]:'';
 const _groupSel=document.getElementById('us-add-stock-group-select');
 if(_groupSel&&_secGroup) _groupSel.value=_secGroup;
+await _loadSubcatOrders();
 usAdminRenderStockPanel(sector);
 // ★ US 섹터 메모/링크 패널 표시
 renderUsSectorNotePanel(sector);
@@ -7092,11 +7141,14 @@ h+='<div class="admin-stock-item" style="flex-direction:column;align-items:stret
 +'</div>'
 +'<div style="display:flex;gap:5px;align-items:center">'
 +'<input class="admin-input" style="flex:1;font-size:10px;padding:3px 7px" id="us-memo-'+esc+'" value="'+memo.replace(/"/g,'&quot;')+'" placeholder="📝 주석 메모 (비워도 됨)">'
++'<input class="admin-input" style="flex:0 0 100px;font-size:10px;padding:3px 7px" id="us-subcat-'+esc+'" list="us-new-stock-subcat-list" value="'+(st.subcat||'').replace(/"/g,'&quot;')+'" placeholder="🏷 소분류">'
 +'<button class="admin-add-btn" style="font-size:10px;padding:3px 10px;white-space:nowrap" onclick="usAdminSaveMemo(\''+escSec+'\',\''+esc+'\')">저장</button>'
 +'</div>'
 +'</div>';
 });
 body.innerHTML=h;
+renderSubcatOrderPanel(sector,'us',sec);
+_populateSubcatDatalist(sector,'us',sec);
 }
 function usAdminSelectAll(){
 document.querySelectorAll('#us-admin-panel-body input[type=checkbox]').forEach(function(c){c.checked=true;});
@@ -7186,15 +7238,34 @@ const key='us-memo-'+stockName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
 const el=document.getElementById(key);
 if(!el)return;
 const memo=el.value.trim();
-const btn=el.nextElementSibling;
+const subcatKey='us-subcat-'+stockName.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+const subcatEl=document.getElementById(subcatKey);
+const subcat=subcatEl?subcatEl.value.trim():'';
+const btn=el.parentElement.querySelector('.admin-add-btn');
 if(btn){btn.disabled=true;btn.innerHTML='<span class="admin-spinner"></span>';}
 try{
 const r=await _usAdminApi('us_update_memo',{sector:sectorName,stock_name:stockName,memo:memo});
 if(!r.ok)throw new Error(r.error||'실패');
-showUsAdminMsg('ok','✅ "'+stockName+'" 메모 저장 완료');
+if(subcatEl){
+  const r2=await _usAdminApi('us_update_subcat',{sector:sectorName,stock_name:stockName,subcat:subcat});
+  if(!r2.ok)throw new Error(r2.error||'실패');
+}
+showUsAdminMsg('ok','✅ "'+stockName+'" 저장 완료');
 const _sec=S.usWatchL&&S.usWatchL.sectors.find(function(s){return s.sector===sectorName;});
-if(_sec){const _st=_sec.stocks.find(function(s){return s.name===stockName;});if(_st)_st.memo=memo;}
-}catch(e){showUsAdminMsg('err','❌ 메모 저장 실패: '+e.message);}
+if(_sec){
+  const _st=_sec.stocks.find(function(s){return s.name===stockName;});
+  if(_st){_st.memo=memo; if(subcatEl)_st.subcat=subcat;}
+}
+if(subcatEl && subcat){
+  const _key='US:'+sectorName;
+  if(!_subcatOrdersCache) _subcatOrdersCache={};
+  if(!_subcatOrdersCache[_key]) _subcatOrdersCache[_key]=[];
+  if(_subcatOrdersCache[_key].indexOf(subcat)===-1){
+    _subcatOrdersCache[_key].push(subcat);
+    renderSubcatOrderPanel(sectorName,'us',_sec);
+  }
+}
+}catch(e){showUsAdminMsg('err','❌ 저장 실패: '+e.message);}
 if(btn){btn.disabled=false;btn.textContent='저장';}
 }
 async function usToggleStockEtf(sectorName,stockName,isEtf){
@@ -7315,8 +7386,10 @@ if(!_usAdminSelSector){showUsAdminMsg('err','좌측에서 섹터를 먼저 선�
 if(!group){showUsAdminMsg('err','대분류를 선택하거나 입력하세요');return;}
 const _usStockBtn=document.querySelector('#us-add-stock-section .admin-add-btn')||document.querySelector('[onclick="usAdminDoAddStock()"]');
 btnLoading(_usStockBtn,'추가 중...');
+const subcatEl=document.getElementById('us-add-stock-subcat');
+const subcat=subcatEl?subcatEl.value.trim():'';
 try{
-const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||'',memo:memo||'',type:(document.getElementById('us-add-stock-type')?.value||'STOCK'),group:group});
+const r=await _usAdminApi('us_add_stock',{sector:_usAdminSelSector,stock_name:name,ticker:ticker||'',memo:memo||'',type:(document.getElementById('us-add-stock-type')?.value||'STOCK'),group:group,subcat:subcat||''});
 if(!r.ok)throw new Error(r.error||'실패');
 showUsAdminMsg('ok',`"${name}" 추가 완료 (대분류: ${group})`);
 btnDone(_usStockBtn,'추가 완료');
@@ -7328,6 +7401,7 @@ if(nameEl) nameEl.value='';
 if(tickerEl) tickerEl.value='';
 if(memoEl) memoEl.value='';
 if(typeEl) typeEl.value='STOCK';
+if(subcatEl) subcatEl.value='';
 if(groupSel){groupSel.value='';} if(groupInp){groupInp.value='';groupInp.style.display='none';}
 await _usRefreshWatchList();
 }catch(e){showUsAdminMsg('err',e.message);btnDone(_usStockBtn,'',true);}
@@ -7593,13 +7667,14 @@ document.getElementById('admin-sector-items').innerHTML=h;
 function filterAdminSectors(kw){
 renderAdminSectors(kw);
 }
-function selectSector(sectorName){
+async function selectSector(sectorName){
 ADM.selectedSector=sectorName;
 ADM.selectedMarket=ADM.selectedMarket||'kr';
 const kw=document.getElementById('sector-filter-input')?.value||'';
 renderAdminSectors(kw);
 const sec=ADM.sectors.find(s=>s.sector===sectorName);
 if(!sec) return;
+await _loadSubcatOrders();
 document.getElementById('admin-stock-panel-title').textContent='📋 '+sectorName+' 종목 ('+sec.stocks.length+'개)';
 document.getElementById('add-stock-section').style.display='';
 // ★ 섹터 메모/링크 입력란 표시
@@ -7713,6 +7788,8 @@ h+=`<div class="admin-stock-item" style="flex-direction:column;align-items:stret
 <div style="display:flex;gap:5px;align-items:center">
 <input class="admin-input" style="flex:1;font-size:10px;padding:3px 7px"
 id="memo_${esc}" value="${memo.replace(/"/g,'&quot;')}" placeholder="📝 주석 메모 (비워도 됨)">
+<input class="admin-input" style="flex:0 0 100px;font-size:10px;padding:3px 7px"
+id="subcat_${esc}" list="new-stock-subcat-list" value="${(st.subcat||'').replace(/"/g,'&quot;')}" placeholder="🏷 소분류">
 <button class="admin-add-btn" style="font-size:10px;padding:3px 10px;white-space:nowrap"
 onclick="saveMemo('${escSec}','${esc}')">저장</button>
 </div>
@@ -7720,6 +7797,8 @@ onclick="saveMemo('${escSec}','${esc}')">저장</button>
 });
 if(!h) h='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0">종목이 없습니다. 아래에서 추가하세요.</div>';
 document.getElementById('admin-stock-list').innerHTML=h;
+renderSubcatOrderPanel(sectorName, ADM.selectedMarket||'kr', sec);
+_populateSubcatDatalist(sectorName, ADM.selectedMarket||'kr', sec);
 }
 function selectAllStocks(){
 document.querySelectorAll('#admin-stock-list input[type=checkbox]').forEach(c=>c.checked=true);
@@ -8002,12 +8081,15 @@ if (!ticker) showMsg('stock-msg', 'ℹ️ 티커 없이 추가합니다. 등락�
 try {
 const isEtfEl = document.getElementById('new-stock-is-etf');
 const isEtf = !!(isEtfEl && isEtfEl.checked);
-await adminPost('add_stock', { sector, stock_name: name, ticker, memo, is_etf: isEtf });
+const subcatEl = document.getElementById('new-stock-subcat');
+const subcat = subcatEl ? subcatEl.value.trim() : '';
+await adminPost('add_stock', { sector, stock_name: name, ticker, memo, is_etf: isEtf, subcat });
 document.getElementById('new-stock-name').value = '';
 if (document.getElementById('new-stock-market')) document.getElementById('new-stock-market').value = '';
 if (document.getElementById('new-stock-code'))   document.getElementById('new-stock-code').value = '';
 if (memoEl) memoEl.value = '';
 if (isEtfEl) isEtfEl.checked = false;
+if (subcatEl) subcatEl.value = '';
 _selectedStockTicker = '';
 showStockAutoInfo(null);
 if (document.getElementById('stock-ticker-preview')) document.getElementById('stock-ticker-preview').style.display = 'none';
@@ -8032,14 +8114,29 @@ async function saveMemo(sectorName, stockName){
 const el=document.getElementById('memo_'+stockName);
 if(!el) return;
 const memo=el.value.trim();
-const btn=el.nextElementSibling;
+const subcatEl=document.getElementById('subcat_'+stockName);
+const subcat=subcatEl?subcatEl.value.trim():'';
+const btn=el.nextElementSibling?.nextElementSibling || el.parentElement.querySelector('.admin-add-btn');
 if(btn){btn.disabled=true;btn.innerHTML='<span class="admin-spinner"></span>';}
 try{
 await adminPost('update_memo',{sector:sectorName,stock_name:stockName,memo});
-showMsg('stock-msg','✅ "'+stockName+'" 메모 저장 완료',false);
+if(subcatEl) await adminPost('update_subcat',{sector:sectorName,stock_name:stockName,subcat});
+showMsg('stock-msg','✅ "'+stockName+'" 저장 완료',false);
 // ★ ADM.sectors 메모리에 즉시 반영 (순서이동 시 메모 사라짐 방지)
 const _memoSec=ADM.sectors.find(s=>s.sector===sectorName);
-if(_memoSec){const _memoSt=_memoSec.stocks.find(s=>s.name===stockName);if(_memoSt)_memoSt.memo=memo;}
+if(_memoSec){
+  const _memoSt=_memoSec.stocks.find(s=>s.name===stockName);
+  if(_memoSt){_memoSt.memo=memo; if(subcatEl)_memoSt.subcat=subcat;}
+}
+if(subcatEl && subcat){
+  const _key='KR:'+sectorName;
+  if(!_subcatOrdersCache) _subcatOrdersCache={};
+  if(!_subcatOrdersCache[_key]) _subcatOrdersCache[_key]=[];
+  if(_subcatOrdersCache[_key].indexOf(subcat)===-1){
+    _subcatOrdersCache[_key].push(subcat);
+    renderSubcatOrderPanel(sectorName,'kr',_memoSec);
+  }
+}
 S.krListAt=0; // 메모 변경 → 다음 진입 시 갱신 유도
 // 메모 저장 후 즉시 해당 페이지 새로고침 (성능 최적화: 필요한 페이지만)
 const krListPage=document.getElementById('page-kr-list')?.style.display!=='none';
@@ -8058,8 +8155,79 @@ S.usToday=d;
 renderUsList(listSorted);
 }catch(e){console.error('메모 반영 오류:',e);}
 }
-}catch(e){showMsg('stock-msg','❌ 메모 저장 실패: '+e.message,true);}
+}catch(e){showMsg('stock-msg','❌ 저장 실패: '+e.message,true);}
 if(btn){btn.disabled=false;btn.innerHTML='저장';}
+}
+// ── 소분류 순서 관리 패널 (섹터 선택 시 종목목록 위에 표시) ─────────
+function renderSubcatOrderPanel(sectorName, market, sec){
+const mk=(market==='us')?'US':'KR';
+const key=mk+':'+sectorName;
+if(!_subcatOrdersCache) _subcatOrdersCache={};
+let order=_subcatOrdersCache[key]||[];
+const used=new Set();
+(sec.stocks||[]).forEach(function(st){ if(st.subcat && st.subcat.trim()) used.add(st.subcat.trim()); });
+used.forEach(function(sc){ if(order.indexOf(sc)===-1) order.push(sc); });
+_subcatOrdersCache[key]=order;
+
+const panelId=(market==='us')?'us-subcat-order-panel':'subcat-order-panel';
+const listElId=(market==='us')?'us-admin-panel-body':'admin-stock-list';
+let panel=document.getElementById(panelId);
+if(!panel){
+  const listEl=document.getElementById(listElId);
+  if(!listEl) return;
+  panel=document.createElement('div');
+  panel.id=panelId;
+  panel.style.cssText='margin-bottom:8px;padding:8px;background:rgba(255,183,77,.06);border:1px solid rgba(255,183,77,.25);border-radius:8px';
+  listEl.parentElement.insertBefore(panel, listEl);
+}
+panel.dataset.sector=sectorName;
+panel.dataset.market=market;
+if(order.length===0){
+  panel.innerHTML='<div style="font-size:10px;color:var(--text-muted)">🏷 소분류 순서 — 아직 이 섹터에 등록된 소분류가 없습니다. 종목 추가/수정 시 소분류를 입력하면 여기 자동으로 나타납니다.</div>';
+  return;
+}
+let h='<div style="font-size:10px;font-weight:700;color:#ffb74d;margin-bottom:6px">🏷 소분류 순서 (종목 팝업에 표시되는 순서)</div><div style="display:flex;gap:5px;flex-wrap:wrap">';
+order.forEach(function(sc,idx){
+  const esc=sc.replace(/'/g,"\\'");
+  h+=`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;background:var(--bg-card2);border:1px solid var(--border);border-radius:14px;padding:3px 5px 3px 10px">
+    ${sc}
+    <button onclick="moveSubcatOrder('${panelId}','${esc}',-1)" title="왼쪽으로" ${idx===0?'disabled style="opacity:.3"':''} style="border:none;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:10px;padding:0 2px">◀</button>
+    <button onclick="moveSubcatOrder('${panelId}','${esc}',1)" title="오른쪽으로" ${idx===order.length-1?'disabled style="opacity:.3"':''} style="border:none;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:10px;padding:0 2px">▶</button>
+  </span>`;
+});
+h+='</div>';
+panel.innerHTML=h;
+}
+async function moveSubcatOrder(panelId, subcat, dir){
+const panel=document.getElementById(panelId);
+if(!panel) return;
+const sectorName=panel.dataset.sector, market=panel.dataset.market||'kr';
+const mk=(market==='us')?'US':'KR';
+const key=mk+':'+sectorName;
+const order=(_subcatOrdersCache&&_subcatOrdersCache[key])||[];
+const i=order.indexOf(subcat);
+const j=i+dir;
+if(i<0||j<0||j>=order.length) return;
+[order[i],order[j]]=[order[j],order[i]];
+_subcatOrdersCache[key]=order;
+if(market==='us'){
+  const sec=S.usWatchL&&S.usWatchL.sectors.find(s=>s.sector===sectorName);
+  renderSubcatOrderPanel(sectorName, market, sec||{stocks:[]});
+}else{
+  const sec=ADM.sectors.find(s=>s.sector===sectorName);
+  renderSubcatOrderPanel(sectorName, market, sec||{stocks:[]});
+}
+try{
+  await adminPost('update_subcat_order',{market:mk,sector:sectorName,order:JSON.stringify(order)});
+}catch(e){showMsg('stock-msg','❌ 소분류 순서 저장 실패: '+e.message,true);}
+}
+function _populateSubcatDatalist(sectorName, market, sec){
+const mk=(market==='us')?'US':'KR';
+const key=mk+':'+sectorName;
+const order=(_subcatOrdersCache&&_subcatOrdersCache[key])||[];
+const dl=document.getElementById(market==='us'?'us-new-stock-subcat-list':'new-stock-subcat-list');
+if(!dl) return;
+dl.innerHTML=order.map(function(sc){return '<option value="'+sc.replace(/"/g,'&quot;')+'">';}).join('');
 }
 async function toggleStockEtf(sectorName, stockName, isEtf){
 try{
