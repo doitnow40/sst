@@ -135,7 +135,7 @@ button[title]:hover::after{
 #sector-popup-overlay.active{pointer-events:auto}
 #sector-popup{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
-  width:360px;max-height:75vh;
+  width:380px;max-width:calc(100vw - 24px);max-height:75vh;
   background:var(--bg-card);border:1px solid var(--border-light);
   border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.7);
   display:flex;flex-direction:column;
@@ -165,18 +165,32 @@ button[title]:hover::after{
 #sector-popup-body{overflow-y:auto;padding:8px 12px 12px;flex:1}
 #sector-popup-body::-webkit-scrollbar{width:4px}
 #sector-popup-body::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
-.sp-stock-row{
-  display:grid;grid-template-columns:1fr auto auto;
+.sp-stock-row,.sp-stock-head{
+  /* ★ [261118] 표 형식 고정 칸: 종목명 | 코드 | 메인 등락률 | 보조 등락률 */
+  display:grid;grid-template-columns:minmax(0,1fr) auto 58px 52px;
   align-items:center;gap:6px;
   padding:5px 8px;border-radius:6px;font-size:11px;
   border-bottom:1px solid rgba(46,58,80,.25);
   transition:background .1s;
 }
+.sp-one-col .sp-stock-row,.sp-one-col .sp-stock-head{grid-template-columns:minmax(0,1fr) auto 58px}
+.sp-one-col .sp-col-sub{display:none}
+.sp-stock-head{padding:2px 8px 4px;font-size:9px;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border)}
+.sp-stock-head span:nth-child(n+3){text-align:right}
+.sp-stock-head:hover{background:none}
+.sp-name-cell{display:flex;align-items:center;gap:4px;min-width:0}
+.sp-etf-tag{flex-shrink:0;font-size:8px;font-weight:700;line-height:13px;height:15px;color:#ffb74d;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.35);border-radius:3px;padding:0 4px;box-sizing:border-box}
+.sp-stock-sub{font-family:var(--font-mono);font-size:10px;text-align:right;white-space:nowrap}
 .sp-stock-row:last-child{border-bottom:none}
 .sp-stock-row:hover{background:rgba(255,255,255,.04)}
-.sp-stock-name{color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sp-stock-ticker{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
-.sp-stock-chg{font-family:var(--font-mono);font-size:11px;font-weight:700;text-align:right;min-width:52px}
+.sp-stock-name{color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sp-stock-ticker{font-family:var(--font-mono);font-size:8px;color:var(--text-muted);background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;white-space:nowrap;justify-self:end}
+.sp-stock-chg{font-family:var(--font-mono);font-size:11px;font-weight:700;text-align:right;white-space:nowrap}
+@media (max-width:400px){
+  .sp-stock-row,.sp-stock-head{grid-template-columns:minmax(0,1fr) 56px 50px}
+  .sp-one-col .sp-stock-row,.sp-one-col .sp-stock-head{grid-template-columns:minmax(0,1fr) 56px}
+  .sp-col-code{display:none}
+}
 .sp-stock-memo{font-size:9px;color:var(--text-muted);grid-column:1/-1;padding-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 th.sector-clickable{cursor:pointer;transition:filter .12s;vertical-align:top}
 th.sector-clickable:hover{filter:brightness(1.35)}
@@ -1455,6 +1469,20 @@ function _renderStockItem(st, useChg, isKr) {
   const etfBadge = isEtf ? '<span style="font-size:8px;color:#ffb74d;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);border-radius:3px;padding:0 3px;margin-right:4px;flex-shrink:0">ETF</span>' : '';
   return `<div class="stock-item" style="gap:0">${yIcon?'<span style="margin-right:4px;flex-shrink:0">'+yIcon+'</span>':''}${etfBadge}<span class="stock-name"${nameAttr} style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${st.name}</span><span style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:auto;padding-left:6px">${memoHtml}<span class="stock-ticker">${tkrShort||'-'}</span><span style="font-family:var(--font-mono);font-size:10px;color:${chgColor};font-weight:${chg!==null&&Math.abs(chg)>=3?'bold':'normal'};min-width:50px;text-align:right">${chgStr}</span></span></div>`;
 }
+// ★ [261118] US 섹터 팝업 한 줄 — KR 팝업과 같은 칸 구조(_spStockRow) 사용
+function _usPopupRow(st, useChg) {
+  const num = v => (v !== null && v !== undefined && v !== '' && !isNaN(parseFloat(v))) ? parseFloat(v) : null;
+  const chg = num(st.chg), prev = num(st.prevChg);
+  const main = useChg ? (chg !== null ? chg : prev) : (prev !== null ? prev : chg);
+  const sub  = (chg !== null && prev !== null) ? (useChg ? prev : chg) : null;
+  const tk = (st.ticker || '').replace(/'/g, "\\'");
+  const yUrl = _yahooStockUrl(st.ticker || '');
+  const yIcon = yUrl ? `<span onclick="_openYahooStock('${tk}',event)" title="Yahoo Finance" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;background:rgba(100,181,246,.2);color:#64b5f6;font-size:8px;font-weight:900;cursor:pointer;flex-shrink:0;border:1px solid rgba(100,181,246,.35);user-select:none">Y</span>` : '';
+  const nUrl = _naverStockUrl(st.ticker || '', st.type || '');
+  const nAttr = nUrl ? ` onclick="_openNaverStock('${tk}','${st.type||''}')" style="cursor:pointer" title="TradingView에서 보기"` : '';
+  return _spStockRow({ name: st.name, ticker: st.ticker, type: st.type, memo: st.memo,
+                       main: main, sub: sub, nameClick: nAttr, codeClick: nAttr, extraIcon: yIcon });
+}
 const KR_LIST_TTL=5*60*1000; // 5분 캐시 TTL
 
 // ══════════════════════════════════════════════════
@@ -2086,11 +2114,43 @@ function _setPopupSort(mode) {
   _popupSortMode = mode;
   _rerenderPopupStockList();
 }
+// ★ [261118] 팝업 종목 한 줄 (KR/US 공통) — 모든 행이 같은 칸 구조
+//   o = { name, ticker, type, memo, main, sub, nameClick, codeClick, extraIcon }
+function _spPct(v) { return (v !== null && v !== undefined && !isNaN(v)) ? (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%' : ''; }
+function _spColor(v, muted) {
+  if (v === null || v === undefined || isNaN(v) || v === 0) return 'var(--text-muted)';
+  if (muted) return v > 0 ? 'rgba(239,83,80,.7)' : 'rgba(66,165,245,.75)';
+  return v > 0 ? '#ef5350' : '#42a5f5';
+}
+function _spStockRow(o) {
+  const main = (o.main !== null && o.main !== undefined && !isNaN(o.main)) ? Number(o.main) : null;
+  const sub  = (o.sub  !== null && o.sub  !== undefined && !isNaN(o.sub))  ? Number(o.sub)  : null;
+  const code = String(o.ticker || '').split(':').pop() || '-';
+  const memo = o.memo || '';
+  return '<div class="sp-stock-row">'
+    + '<span class="sp-name-cell">'
+    +   (o.extraIcon || '')
+    +   '<span class="sp-stock-name"' + (o.nameClick || '') + '>' + o.name + '</span>'
+    +   ((o.type || '') === 'ETF' ? '<span class="sp-etf-tag">ETF</span>' : '')
+    +   (memo ? '<span class="memo-icon" data-memo="' + memo.replace(/"/g, '&quot;') + '" style="flex-shrink:0">ℹ</span>' : '')
+    + '</span>'
+    + '<span class="sp-stock-ticker sp-col-code"' + (o.codeClick || '') + '>' + code + '</span>'
+    + '<span class="sp-stock-chg" style="color:' + _spColor(main) + ';font-weight:' + (main !== null && Math.abs(main) >= 3 ? '800' : '700') + '">' + (main !== null ? _spPct(main) : '-') + '</span>'
+    + '<span class="sp-stock-sub sp-col-sub" style="color:' + _spColor(sub, true) + '">' + _spPct(sub) + '</span>'
+    + '</div>';
+}
+function _spHeadRow(labels) {
+  return '<div class="sp-stock-head"><span>종목</span><span class="sp-col-code" style="text-align:right">코드</span>'
+    + '<span>' + (labels[0] || '') + '</span><span class="sp-col-sub">' + (labels[1] || '') + '</span></div>';
+}
+
 function _rerenderPopupStockList() {
   if (!_popupCtx) return;
   const wrap = document.getElementById('sp-stock-wrap');
   if (!wrap) return;
-  let html = _popupSortBarHtml(_popupSortMode) + _popupCtx.headerHtml;
+  const _labels = _popupCtx.colLabels || ['등락률', ''];
+  wrap.classList.toggle('sp-one-col', !_labels[1]);
+  let html = _popupSortBarHtml(_popupSortMode) + _popupCtx.headerHtml + _spHeadRow(_labels);
 
   const allStocks   = _popupCtx.stocks;
   const etfStocks    = allStocks.filter(function(st) { return (st.type || '') === 'ETF'; });
@@ -2270,7 +2330,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
             stocks: _usValidStocks,
             getMainVal: _usGetMainVal,
             headerHtml: _usHeader,
-            renderRow: st => _renderStockItem(st, _usUseChg, false),
+            renderRow: st => _usPopupRow(st, _usUseChg),
+            colLabels: _usUseChg ? ['오늘', '전일'] : ['확정', '오늘'],
             subcatOrder: _usSubcatOrders['US:' + sectorName] || []
           };
         }
@@ -2363,35 +2424,21 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
       const memo    = st.memo || '';
       const isEtf   = (st.type || '') === 'ETF';
 
-      let mainVal, subHtml = '';
+      // ★ [261118] 메인/보조 등락률을 별도 칸으로 (보조는 둘 다 있을 때만)
+      let mainVal, subVal = null;
       if (_usePrev) {
         mainVal = prevChg !== null ? prevChg : chg;
-        if (chg !== null && prevChg !== null) {
-          const tc = chg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">오늘 '+tc+chg.toFixed(2)+'%</span>';
-        }
+        if (chg !== null && prevChg !== null) subVal = chg;
       } else if (_useToday) {
         mainVal = chg !== null ? chg : prevChg;
-        if (chg !== null && prevChg !== null) {
-          const pc = prevChg >= 0 ? '+' : '';
-          subHtml = '<span style="font-size:8px;color:var(--text-muted);margin-left:3px">전일 '+pc+prevChg.toFixed(2)+'%</span>';
-        }
+        if (chg !== null && prevChg !== null) subVal = prevChg;
       } else {
         mainVal = prevChg !== null ? prevChg : chg;
       }
-
-      const mainStr   = mainVal !== null ? (mainVal >= 0 ? '+' : '') + mainVal.toFixed(2) + '%' : '-';
-      const mainColor = mainVal !== null && mainVal > 0 ? '#ef5350' : mainVal !== null && mainVal < 0 ? '#42a5f5' : 'var(--text-muted)';
-
-      const _nUrl = _naverStockUrl(ticker, st.type||'');
-      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\'")}',' ${st.type||''}')" style="cursor:pointer" title="TradingView에서 보기"` : '';
-      const _etfBadge = isEtf ? '<span style="font-size:8px;color:#ffb74d;background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);border-radius:3px;padding:0 3px;margin-right:4px;flex-shrink:0">ETF</span>' : '';
-      return '<div class="sp-stock-row">'
-        + _etfBadge
-        + `<span class="sp-stock-name"${_nAttr}>`+st.name+(memo ? '<span class="memo-icon" data-memo="'+memo.replace(/"/g,'&quot;')+'" style="margin-left:4px">ℹ</span>' : '')+'</span>'
-        + `<span class="sp-stock-ticker"${_nAttr}>`+ticker+'</span>'
-        + '<span class="sp-stock-chg" style="color:'+mainColor+'">'+mainStr+subHtml+'</span>'
-        + '</div>';
+      const _nUrl  = _naverStockUrl(ticker, st.type||'');
+      const _nAttr = _nUrl ? ` onclick="_openNaverStock('${ticker.replace(/'/g,"\\'")}','${st.type||''}')" style="cursor:pointer" title="네이버 증권에서 보기"` : '';
+      return _spStockRow({ name: st.name, ticker: ticker, type: st.type, memo: memo,
+                           main: mainVal, sub: subVal, nameClick: _nAttr, codeClick: _nAttr });
     };
 
     // 헤더 안내 (갱신 시각 포함) — 정렬과 무관하게 고정
@@ -2406,7 +2453,8 @@ async function _loadSectorPopupData(sectorName, isKr, avgEl, body, prevDate) {
     // ★ 정렬 상태 리셋(팝업 열 때마다 등락률순 기본값) 후 컨텍스트 등록
     _popupSortMode = 'chg';
     const _krSubcatOrders = await _loadSubcatOrders();
-    _popupCtx = { stocks: stocks, getMainVal: _krGetMainVal, headerHtml: header, renderRow: _krRenderRow, subcatOrder: _krSubcatOrders['KR:' + sectorName] || [] };
+    const _krColLabels = _usePrev ? ['확정', '오늘'] : _useToday ? ['오늘', '전일'] : ['확정', ''];
+    _popupCtx = { stocks: stocks, getMainVal: _krGetMainVal, headerHtml: header, renderRow: _krRenderRow, colLabels: _krColLabels, subcatOrder: _krSubcatOrders['KR:' + sectorName] || [] };
 
     // ★ 섹터 메모/링크 헤더 prepend
     body.innerHTML = _renderSectorNoteHeader(sectorName, isKr) + '<div id="sp-stock-wrap"></div>';
