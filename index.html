@@ -3102,7 +3102,17 @@ if(btn)btn.disabled=false;
 if(icon)icon.style.transform='rotate(0deg)';
 }
 }
+// ★ [261118] 기간 버튼이 오래된 축약판 표 함수를 쓰던 버그 수정
+//   → 통계 박스 + 표 그리기를 _renderKrMain() 한 곳으로 통일
+//   renderKr()          : 처음 로드/데이터 갱신 시 — 표 + 차트·분석
+//   renderKrTableOnly() : 기간 버튼 — 표만 (차트는 다시 그리지 않음)
 function renderKr(){
+if(!S.krD)return;
+_renderKrMain();
+renderKrChart();
+renderKrAnalytics();
+}
+function _renderKrMain(){
 if(!S.krD)return;
 const{headers:H,rows:baseRows}=S.krD;
 // rows는 항상 baseRows만 사용 (오늘 행은 테이블에서만 직접 삽입)
@@ -3281,8 +3291,6 @@ t+='</tbody></table>';
 document.getElementById('kr-table').innerHTML=t;
 _applyCollapsedGroups('kr-table');
 const _krGs1=window._krLastSpans?[...new Set(window._krLastSpans.map(function(s){return s.label;}).filter(Boolean))]:[];const _krB1=document.getElementById('kr-group-toggle-bar');if(_krB1){_krB1.innerHTML=_buildGroupToggleBar('kr-table',_krGs1);_applyCollapsedGroups('kr-table');}
-renderKrChart();
-renderKrAnalytics();
 }
 const KR_GROUP_COLORS=[
 '#1565C0','#2E7D32','#6A1B9A','#BF360C','#00695C',
@@ -5474,7 +5482,14 @@ S.usOk=false; S.usWatchAt=0; // 캐시 무효화
 await loadUs();
 }catch(e){ console.warn('[loadUsToday] 실패:', e.message); }
 }
+// ★ [261118] US도 동일하게 통일 (renderUs: 표+차트 / renderUsTableOnly: 표만)
 function renderUs(){
+if(!S.usD)return;
+_renderUsMain();
+renderUsChart();
+renderUsAnalytics();
+}
+function _renderUsMain(){
 if(!S.usD)return;
 const{headers:H,rows:baseRows}=S.usD;
 const rows=baseRows; // rows는 항상 baseRows만 사용
@@ -5644,8 +5659,6 @@ t+='</tbody></table>';
 document.getElementById('us-table').innerHTML=t;
 _applyCollapsedGroups('us-table');
 const _usGs1=window._usLastSpans?[...new Set(window._usLastSpans.map(function(s){return s.g;}).filter(Boolean))]:[];const _usB1=document.getElementById('us-group-toggle-bar');if(_usB1){_usB1.innerHTML=_buildGroupToggleBar('us-table',_usGs1);_applyCollapsedGroups('us-table');}
-renderUsChart();
-renderUsAnalytics();
 }
 const KR_FALLBACK=[
 {sector:'방산',   stocks:['LIG넥스원','한화에어로스페이스','현대로템','한국항공우주','SNT모티브','풍산','아이쓰리시스템','휴먼테크놀로지','코츠테크놀로지','한화시스템']},
@@ -6058,129 +6071,12 @@ if(range <= 22){
 }
 function renderKrTableOnly(){
 if(!S.krD) return;
-const{headers:H,rows}=S.krD;
-const f=rows.slice(0,S.krR);
-const sectorHdrs=H.slice(1);
-const secColorMap={};
-sectorHdrs.forEach((name,i)=>{if(!KR_FIXED[name]){secColorMap[name]=KR_SEC_COLORS[i%KR_SEC_COLORS.length];}});
-if(f.length){
-const lt=f[0];
-const pureSectors=sectorHdrs.filter(h=>!KR_FIXED[h]);
-const sVals=pureSectors.map(h=>parseFloat(lt[H.indexOf(h)])).filter(v=>!isNaN(v));
-const avg=sVals.length?(sVals.reduce((a,b)=>a+b,0)/sVals.length).toFixed(2):'-';
-const mxVal=sVals.length?Math.max(...sVals):null;
-const mnVal=sVals.length?Math.min(...sVals):null;
-const mx=mxVal!==null?mxVal.toFixed(2):'-';
-const mn=mnVal!==null?mnVal.toFixed(2):'-';
-const mxName=mxVal!==null?pureSectors[sVals.indexOf(mxVal)]:'';
-const mnName=mnVal!==null?pureSectors[sVals.indexOf(mnVal)]:'';
-const todayMap=S.krToday&&S.krToday.sectors?S.krToday.sectors:{};
-const todayDate=S.krToday?S.krToday.date:'';
-// ★ 오늘 날짜가 이미 시트에 확정 저장된 경우 → "오늘" 박스 숨김 (renderKr와 동일 로직)
-const _alreadyConfirmedT=todayDate&&rows.some(r=>r[0]===todayDate);
-const _todayDowT=todayDate?new Date(todayDate+'T00:00:00+09:00').getDay():1;
-const _isWeekendT=(_todayDowT===0||_todayDowT===6);
-const _isLiveT = S.krToday && S.krToday.delayed===false;
-const hasTodayStats=todayDate&&Object.keys(todayMap).length>0&&!_isWeekendT&&(!_alreadyConfirmedT||_isLiveT);
-let tAvg='-',tMx='-',tMn='-',tMxName='',tMnName='';
-if(hasTodayStats){
-// ★ pair 방식으로 인덱스 불일치 버그 수정
-const tPairs=pureSectors.map(n=>{const v=todayMap[n];return{name:n,v:(v!==undefined&&!isNaN(parseFloat(v)))?parseFloat(v):null};});
-const tValid=tPairs.filter(p=>p.v!==null);
-const tSum=tValid.reduce((a,p)=>a+p.v,0);
-tAvg=tValid.length?(tSum/tValid.length).toFixed(2):'-';
-const tMxPair=tValid.length?tValid.reduce((a,b)=>b.v>a.v?b:a):null;
-const tMnPair=tValid.length?tValid.reduce((a,b)=>b.v<a.v?b:a):null;
-tMx=tMxPair?tMxPair.v.toFixed(2):'-';
-tMn=tMnPair?tMnPair.v.toFixed(2):'-';
-tMxName=tMxPair?tMxPair.name:'';
-tMnName=tMnPair?tMnPair.name:'';
-}
-_buildKrStats(pureSectors,H,f,hasTodayStats,todayDate,todayMap,false);
-}
-const groupMap=S.krD.groupMap||{};
-const t_header2=buildKrGroupHeaderRow(sectorHdrs, groupMap);
-let t=`<table><thead>${t_header2}<tr><th>날짜</th>`;
-sectorHdrs.forEach((name,_si2)=>{
-const fixed=KR_FIXED[name];let bg,fg;
-if(fixed){bg=fixed.bg;fg=fixed.fg;}else{const c=secColorMap[name]||{bg:'#2e3a50',fg:'#e2e8f0'};bg=c.bg;fg=c.fg;}
-const isW=WATCHED_SECTORS.has(name);
-const _isBdr2=(window._krGroupBorderCols&&window._krGroupBorderCols.has(_si2));
-const _bdr2=_isBdr2?"border-left:3px solid #000;":"";
-t+=`<th class="${isW?'watched-col':''} ${KR_FIXED[name]?'':`sector-clickable`}"
-  style="width:36px;max-width:36px;white-space:normal;word-break:keep-all;line-height:1.25;vertical-align:top;background:${isW?'#7b3a00':bg};color:${isW?'#ffd180':fg};font-size:9px;${_bdr2}"
-  ${KR_FIXED[name]?'':`onclick="openSectorPopup('${name.replace(/'/g,"\\'")}',true)" title="${name} 종목 보기"`}
->${(name==='F&G'?'F&G':name)}${isW?'<div style="font-size:8px;margin-top:2px">⭐</div>':''}</th>`;
-});
-t+='</tr>'
-+avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
-+avg5row(sectorHdrs,f,'kr')
-+sparkline5row(sectorHdrs,f,false)
-+separatorRow(sectorHdrs.length)
-+'</thead><tbody>';
-f.forEach(row=>{
-t+=`<tr><td>${row[0]||''}</td>`;
-sectorHdrs.forEach((name,ci)=>{
-const val=row[ci+1];let c;
-if(KR_FIXED[name]?.type==='ADR')c=adrCell(val);else c=pctCell(val,15);
-const isW=WATCHED_SECTORS.has(name);
-const _isBdrTd2=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci));
-const _bdrTd2=_isBdrTd2?"border-left:3px solid #000;":"";
-t+=`<td class="${isW?'watched-col':''}" style="${_bdrTd2}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||val||''}">${c.t||val||''}</td>`;
-});
-t+='</tr>';
-});
-t+='</tbody></table>';
-document.getElementById('kr-table').innerHTML=t;
-_applyCollapsedGroups('kr-table');
-const _krGs2=window._krLastSpans?[...new Set(window._krLastSpans.map(function(s){return s.label;}).filter(Boolean))]:[];const _krB2=document.getElementById('kr-group-toggle-bar');if(_krB2){_krB2.innerHTML=_buildGroupToggleBar('kr-table',_krGs2);_applyCollapsedGroups('kr-table');}
+_renderKrMain();
 applyTableScroll('kr-table', S.krR);
 }
 function renderUsTableOnly(){
 if(!S.usD) return;
-const{headers:H,rows}=S.usD;
-const f=rows.slice(0,S.usR);
-const sh=H.slice(1);
-if(f.length){
-const lt=f[0],si=H.indexOf('S&P500'),ni=H.indexOf('나스닥'),vi=H.indexOf('VIX');
-const sp=si>=0?parseFloat(lt[si]):NaN,nq=ni>=0?parseFloat(lt[ni]):NaN,vx=vi>=0?parseFloat(lt[vi]):NaN;
-_buildUsStats(lt,H,sp,nq,vx,parseFloat(lt[H.indexOf("S&P500")]),parseFloat(lt[H.indexOf("나스닥")]));
-}
-const spans=[];let pg=null,gs=0;
-const gMap2=S.usD.groupMap||{};
-sh.forEach((h,i)=>{const g=gMap2[h]||'INDEX';if(g!==pg){if(pg!==null)spans.push({g:pg,n:i-gs});gs=i;pg=g;}if(i===sh.length-1)spans.push({g:pg,n:i-gs+1});});
-let t=`<table><thead><tr class="group-row"><th></th>`;
-spans.forEach(({g,n})=>{const gg=US_GROUPS[g]||{bg:GROUP_COLORS[Object.keys(gMap2).indexOf(g)%GROUP_COLORS.length]||'#607D8B',fg:'#fff'};t+=`<th colspan="${n}" style="background:${gg.bg};color:${gg.fg};text-align:left;padding-left:8px">▶ ${g}</th>`;});
-t+='</tr><tr><th>Date <span style="font-size:8px;color:var(--accent-us);font-weight:400">ET</span></th>';
-sh.forEach(h=>{
-const gn=gMap2[h]||'INDEX';const gs3=US_GROUPS[gn]||{bg:'#2e3a50',fg:'#e2e8f0'};
-const m=US_META[h]||{bg:gs3.bg,fg:gs3.fg};
-const isW=US_WATCHED_SECTORS.has(h);
-t+=`<th class="${isW?'watched-col':''} sector-clickable"
-  style="background:${isW?'#7b3a00':m.bg};color:${isW?'#ffd180':m.fg};font-size:9px;vertical-align:top"
-  onclick="openSectorPopup('${h.replace(/'/g,"\\'")}',false)" title="${h} 정보">${h}${isW?'<div style="font-size:8px;margin-top:1px">⭐</div>':''}</th>`;
-});
-t+='</tr>'
-+avg20rowFromData(sh, S.usD.avg20||[], 'us')
-+avg5row(sh,f,'us')
-+sparkline5row(sh,f,true)
-+separatorRow(sh.length)
-+'</thead><tbody>';
-f.forEach(row=>{
-if(String(row[1])==='휴장'){t+=`<tr><td>${row[0]}</td><td colspan="${sh.length}" style="color:var(--text-muted);font-size:10px;text-align:center">🏖️ 휴장</td></tr>`;return;}
-t+=`<tr><td>${dateCell(row[0]||'',false)}</td>`;
-sh.forEach((name,ci)=>{
-const v=row[ci+1],c=usCell(name,v);
-const isW=US_WATCHED_SECTORS.has(name);
-const _usHBdr=(window._usGroupBorderCols&&window._usGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
-t+=`<td class="${isW?'watched-col':''}" style="${_usHBdr}background:${c.bg};color:${c.fg};${c.b?'font-weight:bold':''}\" data-tip="${name}: ${c.t||v||''}">${c.t||v||''}</td>`;
-});
-t+='</tr>';
-});
-t+='</tbody></table>';
-document.getElementById('us-table').innerHTML=t;
-_applyCollapsedGroups('us-table');
-const _usGs2=window._usLastSpans?[...new Set(window._usLastSpans.map(function(s){return s.g;}).filter(Boolean))]:[];const _usB2=document.getElementById('us-group-toggle-bar');if(_usB2){_usB2.innerHTML=_buildGroupToggleBar('us-table',_usGs2);_applyCollapsedGroups('us-table');}
+_renderUsMain();
 applyTableScroll('us-table', S.usR);
 }
 async function refreshKrToday(btn){
