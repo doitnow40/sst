@@ -2738,6 +2738,33 @@ rows.push(r);
 }
 return{headers:H,rows,count:rows.length,sheetReadAt:'(데모) '+new Date().toLocaleString('ko-KR')};
 }
+// ★ [261125] 10D 상승일비율 — 최근 10거래일 중 상승일 비율 (상승추세 섹터 찾기용)
+//   · 오늘 날짜 행(장중 실시간)은 제외, 미국 '휴장' 행 제외 → 최근 10거래일
+//   · 비율 = 상승일 ÷ (상승+하락+보합), 값 없는 날만 분모에서 제외
+//   · 색상: F&G와 같은 파랑-흰색-빨강 체계를 10% 단위 10단계로
+//   · 기간 버튼과 무관하게 항상 최근 10거래일 기준
+function upDayRatio10row(sectorHdrs, allRows, mode){
+const tz=mode==='us'?'America/New_York':'Asia/Seoul';
+const today=new Date().toLocaleDateString('en-CA',{timeZone:tz}); // YYYY-MM-DD
+const base=(allRows||[]).filter(r=>{const d=String(r[0]||'').slice(0,10);return d&&d!==today&&String(r[1])!=='휴장';}).slice(0,10);
+let h='<tr class="avg-row"><td class="avg-row-label" style="background:var(--bg-card2);white-space:nowrap" title="최근 10거래일 중 상승한 날의 비율 (오늘 제외, 보합 포함)">10D 상승일비율</td>';
+sectorHdrs.forEach((name,ci)=>{
+const bdr=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
+const isAbs=ABSOLUTE_VALUE_SECTORS.has(name)||KR_FIXED[name]?.type==='ADR'||(mode==='us'&&US_META[name]?.type==='YIELD');
+if(isAbs){h+=`<td style="${bdr}background:var(--bg-card2)"></td>`;return;}
+let up=0,dn=0,fl=0;
+base.forEach(r=>{const raw=r[ci+1];if(raw===null||raw===undefined||raw===''||String(raw)==='휴장')return;const v=parseFloat(raw);if(isNaN(v))return;if(v>0)up++;else if(v<0)dn++;else fl++;});
+const n=up+dn+fl;
+if(n<5){h+=`<td style="${bdr}background:var(--bg-card2)"></td>`;return;}
+const ratio=up/n*100;
+const bin=Math.min(9,Math.floor(ratio/10));
+const c=fngCell(bin*10+5);
+const strong=(ratio>=70||ratio<=30);
+h+=`<td style="${bdr}background:${c.bg};color:${c.fg};font-weight:${strong?'bold':'normal'}" title="${name}: 최근 ${n}거래일 상승 ${up} · 하락 ${dn} · 보합 ${fl}">${Math.round(ratio)}%</td>`;
+});
+h+=`<td style="background:var(--bg-card2)"></td>`;
+return h+'</tr>';
+}
 function avg5row(sectorHdrs, filtered, mode){
 let h='<tr class="avg-row"><td class="avg-row-label" style="background:var(--bg-card2)">5D Avg</td>';
 sectorHdrs.forEach((name,ci)=>{
@@ -3217,6 +3244,7 @@ t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;
 t+='</tr>'
 +avg20rowFromData(sectorHdrs, S.krD.avg20||[], 'kr')
 +avg5row(sectorHdrs,f,'kr')
++upDayRatio10row(sectorHdrs,rows,'kr')
 +sparkline5row(sectorHdrs,f,false)
 +separatorRow(sectorHdrs.length)
 +'</thead><tbody>';
@@ -5568,6 +5596,7 @@ t+=`<th style="min-width:100px;max-width:180px;background:#1a2535;color:#8a9ab5;
 t+='</tr>'
 +avg20rowFromData(sh, S.usD.avg20||[], 'us')
 +avg5row(sh,f,'us')
++upDayRatio10row(sh,rows,'us')
 +sparkline5row(sh,f,true)
 +separatorRow(sh.length)
 +'</thead><tbody>';
