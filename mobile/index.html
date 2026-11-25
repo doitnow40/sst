@@ -3190,15 +3190,13 @@ rows.push(r);
 return{headers:H,rows,count:rows.length,sheetReadAt:'(데모) '+new Date().toLocaleString('ko-KR')};
 }
 // ★ [261125] 10D 상승일비율 — 최근 10거래일 중 상승일 비율 (상승추세 섹터 찾기용)
-//   · 오늘 날짜 행(장중 실시간)은 제외, 미국 '휴장' 행 제외 → 최근 10거래일
+//   · [261125 수정] 오늘 행 포함 (표 맨 위 행부터 10거래일), 미국 '휴장' 행만 제외
 //   · 비율 = 상승일 ÷ (상승+하락+보합), 값 없는 날만 분모에서 제외
 //   · 색상: F&G와 같은 파랑-흰색-빨강 체계를 10% 단위 10단계로
 //   · 기간 버튼과 무관하게 항상 최근 10거래일 기준
 function upDayRatio10row(sectorHdrs, allRows, mode){
-const tz=mode==='us'?'America/New_York':'Asia/Seoul';
-const today=new Date().toLocaleDateString('en-CA',{timeZone:tz}); // YYYY-MM-DD
-const base=(allRows||[]).filter(r=>{const d=String(r[0]||'').slice(0,10);return d&&d!==today&&String(r[1])!=='휴장';}).slice(0,10);
-let h='<tr class="avg-row"><td class="avg-row-label" style="background:var(--bg-card2);white-space:nowrap" title="최근 10거래일 중 상승한 날의 비율 (오늘 제외, 보합 포함)">10D 상승일비율</td>';
+const base=(allRows||[]).filter(r=>{const d=String(r[0]||'').slice(0,10);return d&&String(r[1])!=='휴장';}).slice(0,10);
+let h='<tr class="avg-row"><td class="avg-row-label" style="background:var(--bg-card2);white-space:nowrap" title="최근 10거래일(오늘 포함) 중 상승한 날의 비율 (보합 포함)">10D 상승일비율</td>';
 sectorHdrs.forEach((name,ci)=>{
 const bdr=(window._krGroupBorderCols&&window._krGroupBorderCols.has(ci))?'border-left:3px solid #000;':'';
 const isAbs=ABSOLUTE_VALUE_SECTORS.has(name)||KR_FIXED[name]?.type==='ADR'||(mode==='us'&&US_META[name]?.type==='YIELD');
